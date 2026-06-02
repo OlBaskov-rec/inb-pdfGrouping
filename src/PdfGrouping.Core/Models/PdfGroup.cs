@@ -22,5 +22,8 @@ public class PdfGroup
         }
     }
 
+    /// <summary>Диапазоны в виде строки, напр. «1–10, 25–30». Для отображения в UI.</summary>
+    public string RangesText => Ranges.Count == 0 ? "—" : string.Join(", ", Ranges);
+
     public override string ToString() => $"{Label} ({TotalPages} стр.)";
 }
