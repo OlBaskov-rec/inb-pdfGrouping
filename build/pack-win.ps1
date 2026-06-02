@@ -23,7 +23,13 @@
 param(
     [string]$Version = "",
     [switch]$Upload,
-    [string]$Token = $env:GITHUB_TOKEN
+    [string]$Token = $env:GITHUB_TOKEN,
+    # Markdown-файл с заметками релиза. По умолчанию build/release-notes-<Version>.md, если есть.
+    [string]$ReleaseNotes = "",
+    # Параметры signtool.exe для подписи (проброс в vpk --signParams), напр.:
+    #   '/fd sha256 /tr http://timestamp.digicert.com /td sha256 /a'                      (из хранилища Windows)
+    #   '/fd sha256 /f C:\path\cert.pfx /p PASSWORD /tr http://timestamp.digicert.com /td sha256'  (из PFX)
+    [string]$SignParams = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -46,6 +52,13 @@ if ([string]::IsNullOrWhiteSpace($Version)) {
 }
 Write-Host "==> Версия релиза: $Version" -ForegroundColor Cyan
 
+# Заметки релиза: явный путь или соглашение build/release-notes-<Version>.md
+if ([string]::IsNullOrWhiteSpace($ReleaseNotes)) {
+    $candidate = Join-Path $PSScriptRoot "release-notes-$Version.md"
+    if (Test-Path $candidate) { $ReleaseNotes = $candidate }
+}
+if ($ReleaseNotes) { Write-Host "==> Заметки релиза: $ReleaseNotes" -ForegroundColor Cyan }
+
 # Инструмент vpk (из манифеста .config/dotnet-tools.json)
 Push-Location $repoRoot
 try {
@@ -56,14 +69,18 @@ try {
     dotnet publish $proj -c Release -r $rid --self-contained true -o $publishDir
 
     Write-Host "==> vpk pack" -ForegroundColor Cyan
-    dotnet vpk pack `
-        --packId $packId `
-        --packVersion $Version `
-        --packDir $publishDir `
-        --mainExe $mainExe `
-        --packTitle $title `
-        --runtime $rid `
-        --outputDir $releaseDir
+    $packArgs = @(
+        "--packId", $packId,
+        "--packVersion", $Version,
+        "--packDir", $publishDir,
+        "--mainExe", $mainExe,
+        "--packTitle", $title,
+        "--runtime", $rid,
+        "--outputDir", $releaseDir
+    )
+    if ($ReleaseNotes) { $packArgs += @("--releaseNotes", $ReleaseNotes) }
+    if ($SignParams)   { $packArgs += @("--signParams", $SignParams) }
+    dotnet vpk pack @packArgs
 
     if ($Upload) {
         if ([string]::IsNullOrWhiteSpace($Token)) {

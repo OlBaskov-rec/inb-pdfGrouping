@@ -38,6 +38,11 @@ coverage*.info
 *.nuget.targets
 .nuget/
 
+# Секреты подписи (приватные ключи никогда не коммитим; .cer — публичный, можно)
+*.pfx
+*.snk
+*.p12
+
 # OS files
 .DS_Store
 Thumbs.db
