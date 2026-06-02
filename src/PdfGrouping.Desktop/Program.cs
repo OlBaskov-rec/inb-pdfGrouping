@@ -1,5 +1,6 @@
 ﻿using Avalonia;
 using System;
+using Velopack;
 
 namespace PdfGrouping.Desktop;
 
@@ -11,8 +12,10 @@ class Program
     [STAThread]
     public static void Main(string[] args)
     {
-        // ЭТАП 5 (Velopack): первой строкой здесь будет VelopackApp.Build().Run();
-        // — обрабатывает хуки установки/обновления до старта UI.
+        // Должно идти ПЕРВЫМ: Velopack обрабатывает хуки установки/обновления
+        // (--veloapp-install и т.п.) и при необходимости завершает процесс до старта UI.
+        VelopackApp.Build().Run();
+
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 

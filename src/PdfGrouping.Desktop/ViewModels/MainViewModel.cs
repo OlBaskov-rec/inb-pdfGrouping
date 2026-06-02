@@ -12,10 +12,12 @@ public partial class MainViewModel : ObservableObject
 {
     private readonly PdfDocumentService _pdfService = new();
     private readonly IFilePickerService _filePicker;
+    private readonly UpdateService _updateService;
 
-    public MainViewModel(IFilePickerService filePicker)
+    public MainViewModel(IFilePickerService filePicker, UpdateService updateService)
     {
         _filePicker = filePicker;
+        _updateService = updateService;
     }
 
     // --- Исходный PDF ---
@@ -64,6 +66,13 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _hasResults;
+
+    // --- Обновления (Velopack) ---
+    [ObservableProperty]
+    private bool _isUpdateReady;
+
+    [ObservableProperty]
+    private string _updateText = string.Empty;
 
     // -------------------------------------------------------------------
     // КОМАНДЫ
@@ -220,6 +229,34 @@ public partial class MainViewModel : ObservableObject
     {
         if (!string.IsNullOrEmpty(OutputDirectory))
             PlatformHelper.OpenFolder(OutputDirectory);
+    }
+
+    [RelayCommand]
+    private void ApplyUpdate() => _updateService.ApplyAndRestart();
+
+    /// <summary>
+    /// Фоновая проверка обновлений при старте. В dev-запуске — безопасный no-op.
+    /// Ошибки сети не мешают работе приложения.
+    /// </summary>
+    public async Task CheckForUpdatesAsync()
+    {
+        try
+        {
+            if (!_updateService.IsSupported)
+                return;
+
+            var version = await _updateService.CheckAsync();
+            if (version is null)
+                return;
+
+            await _updateService.DownloadAsync();
+            UpdateText = $"Доступно обновление {version} — готово к установке.";
+            IsUpdateReady = true;
+        }
+        catch
+        {
+            // Обновление не критично для основной работы — тихо игнорируем.
+        }
     }
 
     [RelayCommand]

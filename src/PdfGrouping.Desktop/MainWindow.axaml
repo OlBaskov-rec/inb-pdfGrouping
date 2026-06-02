@@ -163,19 +163,33 @@
             </TextBlock>
         </Border>
 
-        <!-- Row 4: обработать + статус -->
-        <Grid Grid.Row="4" ColumnDefinitions="Auto,*">
-            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                <Button Content="▶ Обработать" Command="{Binding ProcessCommand}"
-                        IsEnabled="{Binding !IsProcessing}"
-                        Padding="20,8" FontSize="15" FontWeight="Bold"
-                        Background="#0078D4" Foreground="White" />
-                <ProgressBar Width="120" Margin="12,0" IsIndeterminate="{Binding IsProcessing}"
-                             IsVisible="{Binding IsProcessing}" VerticalAlignment="Center" />
-            </StackPanel>
-            <TextBlock Grid.Column="1" Text="{Binding StatusText}" VerticalAlignment="Center"
-                       Margin="16,0,0,0" FontSize="13" TextWrapping="Wrap"
-                       Foreground="{Binding StatusIsError, Converter={StaticResource BoolToBrush}}" />
-        </Grid>
+        <!-- Row 4: баннер обновления + обработать + статус -->
+        <StackPanel Grid.Row="4">
+            <!-- Баннер обновления (виден только когда обновление скачано) -->
+            <Border Background="#E7F3E8" BorderBrush="#3A8A3F" BorderThickness="1" CornerRadius="6"
+                    Padding="10,8" Margin="0,0,0,8" IsVisible="{Binding IsUpdateReady}">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="⟳ Обновить и перезапустить"
+                            Command="{Binding ApplyUpdateCommand}"
+                            Background="#3A8A3F" Foreground="White" FontWeight="Bold" />
+                    <TextBlock Text="{Binding UpdateText}" VerticalAlignment="Center"
+                               Foreground="#1E5E22" FontWeight="SemiBold" />
+                </DockPanel>
+            </Border>
+
+            <Grid ColumnDefinitions="Auto,*">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="▶ Обработать" Command="{Binding ProcessCommand}"
+                            IsEnabled="{Binding !IsProcessing}"
+                            Padding="20,8" FontSize="15" FontWeight="Bold"
+                            Background="#0078D4" Foreground="White" />
+                    <ProgressBar Width="120" Margin="12,0" IsIndeterminate="{Binding IsProcessing}"
+                                 IsVisible="{Binding IsProcessing}" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="{Binding StatusText}" VerticalAlignment="Center"
+                           Margin="16,0,0,0" FontSize="13" TextWrapping="Wrap"
+                           Foreground="{Binding StatusIsError, Converter={StaticResource BoolToBrush}}" />
+            </Grid>
+        </StackPanel>
     </Grid>
 </Window>

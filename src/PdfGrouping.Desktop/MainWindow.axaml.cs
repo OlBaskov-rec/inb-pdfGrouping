@@ -15,11 +15,14 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        _viewModel = new MainViewModel(new StorageProviderFilePicker(() => this));
+        _viewModel = new MainViewModel(new StorageProviderFilePicker(() => this), new UpdateService());
         DataContext = _viewModel;
 
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
         AddHandler(DragDrop.DropEvent, OnDrop);
+
+        // Фоновая проверка обновлений (no-op в dev-запуске).
+        _ = _viewModel.CheckForUpdatesAsync();
     }
 
     private static void OnDragOver(object? sender, DragEventArgs e)
