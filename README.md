@@ -80,17 +80,57 @@ dotnet test
 | **B** | 11–24 | `B.pdf` (14 стр.) |
 | **C** | 31–50 | `C.pdf` (20 стр.) |
 
-## Portable-сборка и обновления
+## Portable-сборка и обновления (Velopack)
 
-Целевая модель распространения — **portable self-contained** сборка с авто-обновлением через
-**[Velopack](https://velopack.io)** (фид — GitHub Releases). Подключается отдельным этапом;
-до этого распространяется как self-contained publish:
+Распространение — **portable self-contained** сборка с авто-обновлением через
+**[Velopack](https://velopack.io)**. Фид обновлений — **GitHub Releases** публичного
+репозитория (токен для скачивания не нужен).
 
-```bash
-dotnet publish src/PdfGrouping.Desktop -c Release -r win-x64 --self-contained true -o ./publish
+### Как это работает
+
+- `VelopackApp.Build().Run()` вызывается первым в [Program.cs](src/PdfGrouping.Desktop/Program.cs)
+  и обрабатывает хуки установки/обновления.
+- При старте приложение в фоне проверяет GitHub Releases
+  ([UpdateService.cs](src/PdfGrouping.Desktop/Services/UpdateService.cs)); если есть новая
+  версия — тихо скачивает её и показывает баннер **«⟳ Обновить и перезапустить»**.
+- В режиме разработки (`dotnet run`) проверка обновлений — безопасный no-op.
+
+### Сборка релиза
+
+Инструмент `vpk` подключён через манифест `.config/dotnet-tools.json` (восстанавливается
+автоматически). Скрипт упаковки:
+
+```powershell
+# Локальная сборка (Setup.exe + Portable.zip + пакет обновления в .\Releases)
+pwsh build/pack-win.ps1 -Version 0.1.0
+
+# Сборка и публикация релиза в GitHub Releases (нужен PAT-токен)
+$env:GITHUB_TOKEN = "<ghp_...>"
+pwsh build/pack-win.ps1 -Version 0.1.0 -Upload
 ```
 
-macOS-сборка (`-r osx-arm64` / `osx-x64`) планируется после стабилизации Windows-версии.
+Артефакты в `.\Releases`:
+- `PdfGrouping-win-Portable.zip` — portable-приложение (со встроенным `Update.exe`);
+- `PdfGrouping-win-Setup.exe` — установщик;
+- `*-full.nupkg`, `RELEASES`, `releases.win.json` — пакет и метаданные фида обновлений.
+
+> **Версионирование:** поднимайте `<Version>` в
+> [PdfGrouping.Desktop.csproj](src/PdfGrouping.Desktop/PdfGrouping.Desktop.csproj) (или
+> передавайте `-Version`) перед каждым релизом — Velopack обновляет клиентов только на
+> бóльшую версию.
+
+### Токен GitHub для публикации
+
+Нужен только для `-Upload`. Создание: **GitHub → Settings → Developer settings →
+Personal access tokens → Fine-grained tokens → Generate new token**, доступ к репозиторию
+`inb-pdfGrouping`, разрешение **Contents: Read and write**. Полученный `ghp_…`/`github_pat_…`
+положить в `GITHUB_TOKEN` (не коммитить в репозиторий).
+
+### macOS (планируется)
+
+Та же кодовая база (Avalonia + PdfSharp кросс-платформенны). Сборка под mac:
+`dotnet publish -r osx-arm64` (или `osx-x64`) + `vpk pack` на macOS — отдельным этапом после
+стабилизации Windows-версии.
 
 ## Лицензия
 
