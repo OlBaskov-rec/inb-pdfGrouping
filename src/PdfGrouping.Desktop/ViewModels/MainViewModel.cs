@@ -125,7 +125,7 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
-        // Предупреждение о пересечении с уже добавленными диапазонами (не блокируем).
+        // Пересечение с диапазонами внутри ТЕКУЩЕЙ группы (мягкое предупреждение в статусе).
         var overlapping = Ranges.FirstOrDefault(r => start <= r.EndPage && end >= r.StartPage);
 
         var range = new PageRange { StartPage = start, EndPage = end };
@@ -136,16 +136,65 @@ public partial class MainViewModel : ObservableObject
         RangeStartText = (end + 1 <= TotalPages ? end + 1 : TotalPages).ToString();
         RangeEndText = TotalPages.ToString();
 
-        if (overlapping != null)
+        // Пересечение со страницами УЖЕ СОЗДАННЫХ групп — показываем баннер с действиями.
+        bool overlapsPrevGroups = Groups
+            .SelectMany(g => g.Ranges)
+            .Any(r => start <= r.EndPage && end >= r.StartPage);
+
+        if (overlapsPrevGroups)
+        {
+            _overlapRange = range;
+            OverlapWarningText = "Некоторые страницы уже выбраны в предыдущих диапазонах.";
+            HasOverlapWarning = true;
+            SetWarning($"Диапазон {range}: часть страниц уже в других группах.");
+        }
+        else if (overlapping != null)
+        {
             SetWarning($"Диапазон {range} пересекается с {overlapping} — страницы продублируются.");
+        }
         else
+        {
             SetInfo($"Добавлен диапазон: {range}");
+        }
+    }
+
+    // Баннер пересечения с предыдущими группами
+    [ObservableProperty]
+    private bool _hasOverlapWarning;
+
+    [ObservableProperty]
+    private string _overlapWarningText = string.Empty;
+
+    private PageRange? _overlapRange;
+
+    /// <summary>«Добавить ещё раз» — оставить диапазон несмотря на пересечение.</summary>
+    [RelayCommand]
+    private void KeepOverlapRange()
+    {
+        HasOverlapWarning = false;
+        _overlapRange = null;
+        SetInfo("Диапазон оставлен (страницы продублируются).");
+    }
+
+    /// <summary>«Убрать» — удалить только что добавленный пересекающийся диапазон.</summary>
+    [RelayCommand]
+    private void RemoveOverlapRange()
+    {
+        if (_overlapRange != null)
+        {
+            Ranges.Remove(_overlapRange);
+            UpdateRangesDisplay();
+        }
+        _overlapRange = null;
+        HasOverlapWarning = false;
+        SetInfo("Пересекающийся диапазон убран.");
     }
 
     [RelayCommand]
     private void RemoveRange(PageRange? range)
     {
         if (range == null) return;
+        if (ReferenceEquals(range, _overlapRange)) { _overlapRange = null; HasOverlapWarning = false; }
         Ranges.Remove(range);
         UpdateRangesDisplay();
         SetInfo($"Диапазон {range} убран");
@@ -155,6 +204,8 @@ public partial class MainViewModel : ObservableObject
     private void ClearRanges()
     {
         Ranges.Clear();
+        _overlapRange = null;
+        HasOverlapWarning = false;
         UpdateRangesDisplay();
         SetInfo("Диапазоны очищены");
     }
@@ -190,6 +241,8 @@ public partial class MainViewModel : ObservableObject
 
         // Готовимся к следующей группе
         Ranges.Clear();
+        _overlapRange = null;
+        HasOverlapWarning = false;
         UpdateRangesDisplay();
         GroupLabelText = string.Empty;
     }
@@ -289,6 +342,8 @@ public partial class MainViewModel : ObservableObject
         Groups.Clear();
         OutputFiles.Clear();
         HasResults = false;
+        _overlapRange = null;
+        HasOverlapWarning = false;
         UpdateRangesDisplay();
         GroupLabelText = string.Empty;
         OutputDirectory = string.Empty;

@@ -51,7 +51,7 @@
 
             <!-- Диапазоны -->
             <Border Grid.Column="0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
-                <Grid RowDefinitions="Auto,Auto,Auto,*">
+                <Grid RowDefinitions="Auto,Auto,Auto,Auto,*">
                     <TextBlock Grid.Row="0" Text="Диапазоны страниц" FontWeight="Bold" Margin="0,0,0,6" />
 
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,6">
@@ -73,7 +73,24 @@
                         <Button Content="Очистить" Margin="6,0,0,0" Command="{Binding ClearRangesCommand}" />
                     </StackPanel>
 
-                    <ListBox Grid.Row="3" ItemsSource="{Binding Ranges}" MinHeight="90"
+                    <!-- Баннер пересечения с предыдущими группами -->
+                    <Border Grid.Row="3" Background="#FFF4CE" BorderBrush="#E0A800" BorderThickness="1"
+                            CornerRadius="6" Padding="8" Margin="0,0,0,6"
+                            IsVisible="{Binding HasOverlapWarning}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding OverlapWarningText}" TextWrapping="Wrap"
+                                       Foreground="#7A5B00" FontWeight="SemiBold" Margin="0,0,0,6" />
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Добавить ещё раз" Command="{Binding KeepOverlapRangeCommand}"
+                                        ToolTip.Tip="Оставить диапазон, страницы продублируются" />
+                                <Button Content="Убрать" Margin="6,0,0,0" Foreground="#C42B1C"
+                                        Command="{Binding RemoveOverlapRangeCommand}"
+                                        ToolTip.Tip="Удалить этот пересекающийся диапазон" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <ListBox Grid.Row="4" ItemsSource="{Binding Ranges}" MinHeight="90"
                              SelectionMode="Single">
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="models:PageRange">
