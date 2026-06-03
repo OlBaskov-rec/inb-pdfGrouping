@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Reflection;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Platform.Storage;
@@ -15,6 +16,8 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
+        Title = $"PDF Grouping v{GetAppVersion()} — Разделение и группировка PDF";
+
         _viewModel = new MainViewModel(new StorageProviderFilePicker(() => this), new UpdateService());
         DataContext = _viewModel;
 
@@ -23,6 +26,19 @@ public partial class MainWindow : Window
 
         // Фоновая проверка обновлений (no-op в dev-запуске).
         _ = _viewModel.CheckForUpdatesAsync();
+    }
+
+    /// <summary>Версия приложения из сборки (источник — &lt;Version&gt; в csproj).</summary>
+    private static string GetAppVersion()
+    {
+        var asm = Assembly.GetExecutingAssembly();
+        // InformationalVersion может содержать суффикс сборки (+hash) — отбрасываем его.
+        var info = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        if (!string.IsNullOrEmpty(info))
+            return info.Split('+')[0];
+
+        var v = asm.GetName().Version;
+        return v is null ? "?" : $"{v.Major}.{v.Minor}.{v.Build}";
     }
 
     private static void OnDragOver(object? sender, DragEventArgs e)
