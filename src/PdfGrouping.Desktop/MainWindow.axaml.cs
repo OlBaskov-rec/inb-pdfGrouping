@@ -48,6 +48,12 @@ public partial class MainWindow : Window
             : DragDropEffects.None;
     }
 
+    private void ZoomOverlay_PointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        _viewModel.CloseZoom();
+        e.Handled = true;
+    }
+
     private void OnDrop(object? sender, DragEventArgs e)
     {
         if (!e.DataTransfer.Contains(DataFormat.File))

@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
+using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PdfGrouping.Core.Models;
@@ -11,6 +13,7 @@ namespace PdfGrouping.Desktop.ViewModels;
 public partial class MainViewModel : ObservableObject
 {
     private readonly PdfDocumentService _pdfService = new();
+    private readonly PdfRenderService _renderService = new();
     private readonly IFilePickerService _filePicker;
     private readonly UpdateService _updateService;
 
@@ -200,6 +203,119 @@ public partial class MainViewModel : ObservableObject
         SetInfo($"Диапазон {range} убран");
     }
 
+    // -------------------------------------------------------------------
+    // ПРЕДПРОСМОТР СТРАНИЦ (включаемая панель + увеличение)
+    // -------------------------------------------------------------------
+
+    [ObservableProperty]
+    private bool _isPreviewEnabled;
+
+    [ObservableProperty]
+    private PageRange? _selectedRange;
+
+    [ObservableProperty]
+    private Bitmap? _startThumb;
+
+    [ObservableProperty]
+    private Bitmap? _endThumb;
+
+    [ObservableProperty]
+    private bool _isZoomOpen;
+
+    [ObservableProperty]
+    private Bitmap? _zoomImage;
+
+    /// <summary>Есть ли загруженные миниатюры (для подсказки в панели).</summary>
+    [ObservableProperty]
+    private bool _hasPreview;
+
+    partial void OnIsPreviewEnabledChanged(bool value)
+    {
+        if (value)
+            _ = RefreshPreviewAsync();
+        else
+        {
+            StartThumb = null;
+            EndThumb = null;
+            HasPreview = false;
+        }
+    }
+
+    partial void OnSelectedRangeChanged(PageRange? value)
+    {
+        if (IsPreviewEnabled)
+            _ = RefreshPreviewAsync();
+    }
+
+    private async Task RefreshPreviewAsync()
+    {
+        var range = SelectedRange;
+        var path = SourceFilePath;
+
+        if (range is null || string.IsNullOrEmpty(path) || TotalPages <= 0)
+        {
+            StartThumb = null;
+            EndThumb = null;
+            HasPreview = false;
+            return;
+        }
+
+        int startPage = range.StartPage;
+        int endPage = range.EndPage;
+
+        try
+        {
+            var (s, e) = await Task.Run(() =>
+            {
+                var sp = ImageHelper.ToBitmap(_renderService.RenderPage(path, startPage, 360, 1000));
+                var ep = ImageHelper.ToBitmap(_renderService.RenderPage(path, endPage, 360, 1000));
+                return (sp, ep);
+            });
+
+            StartThumb = s;
+            EndThumb = e;
+            HasPreview = true;
+        }
+        catch
+        {
+            StartThumb = null;
+            EndThumb = null;
+            HasPreview = false;
+        }
+    }
+
+    [RelayCommand]
+    private Task ZoomStartAsync() => OpenZoomAsync(SelectedRange?.StartPage);
+
+    [RelayCommand]
+    private Task ZoomEndAsync() => OpenZoomAsync(SelectedRange?.EndPage);
+
+    private async Task OpenZoomAsync(int? page)
+    {
+        var path = SourceFilePath;
+        if (page is null || string.IsNullOrEmpty(path)) return;
+
+        int p = page.Value;
+        try
+        {
+            var big = await Task.Run(() =>
+                ImageHelper.ToBitmap(_renderService.RenderPage(path, p, 1600, 2200)));
+            ZoomImage = big;
+            IsZoomOpen = true;
+        }
+        catch
+        {
+            // не критично
+        }
+    }
+
+    /// <summary>Свернуть увеличенный просмотр (по клику в любом месте).</summary>
+    public void CloseZoom()
+    {
+        IsZoomOpen = false;
+        ZoomImage = null;
+    }
+
     [RelayCommand]
     private void ClearRanges()
     {
@@ -344,6 +460,11 @@ public partial class MainViewModel : ObservableObject
         HasResults = false;
         _overlapRange = null;
         HasOverlapWarning = false;
+        SelectedRange = null;
+        StartThumb = null;
+        EndThumb = null;
+        HasPreview = false;
+        CloseZoom();
         UpdateRangesDisplay();
         GroupLabelText = string.Empty;
         OutputDirectory = string.Empty;

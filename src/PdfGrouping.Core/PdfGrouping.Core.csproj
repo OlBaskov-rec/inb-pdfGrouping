@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="PdfSharp" Version="6.2.4" />
+    <PackageReference Include="Docnet.Core" Version="2.6.0" />
   </ItemGroup>
 
 </Project>
