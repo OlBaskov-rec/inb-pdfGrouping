@@ -125,6 +125,9 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
+        // Предупреждение о пересечении с уже добавленными диапазонами (не блокируем).
+        var overlapping = Ranges.FirstOrDefault(r => start <= r.EndPage && end >= r.StartPage);
+
         var range = new PageRange { StartPage = start, EndPage = end };
         Ranges.Add(range);
         UpdateRangesDisplay();
@@ -133,7 +136,19 @@ public partial class MainViewModel : ObservableObject
         RangeStartText = (end + 1 <= TotalPages ? end + 1 : TotalPages).ToString();
         RangeEndText = TotalPages.ToString();
 
-        SetInfo($"Добавлен диапазон: {range}");
+        if (overlapping != null)
+            SetWarning($"Диапазон {range} пересекается с {overlapping} — страницы продублируются.");
+        else
+            SetInfo($"Добавлен диапазон: {range}");
+    }
+
+    [RelayCommand]
+    private void RemoveRange(PageRange? range)
+    {
+        if (range == null) return;
+        Ranges.Remove(range);
+        UpdateRangesDisplay();
+        SetInfo($"Диапазон {range} убран");
     }
 
     [RelayCommand]
@@ -157,6 +172,12 @@ public partial class MainViewModel : ObservableObject
         if (Ranges.Count == 0)
         {
             SetError("Сначала добавьте диапазоны страниц.");
+            return;
+        }
+
+        if (Groups.Any(g => string.Equals(g.Label, label, StringComparison.OrdinalIgnoreCase)))
+        {
+            SetError($"Группа с меткой «{label}» уже существует. Выберите другую метку.");
             return;
         }
 
@@ -327,5 +348,12 @@ public partial class MainViewModel : ObservableObject
     {
         StatusIsError = true;
         StatusText = text;
+    }
+
+    private void SetWarning(string text)
+    {
+        // Действие выполнено, но требует внимания — помечаем значком, не красным.
+        StatusIsError = false;
+        StatusText = "⚠ " + text;
     }
 }

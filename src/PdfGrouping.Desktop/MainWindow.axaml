@@ -18,7 +18,7 @@
         <conv:BoolToBrushConverter x:Key="BoolToBrush" />
     </Window.Resources>
 
-    <Grid Margin="12" RowDefinitions="Auto,Auto,*,Auto,Auto">
+    <Grid Margin="12" RowDefinitions="Auto,Auto,*,Auto,Auto,Auto">
 
         <!-- Row 0: исходный файл -->
         <Border Grid.Row="0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
@@ -38,8 +38,16 @@
             </DockPanel>
         </Border>
 
-        <!-- Row 1: диапазоны | метка | группы -->
-        <Grid Grid.Row="1" ColumnDefinitions="*,Auto,*" Margin="0,0,0,8">
+        <!-- Row 1: всего страниц (под блоком пути к файлу) -->
+        <Border Grid.Row="1" Background="#F0F0F0" CornerRadius="4" Padding="8" Margin="0,0,0,8">
+            <TextBlock>
+                <Run Text="Всего страниц в источнике:" Foreground="Gray" />
+                <Run Text="{Binding TotalPages}" FontWeight="Bold" />
+            </TextBlock>
+        </Border>
+
+        <!-- Row 2: диапазоны | метка | группы -->
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto,*" Margin="0,0,0,8">
 
             <!-- Диапазоны -->
             <Border Grid.Column="0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
@@ -66,17 +74,23 @@
                     </StackPanel>
 
                     <ListBox Grid.Row="3" ItemsSource="{Binding Ranges}" MinHeight="90"
-                             SelectionMode="Multiple">
+                             SelectionMode="Single">
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="models:PageRange">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Стр." FontSize="11" Foreground="Gray" VerticalAlignment="Center" />
-                                    <TextBlock Text="{Binding StartPage}" FontWeight="Bold" Margin="3,0,0,0" />
-                                    <TextBlock Text="–" Margin="3,0" />
-                                    <TextBlock Text="{Binding EndPage}" FontWeight="Bold" />
-                                    <TextBlock Text="{Binding PageCount, StringFormat=' ({0} стр.)'}"
-                                               FontSize="11" Foreground="Gray" />
-                                </StackPanel>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                        <TextBlock Text="Стр." FontSize="11" Foreground="Gray" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding StartPage}" FontWeight="Bold" Margin="3,0,0,0" />
+                                        <TextBlock Text="–" Margin="3,0" />
+                                        <TextBlock Text="{Binding EndPage}" FontWeight="Bold" />
+                                        <TextBlock Text="{Binding PageCount, StringFormat=' ({0} стр.)'}"
+                                                   FontSize="11" Foreground="Gray" />
+                                    </StackPanel>
+                                    <Button Grid.Column="1" Content="✕" Padding="6,2" Foreground="#C42B1C"
+                                            Background="Transparent" BorderThickness="0"
+                                            Command="{ReflectionBinding $parent[ListBox].DataContext.RemoveRangeCommand}"
+                                            CommandParameter="{Binding}" ToolTip.Tip="Убрать этот диапазон" />
+                                </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
@@ -101,7 +115,7 @@
 
             <!-- Группы -->
             <Border Grid.Column="2" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
-                <Grid RowDefinitions="Auto,*,Auto">
+                <Grid RowDefinitions="Auto,*">
                     <TextBlock Grid.Row="0" Text="Сформированные группы" FontWeight="Bold" Margin="0,0,0,6" />
 
                     <ListBox Grid.Row="1" ItemsSource="{Binding Groups}" MinHeight="90">
@@ -124,46 +138,24 @@
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
-
-                    <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" Margin="0,8,0,0">
-                        <TextBlock Grid.Column="0" Text="Сохранить в:" VerticalAlignment="Center" Margin="0,0,6,0" />
-                        <TextBox Grid.Column="1" Text="{Binding OutputDirectory}" IsReadOnly="True"
-                                 VerticalAlignment="Center" PlaceholderText="папка для результатов" />
-                        <Button Grid.Column="2" Content="…" Margin="6,0,0,0"
-                                Command="{Binding BrowseOutputDirectoryCommand}" />
-                    </Grid>
                 </Grid>
             </Border>
         </Grid>
 
-        <!-- Row 2: результаты -->
-        <Border Grid.Row="2" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
-                Padding="10" Margin="0,0,0,8" IsVisible="{Binding HasResults}">
-            <Grid RowDefinitions="Auto,*">
-                <DockPanel Grid.Row="0" Margin="0,0,0,6">
-                    <Button DockPanel.Dock="Right" Content="📂 Открыть папку"
-                            Command="{Binding OpenOutputFolderCommand}" />
-                    <TextBlock Text="Созданные файлы" FontWeight="Bold" VerticalAlignment="Center" />
-                </DockPanel>
-                <ListBox Grid.Row="1" ItemsSource="{Binding OutputFiles}">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate x:DataType="x:String">
-                            <TextBlock Text="{Binding}" FontSize="12" />
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+        <!-- Row 3: куда сохранять (на всю ширину) -->
+        <Border Grid.Row="3" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
+                Padding="10" Margin="0,0,0,8">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <TextBlock Grid.Column="0" Text="Сохранить результаты в:" FontWeight="Bold"
+                           VerticalAlignment="Center" Margin="0,0,8,0" />
+                <TextBox Grid.Column="1" Text="{Binding OutputDirectory}" IsReadOnly="True"
+                         VerticalAlignment="Center" PlaceholderText="папка для результатов" />
+                <Button Grid.Column="2" Content="Обзор…" Margin="8,0,0,0"
+                        Command="{Binding BrowseOutputDirectoryCommand}" ToolTip.Tip="Выбрать папку" />
             </Grid>
         </Border>
 
-        <!-- Row 3: всего страниц -->
-        <Border Grid.Row="3" Background="#F0F0F0" CornerRadius="4" Padding="8" Margin="0,0,0,8">
-            <TextBlock>
-                <Run Text="Всего страниц в источнике:" Foreground="Gray" />
-                <Run Text="{Binding TotalPages}" FontWeight="Bold" />
-            </TextBlock>
-        </Border>
-
-        <!-- Row 4: баннер обновления + обработать + статус -->
+        <!-- Row 4: баннер обновления + кнопка Обработать + статус (выше блока результатов) -->
         <StackPanel Grid.Row="4">
             <!-- Баннер обновления (виден только когда обновление скачано) -->
             <Border Background="#E7F3E8" BorderBrush="#3A8A3F" BorderThickness="1" CornerRadius="6"
@@ -177,7 +169,7 @@
                 </DockPanel>
             </Border>
 
-            <Grid ColumnDefinitions="Auto,*">
+            <Grid ColumnDefinitions="Auto,*" Margin="0,0,0,8">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Content="▶ Обработать" Command="{Binding ProcessCommand}"
                             IsEnabled="{Binding !IsProcessing}"
@@ -191,5 +183,24 @@
                            Foreground="{Binding StatusIsError, Converter={StaticResource BoolToBrush}}" />
             </Grid>
         </StackPanel>
+
+        <!-- Row 5: результаты (созданные файлы) -->
+        <Border Grid.Row="5" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
+                Padding="10" IsVisible="{Binding HasResults}">
+            <Grid RowDefinitions="Auto,*">
+                <DockPanel Grid.Row="0" Margin="0,0,0,6">
+                    <Button DockPanel.Dock="Right" Content="📂 Открыть папку"
+                            Command="{Binding OpenOutputFolderCommand}" />
+                    <TextBlock Text="Созданные файлы" FontWeight="Bold" VerticalAlignment="Center" />
+                </DockPanel>
+                <ListBox Grid.Row="1" ItemsSource="{Binding OutputFiles}" MinHeight="80" MaxHeight="180">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <TextBlock Text="{Binding}" FontSize="12" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </Border>
     </Grid>
 </Window>
