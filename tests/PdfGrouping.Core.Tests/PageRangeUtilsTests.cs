@@ -30,4 +30,23 @@ public class PageRangeUtilsTests
     [Fact]
     public void Merge_IgnoresInvalid()
         => Assert.Equal("3–4", PageRangeUtils.MergeToString(new[] { (5, 1), (3, 4) }));
+
+    [Fact]
+    public void Expand_ListsIndividualPages_Sorted_NoDuplicates()
+    {
+        var s = PageRangeUtils.ExpandToString(new[] { (8, 10), (9, 12) });
+        Assert.Equal("8, 9, 10, 11, 12", s);
+    }
+
+    [Fact]
+    public void Expand_Empty_ReturnsEmpty()
+        => Assert.Equal("", PageRangeUtils.ExpandToString(new (int, int)[0]));
+
+    [Fact]
+    public void Expand_TruncatesWhenTooMany()
+    {
+        var s = PageRangeUtils.ExpandToString(new[] { (1, 100) }, maxCount: 5);
+        Assert.StartsWith("1, 2, 3, 4, 5, …", s);
+        Assert.Contains("всего 100", s);
+    }
 }

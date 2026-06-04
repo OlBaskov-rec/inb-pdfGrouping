@@ -10,7 +10,7 @@
         x:Name="Root"
         x:DataType="vm:MainViewModel"
         Title="PDF Grouping — Разделение и группировка PDF"
-        Width="1000" Height="790" MinWidth="720" MinHeight="500"
+        Width="1000" Height="800" MinWidth="780" MinHeight="660"
         WindowStartupLocation="CenterScreen"
         DragDrop.AllowDrop="True">
 

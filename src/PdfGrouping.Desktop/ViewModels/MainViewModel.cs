@@ -174,7 +174,7 @@ public partial class MainViewModel : ObservableObject
                 Overlaps.Add(new OverlapInfo($"{start}–{end}", $"{r.StartPage}–{r.EndPage}", label, dup));
             }
 
-            DuplicatedPagesText = PageRangeUtils.MergeToString(dupIntervals);
+            DuplicatedPagesText = PageRangeUtils.ExpandToString(dupIntervals);
             _overlapRange = range;
             HasOverlapWarning = true;
             SetWarning($"Диапазон {range}: часть страниц уже в других группах.");

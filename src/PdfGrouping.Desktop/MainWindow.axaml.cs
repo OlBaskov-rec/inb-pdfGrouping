@@ -40,14 +40,20 @@ public partial class MainWindow : Window
         AdjustWidthForPreview();
     }
 
-    /// <summary>Минимальная ширина окна: больше, когда открыта панель предпросмотра.</summary>
+    /// <summary>
+    /// Минимальные размеры окна, чтобы интерфейс не сжимался внахлёст.
+    /// При открытой панели предпросмотра требуется больше ширины/высоты.
+    /// </summary>
     private void AdjustWidthForPreview()
     {
-        // Базовая ширина под 3 колонки + (опционально) панель предпросмотра (300) и отступ.
-        double min = _viewModel.IsPreviewEnabled ? 1040 : 720;
-        MinWidth = min;
-        if (Width < min)
-            Width = min;
+        double minW = _viewModel.IsPreviewEnabled ? 1090 : 780;
+        double minH = _viewModel.IsPreviewEnabled ? 720 : 660;
+
+        MinWidth = minW;
+        MinHeight = minH;
+
+        if (Width < minW) Width = minW;
+        if (Height < minH) Height = minH;
     }
 
     private double? _baselineHeight;

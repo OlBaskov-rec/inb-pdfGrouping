@@ -35,4 +35,24 @@ public static class PageRangeUtils
 
         return string.Join(", ", merged.Select(m => m.s == m.e ? $"{m.s}" : $"{m.s}–{m.e}"));
     }
+
+    /// <summary>
+    /// Разворачивает интервалы в явный перечень номеров страниц: «8, 9, 10, 30, 31».
+    /// При количестве больше <paramref name="maxCount"/> остаток сворачивается в «… (всего N)».
+    /// </summary>
+    public static string ExpandToString(IEnumerable<(int Start, int End)> intervals, int maxCount = 60)
+    {
+        var pages = new SortedSet<int>();
+        foreach (var (s, e) in intervals)
+            for (int p = Math.Max(1, s); p <= e; p++)
+                pages.Add(p);
+
+        if (pages.Count == 0)
+            return string.Empty;
+
+        if (pages.Count <= maxCount)
+            return string.Join(", ", pages);
+
+        return string.Join(", ", pages.Take(maxCount)) + $", … (всего {pages.Count})";
+    }
 }
