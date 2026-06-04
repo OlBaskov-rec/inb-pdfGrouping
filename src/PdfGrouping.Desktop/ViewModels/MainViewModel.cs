@@ -12,7 +12,7 @@ using PdfGrouping.Desktop.Services;
 namespace PdfGrouping.Desktop.ViewModels;
 
 /// <summary>Описание одного пересечения: добавленный диапазон vs диапазон прежней группы.</summary>
-public record OverlapInfo(string NewPages, string ExistingPages, string GroupLabel);
+public record OverlapInfo(string NewPages, string ExistingPages, string GroupLabel, string Dup);
 
 public partial class MainViewModel : ObservableObject
 {
@@ -153,7 +153,12 @@ public partial class MainViewModel : ObservableObject
         if (prevOverlaps.Count > 0)
         {
             foreach (var (label, r) in prevOverlaps)
-                Overlaps.Add(new OverlapInfo($"{start}–{end}", $"{r.StartPage}–{r.EndPage}", label));
+            {
+                int dupStart = Math.Max(start, r.StartPage);
+                int dupEnd = Math.Min(end, r.EndPage);
+                string dup = dupStart == dupEnd ? $"{dupStart}" : $"{dupStart}–{dupEnd}";
+                Overlaps.Add(new OverlapInfo($"{start}–{end}", $"{r.StartPage}–{r.EndPage}", label, dup));
+            }
 
             _overlapRange = range;
             HasOverlapWarning = true;

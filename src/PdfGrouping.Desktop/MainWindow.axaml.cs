@@ -33,24 +33,56 @@ public partial class MainWindow : Window
             if (e.PropertyName == nameof(MainViewModel.HasOverlapWarning))
                 AdjustHeightForWarnings();
         };
+        _viewModel.Overlaps.CollectionChanged += (_, _) => AdjustHeightForWarnings();
     }
 
     private double? _baselineHeight;
+    private bool _adjustingHeight;
 
     private void AdjustHeightForWarnings()
     {
-        if (_viewModel.HasOverlapWarning)
+        // Меняем высоту окна вне текущего прохода разметки.
+        Avalonia.Threading.Dispatcher.UIThread.Post(ApplyHeightForWarnings,
+            Avalonia.Threading.DispatcherPriority.Normal);
+    }
+
+    private void ApplyHeightForWarnings()
+    {
+        if (_adjustingHeight)
+            return;
+
+        _adjustingHeight = true;
+        try
         {
-            _baselineHeight ??= Height;
-            int lines = _viewModel.Overlaps.Count;
-            double target = (_baselineHeight ?? Height) + 130 + lines * 30;
-            Height = System.Math.Min(target, 1100);
+            if (_viewModel.HasOverlapWarning)
+            {
+                _baselineHeight ??= Height;
+                int lines = System.Math.Max(1, _viewModel.Overlaps.Count);
+                double target = System.Math.Min(
+                    (_baselineHeight ?? Height) + 160 + lines * 32,
+                    MaxAllowedHeight());
+                if (System.Math.Abs(Height - target) > 1)
+                    Height = target;
+            }
+            else if (_baselineHeight is double h)
+            {
+                _baselineHeight = null;
+                if (System.Math.Abs(Height - h) > 1)
+                    Height = h;
+            }
         }
-        else if (_baselineHeight is double h)
+        finally
         {
-            Height = h;
-            _baselineHeight = null;
+            _adjustingHeight = false;
         }
+    }
+
+    private double MaxAllowedHeight()
+    {
+        var screen = Screens.ScreenFromWindow(this);
+        if (screen is null)
+            return 1200;
+        return screen.WorkingArea.Height / RenderScaling - 48;
     }
 
     /// <summary>Версия приложения из сборки (источник — &lt;Version&gt; в csproj).</summary>

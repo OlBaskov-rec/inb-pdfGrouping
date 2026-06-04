@@ -217,7 +217,8 @@
         </Grid>
 
         <!-- Row 3: предупреждение о пересечениях (на всю ширину, расширяется вниз) -->
-        <Border Grid.Row="3" Background="#FDECEA" BorderBrush="#C42B1C" BorderThickness="2"
+        <Border Grid.Row="3" x:Name="WarningBlock"
+                Background="#FDECEA" BorderBrush="#C42B1C" BorderThickness="2"
                 CornerRadius="6" Padding="12" Margin="0,0,0,8"
                 IsVisible="{Binding HasOverlapWarning}">
             <DockPanel>
@@ -231,12 +232,16 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:OverlapInfo">
                                 <TextBlock TextWrapping="Wrap" FontSize="15" Margin="0,3">
-                                    <Run Text="Диапазон" FontWeight="Bold" />
+                                    <Run Text="Диапазон " FontWeight="Bold" />
                                     <Run Text="{Binding NewPages}" FontWeight="Bold" />
-                                    <Run Text=" пересекает " Foreground="#C42B1C" FontWeight="Bold" />
-                                    <Run Text="Диапазон" FontWeight="Bold" />
+                                    <Run Text="  пересекает  " Foreground="#C42B1C" FontWeight="Bold" />
+                                    <Run Text="Диапазон " FontWeight="Bold" />
                                     <Run Text="{Binding ExistingPages}" FontWeight="Bold" />
-                                    <Run Text="{Binding GroupLabel, StringFormat=' · группа {0}'}" Foreground="#888" />
+                                    <Run Text="  ·  группа " Foreground="#888" />
+                                    <Run Text="{Binding GroupLabel}" Foreground="#888" />
+                                    <Run Text="   (дубли: " Foreground="#C42B1C" FontWeight="Bold" />
+                                    <Run Text="{Binding Dup}" Foreground="#C42B1C" FontWeight="Bold" />
+                                    <Run Text=")" Foreground="#C42B1C" FontWeight="Bold" />
                                 </TextBlock>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -285,6 +290,13 @@
                             IsEnabled="{Binding !IsProcessing}"
                             Padding="20,8" FontSize="15" FontWeight="Bold"
                             Background="#0078D4" Foreground="White" />
+                    <!-- Крупный индикатор предупреждения рядом с кнопкой -->
+                    <Border IsVisible="{Binding HasOverlapWarning}" Margin="12,0,0,0"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="Есть пересечения диапазонов — страницы продублируются (см. предупреждение выше)">
+                        <TextBlock Text="⚠" FontSize="34" FontWeight="Bold" Foreground="#C42B1C"
+                                   VerticalAlignment="Center" />
+                    </Border>
                     <ProgressBar Width="120" Margin="12,0" IsIndeterminate="{Binding IsProcessing}"
                                  IsVisible="{Binding IsProcessing}" VerticalAlignment="Center" />
                 </StackPanel>
