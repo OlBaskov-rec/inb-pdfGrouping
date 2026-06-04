@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -423,6 +424,57 @@ public partial class MainViewModel : ObservableObject
 
     [RelayCommand]
     private void ApplyUpdate() => _updateService.ApplyAndRestart();
+
+    // --- «О программе» / ручная проверка обновлений ---
+
+    /// <summary>Версия приложения (из сборки) для окна «О программе».</summary>
+    public string AppVersion { get; } = GetAppVersion();
+
+    [ObservableProperty]
+    private string _updateCheckStatus = string.Empty;
+
+    private static string GetAppVersion()
+    {
+        var asm = Assembly.GetExecutingAssembly();
+        var info = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        if (!string.IsNullOrEmpty(info))
+            return info.Split('+')[0];
+        var v = asm.GetName().Version;
+        return v is null ? "?" : $"{v.Major}.{v.Minor}.{v.Build}";
+    }
+
+    /// <summary>Ручная проверка обновления из окна «О программе».</summary>
+    [RelayCommand]
+    private async Task CheckUpdatesManualAsync()
+    {
+        if (!_updateService.IsSupported)
+        {
+            UpdateCheckStatus = "Проверка доступна только в установленной или portable-версии (не в режиме разработки).";
+            return;
+        }
+
+        UpdateCheckStatus = "Проверка…";
+        try
+        {
+            var version = await _updateService.CheckAsync();
+            if (version is null)
+            {
+                UpdateCheckStatus = "У вас последняя версия.";
+                return;
+            }
+
+            UpdateCheckStatus = $"Найдено обновление {version}. Скачивание…";
+            await _updateService.DownloadAsync();
+
+            UpdateText = $"Доступно обновление {version} — готово к установке.";
+            IsUpdateReady = true;
+            UpdateCheckStatus = $"Обновление {version} скачано. Нажмите «Обновить и перезапустить».";
+        }
+        catch (Exception ex)
+        {
+            UpdateCheckStatus = "Не удалось проверить обновления: " + ex.Message;
+        }
+    }
 
     /// <summary>
     /// Фоновая проверка обновлений при старте. В dev-запуске — безопасный no-op.

@@ -10,7 +10,7 @@
         x:Name="Root"
         x:DataType="vm:MainViewModel"
         Title="PDF Grouping — Разделение и группировка PDF"
-        Width="1000" Height="700" MinWidth="820" MinHeight="560"
+        Width="1000" Height="790" MinWidth="700" MinHeight="500"
         WindowStartupLocation="CenterScreen"
         DragDrop.AllowDrop="True">
 
@@ -57,7 +57,40 @@
             </DockPanel>
         </Border>
 
-        <Grid Grid.Column="1" RowDefinitions="Auto,Auto,*,Auto,Auto,Auto">
+        <Grid Grid.Column="1" RowDefinitions="Auto,*">
+
+        <!-- Верхняя панель: справа кнопка «О программе» -->
+        <DockPanel Grid.Row="0" Margin="0,0,0,8">
+            <Button DockPanel.Dock="Right" Content="ℹ О программе" Padding="8,4"
+                    ToolTip.Tip="Сведения о программе и проверка обновлений">
+                <Button.Flyout>
+                    <Flyout Placement="BottomEdgeAlignedRight">
+                        <StackPanel Width="300">
+                            <TextBlock Text="PDF Grouping" FontWeight="Bold" FontSize="15" />
+                            <TextBlock Text="{Binding AppVersion, StringFormat='Версия {0}'}"
+                                       Foreground="#555" Margin="0,2,0,6" />
+                            <TextBlock Text="Разделение и группировка PDF по диапазонам страниц."
+                                       TextWrapping="Wrap" />
+                            <TextBlock Text="© 2026 · INB · внутренний инструмент"
+                                       TextWrapping="Wrap" Foreground="#777" FontSize="12" Margin="0,6,0,0" />
+                            <TextBlock Text="github.com/OlBaskov-rec/inb-pdfGrouping"
+                                       Foreground="#777" FontSize="12" />
+                            <Border Height="1" Background="#E0E0E0" Margin="0,8" />
+                            <Button Content="Проверить обновление"
+                                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                    Command="{Binding CheckUpdatesManualCommand}" />
+                            <TextBlock Text="{Binding UpdateCheckStatus}" TextWrapping="Wrap"
+                                       FontSize="12" Foreground="#555" Margin="0,6,0,0" />
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+            <TextBlock />
+        </DockPanel>
+
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
 
         <!-- Row 0: исходный файл -->
         <Border Grid.Row="0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
@@ -85,8 +118,8 @@
             </TextBlock>
         </Border>
 
-        <!-- Row 2: диапазоны | метка | группы -->
-        <Grid Grid.Row="2" ColumnDefinitions="*,Auto,*" Margin="0,0,0,8">
+        <!-- Row 2: диапазоны | метка | группы (фикс. высота — не сжимается внахлёст) -->
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto,*" Height="300" Margin="0,0,0,8">
 
             <!-- Диапазоны -->
             <Border Grid.Column="0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
@@ -106,14 +139,14 @@
                         </TextBlock>
                     </StackPanel>
 
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,6">
-                        <Button Content="+ Добавить диапазон" Command="{Binding AddRangeCommand}"
+                    <WrapPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,6">
+                        <Button Content="+ Добавить диапазон" Margin="0,0,6,4" Command="{Binding AddRangeCommand}"
                                 IsEnabled="{Binding !IsProcessing}" />
-                        <Button Content="Очистить" Margin="6,0,0,0" Command="{Binding ClearRangesCommand}" />
-                        <ToggleButton Content="👁 Предпросмотр" Margin="6,0,0,0"
+                        <Button Content="Очистить" Margin="0,0,6,4" Command="{Binding ClearRangesCommand}" />
+                        <ToggleButton Content="👁 Предпросмотр" Margin="0,0,0,4"
                                       IsChecked="{Binding IsPreviewEnabled}"
                                       ToolTip.Tip="Показать миниатюры начальной и конечной страниц выбранного диапазона" />
-                    </StackPanel>
+                    </WrapPanel>
 
                     <!-- Баннер пересечения с предыдущими группами -->
                     <Border Grid.Row="3" Background="#FFF4CE" BorderBrush="#E0A800" BorderThickness="1"
@@ -132,7 +165,7 @@
                         </StackPanel>
                     </Border>
 
-                    <ListBox Grid.Row="4" ItemsSource="{Binding Ranges}" MinHeight="90"
+                    <ListBox Grid.Row="4" ItemsSource="{Binding Ranges}"
                              SelectionMode="Single"
                              SelectedItem="{Binding SelectedRange}">
                         <ListBox.ItemTemplate>
@@ -178,7 +211,7 @@
                 <Grid RowDefinitions="Auto,*">
                     <TextBlock Grid.Row="0" Text="Сформированные группы" FontWeight="Bold" Margin="0,0,0,6" />
 
-                    <ListBox Grid.Row="1" ItemsSource="{Binding Groups}" MinHeight="90">
+                    <ListBox Grid.Row="1" ItemsSource="{Binding Groups}">
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="models:PdfGroup">
                                 <Grid ColumnDefinitions="*,Auto">
@@ -253,7 +286,7 @@
                             Command="{Binding OpenOutputFolderCommand}" />
                     <TextBlock Text="Созданные файлы" FontWeight="Bold" VerticalAlignment="Center" />
                 </DockPanel>
-                <ListBox Grid.Row="1" ItemsSource="{Binding OutputFiles}" MinHeight="80" MaxHeight="180">
+                <ListBox Grid.Row="1" ItemsSource="{Binding OutputFiles}" Height="150">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="x:String">
                             <TextBlock Text="{Binding}" FontSize="12" />
@@ -262,6 +295,8 @@
                 </ListBox>
             </Grid>
         </Border>
+        </Grid>
+        </ScrollViewer>
         </Grid>
       </Grid>
 
