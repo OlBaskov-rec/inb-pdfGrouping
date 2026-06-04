@@ -27,13 +27,27 @@ public partial class MainWindow : Window
         // Фоновая проверка обновлений (no-op в dev-запуске).
         _ = _viewModel.CheckForUpdatesAsync();
 
-        // Окно «расширяется вниз», когда появляются предупреждения о пересечениях.
+        // Окно подстраивается: вниз — при предупреждениях, в ширину — при предпросмотре.
         _viewModel.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(MainViewModel.HasOverlapWarning))
                 AdjustHeightForWarnings();
+            else if (e.PropertyName == nameof(MainViewModel.IsPreviewEnabled))
+                AdjustWidthForPreview();
         };
         _viewModel.Overlaps.CollectionChanged += (_, _) => AdjustHeightForWarnings();
+
+        AdjustWidthForPreview();
+    }
+
+    /// <summary>Минимальная ширина окна: больше, когда открыта панель предпросмотра.</summary>
+    private void AdjustWidthForPreview()
+    {
+        // Базовая ширина под 3 колонки + (опционально) панель предпросмотра (300) и отступ.
+        double min = _viewModel.IsPreviewEnabled ? 1040 : 720;
+        MinWidth = min;
+        if (Width < min)
+            Width = min;
     }
 
     private double? _baselineHeight;

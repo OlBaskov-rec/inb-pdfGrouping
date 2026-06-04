@@ -10,7 +10,7 @@
         x:Name="Root"
         x:DataType="vm:MainViewModel"
         Title="PDF Grouping — Разделение и группировка PDF"
-        Width="1000" Height="790" MinWidth="700" MinHeight="500"
+        Width="1000" Height="790" MinWidth="720" MinHeight="500"
         WindowStartupLocation="CenterScreen"
         DragDrop.AllowDrop="True">
 
@@ -120,7 +120,7 @@
         <Grid Grid.Row="2" ColumnDefinitions="*,Auto,*" Height="300" Margin="0,0,0,8">
 
             <!-- Диапазоны -->
-            <Border Grid.Column="0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
+            <Border Grid.Column="0" MinWidth="240" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
                 <Grid RowDefinitions="Auto,Auto,Auto,*">
                     <TextBlock Grid.Row="0" Text="Диапазоны страниц" FontWeight="Bold" Margin="0,0,0,6" />
 
@@ -188,7 +188,7 @@
             </Border>
 
             <!-- Группы -->
-            <Border Grid.Column="2" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
+            <Border Grid.Column="2" MinWidth="240" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
                 <Grid RowDefinitions="Auto,*">
                     <TextBlock Grid.Row="0" Text="Сформированные группы" FontWeight="Bold" Margin="0,0,0,6" />
 
