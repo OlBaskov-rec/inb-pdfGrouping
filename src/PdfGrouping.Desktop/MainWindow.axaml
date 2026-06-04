@@ -246,6 +246,10 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+                    <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" FontSize="15">
+                        <Run Text="Дублирующиеся страницы: " FontWeight="Bold" />
+                        <Run Text="{Binding DuplicatedPagesText}" FontWeight="Bold" Foreground="#C42B1C" />
+                    </TextBlock>
                     <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                         <Button Content="Добавить ещё раз" Command="{Binding KeepOverlapRangeCommand}"
                                 ToolTip.Tip="Оставить диапазон, страницы продублируются" />
@@ -290,6 +294,11 @@
                             IsEnabled="{Binding !IsProcessing}"
                             Padding="20,8" FontSize="15" FontWeight="Bold"
                             Background="#0078D4" Foreground="White" />
+                    <!-- Тумблер «Без пересечений»: запрещает добавлять пересекающиеся диапазоны -->
+                    <ToggleButton Content="🚫 Без пересечений" Margin="10,0,0,0"
+                                  VerticalAlignment="Center"
+                                  IsChecked="{Binding BlockOverlaps}"
+                                  ToolTip.Tip="Во включённом состоянии нельзя добавить диапазон со страницами, уже выбранными ранее" />
                     <!-- Крупный индикатор предупреждения рядом с кнопкой -->
                     <Border IsVisible="{Binding HasOverlapWarning}" Margin="12,0,0,0"
                             VerticalAlignment="Center"

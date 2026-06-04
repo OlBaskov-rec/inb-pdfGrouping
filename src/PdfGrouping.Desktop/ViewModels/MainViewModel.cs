@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using PdfGrouping.Core;
 using PdfGrouping.Core.Models;
 using PdfGrouping.Core.Services;
 using PdfGrouping.Desktop.Services;
@@ -132,8 +133,27 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
-        // Пересечение с диапазонами внутри ТЕКУЩЕЙ группы (мягкое предупреждение в статусе).
-        var overlapping = Ranges.FirstOrDefault(r => start <= r.EndPage && end >= r.StartPage);
+        // Пересечения: внутри текущей группы и со страницами уже созданных групп.
+        var curOverlaps = Ranges
+            .Where(r => start <= r.EndPage && end >= r.StartPage)
+            .ToList();
+        var prevOverlaps = Groups
+            .SelectMany(g => g.Ranges.Select(r => (g.Label, Range: r)))
+            .Where(x => start <= x.Range.EndPage && end >= x.Range.StartPage)
+            .ToList();
+
+        // Объединённый список дублируемых страниц (пересечения нового диапазона с уже выбранными).
+        var dupIntervals = curOverlaps.Select(r => (Math.Max(start, r.StartPage), Math.Min(end, r.EndPage)))
+            .Concat(prevOverlaps.Select(x => (Math.Max(start, x.Range.StartPage), Math.Min(end, x.Range.EndPage))))
+            .ToList();
+
+        // Режим «Без пересечений»: диапазон с пересекающимися страницами не добавляется.
+        if (BlockOverlaps && dupIntervals.Count > 0)
+        {
+            string conflict = PageRangeUtils.MergeToString(dupIntervals);
+            SetError($"Пересечения запрещены: страницы {conflict} уже выбраны. Диапазон не добавлен.");
+            return;
+        }
 
         var range = new PageRange { StartPage = start, EndPage = end };
         Ranges.Add(range);
@@ -142,12 +162,6 @@ public partial class MainViewModel : ObservableObject
         // Подготовить следующий ввод
         RangeStartText = (end + 1 <= TotalPages ? end + 1 : TotalPages).ToString();
         RangeEndText = TotalPages.ToString();
-
-        // Пересечение со страницами УЖЕ СОЗДАННЫХ групп — показываем баннер с действиями.
-        var prevOverlaps = Groups
-            .SelectMany(g => g.Ranges.Select(r => (g.Label, Range: r)))
-            .Where(x => start <= x.Range.EndPage && end >= x.Range.StartPage)
-            .ToList();
 
         Overlaps.Clear();
         if (prevOverlaps.Count > 0)
@@ -160,13 +174,14 @@ public partial class MainViewModel : ObservableObject
                 Overlaps.Add(new OverlapInfo($"{start}–{end}", $"{r.StartPage}–{r.EndPage}", label, dup));
             }
 
+            DuplicatedPagesText = PageRangeUtils.MergeToString(dupIntervals);
             _overlapRange = range;
             HasOverlapWarning = true;
             SetWarning($"Диапазон {range}: часть страниц уже в других группах.");
         }
-        else if (overlapping != null)
+        else if (curOverlaps.Count > 0)
         {
-            SetWarning($"Диапазон {range} пересекается с {overlapping} — страницы продублируются.");
+            SetWarning($"Диапазон {range} пересекается с {curOverlaps[0]} — страницы продублируются.");
         }
         else
         {
@@ -177,6 +192,14 @@ public partial class MainViewModel : ObservableObject
     // Баннер пересечения с предыдущими группами
     [ObservableProperty]
     private bool _hasOverlapWarning;
+
+    /// <summary>Сводный компактный список дублируемых страниц, напр. «10–23, 30».</summary>
+    [ObservableProperty]
+    private string _duplicatedPagesText = string.Empty;
+
+    /// <summary>Режим запрета добавления пересекающихся диапазонов (тумблер у «Обработать»).</summary>
+    [ObservableProperty]
+    private bool _blockOverlaps;
 
     /// <summary>Список пересечений добавленного диапазона с диапазонами прежних групп.</summary>
     public ObservableCollection<OverlapInfo> Overlaps { get; } = new();
