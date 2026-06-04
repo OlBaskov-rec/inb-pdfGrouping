@@ -66,13 +66,11 @@
                 <Button.Flyout>
                     <Flyout Placement="BottomEdgeAlignedRight">
                         <StackPanel Width="300">
-                            <TextBlock Text="PDF Grouping" FontWeight="Bold" FontSize="15" />
+                            <TextBlock Text="PDF Grouping" FontWeight="Bold" FontSize="16" />
+                            <TextBlock Text="кроим pdf" FontStyle="Italic" Foreground="#555" Margin="0,0,0,4" />
                             <TextBlock Text="{Binding AppVersion, StringFormat='Версия {0}'}"
-                                       Foreground="#555" Margin="0,2,0,6" />
-                            <TextBlock Text="Разделение и группировка PDF по диапазонам страниц."
-                                       TextWrapping="Wrap" />
-                            <TextBlock Text="© 2026 · INB · внутренний инструмент"
-                                       TextWrapping="Wrap" Foreground="#777" FontSize="12" Margin="0,6,0,0" />
+                                       Foreground="#555" Margin="0,0,0,4" />
+                            <TextBlock Text="Автор: Inbasko" Margin="0,0,0,2" />
                             <TextBlock Text="github.com/OlBaskov-rec/inb-pdfGrouping"
                                        Foreground="#777" FontSize="12" />
                             <Border Height="1" Background="#E0E0E0" Margin="0,8" />
@@ -90,7 +88,7 @@
 
         <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto">
-        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
 
         <!-- Row 0: исходный файл -->
         <Border Grid.Row="0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
@@ -123,7 +121,7 @@
 
             <!-- Диапазоны -->
             <Border Grid.Column="0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
-                <Grid RowDefinitions="Auto,Auto,Auto,Auto,*">
+                <Grid RowDefinitions="Auto,Auto,Auto,*">
                     <TextBlock Grid.Row="0" Text="Диапазоны страниц" FontWeight="Bold" Margin="0,0,0,6" />
 
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,6">
@@ -148,24 +146,7 @@
                                       ToolTip.Tip="Показать миниатюры начальной и конечной страниц выбранного диапазона" />
                     </WrapPanel>
 
-                    <!-- Баннер пересечения с предыдущими группами -->
-                    <Border Grid.Row="3" Background="#FFF4CE" BorderBrush="#E0A800" BorderThickness="1"
-                            CornerRadius="6" Padding="8" Margin="0,0,0,6"
-                            IsVisible="{Binding HasOverlapWarning}">
-                        <StackPanel>
-                            <TextBlock Text="{Binding OverlapWarningText}" TextWrapping="Wrap"
-                                       Foreground="#7A5B00" FontWeight="SemiBold" Margin="0,0,0,6" />
-                            <StackPanel Orientation="Horizontal">
-                                <Button Content="Добавить ещё раз" Command="{Binding KeepOverlapRangeCommand}"
-                                        ToolTip.Tip="Оставить диапазон, страницы продублируются" />
-                                <Button Content="Убрать" Margin="6,0,0,0" Foreground="#C42B1C"
-                                        Command="{Binding RemoveOverlapRangeCommand}"
-                                        ToolTip.Tip="Удалить этот пересекающийся диапазон" />
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
-
-                    <ListBox Grid.Row="4" ItemsSource="{Binding Ranges}"
+                    <ListBox Grid.Row="3" ItemsSource="{Binding Ranges}"
                              SelectionMode="Single"
                              SelectedItem="{Binding SelectedRange}">
                         <ListBox.ItemTemplate>
@@ -235,8 +216,44 @@
             </Border>
         </Grid>
 
-        <!-- Row 3: куда сохранять (на всю ширину) -->
-        <Border Grid.Row="3" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
+        <!-- Row 3: предупреждение о пересечениях (на всю ширину, расширяется вниз) -->
+        <Border Grid.Row="3" Background="#FDECEA" BorderBrush="#C42B1C" BorderThickness="2"
+                CornerRadius="6" Padding="12" Margin="0,0,0,8"
+                IsVisible="{Binding HasOverlapWarning}">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Left" Text="⚠" FontSize="40" Foreground="#C42B1C"
+                           VerticalAlignment="Top" Margin="0,0,14,0" />
+                <StackPanel>
+                    <TextBlock Text="Внимание: пересечение с уже выбранными страницами"
+                               FontWeight="Bold" FontSize="16" Foreground="#C42B1C"
+                               TextWrapping="Wrap" Margin="0,0,0,8" />
+                    <ItemsControl ItemsSource="{Binding Overlaps}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:OverlapInfo">
+                                <TextBlock TextWrapping="Wrap" FontSize="15" Margin="0,3">
+                                    <Run Text="Диапазон" FontWeight="Bold" />
+                                    <Run Text="{Binding NewPages}" FontWeight="Bold" />
+                                    <Run Text=" пересекает " Foreground="#C42B1C" FontWeight="Bold" />
+                                    <Run Text="Диапазон" FontWeight="Bold" />
+                                    <Run Text="{Binding ExistingPages}" FontWeight="Bold" />
+                                    <Run Text="{Binding GroupLabel, StringFormat=' · группа {0}'}" Foreground="#888" />
+                                </TextBlock>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <Button Content="Добавить ещё раз" Command="{Binding KeepOverlapRangeCommand}"
+                                ToolTip.Tip="Оставить диапазон, страницы продублируются" />
+                        <Button Content="Убрать" Margin="8,0,0,0" Foreground="#C42B1C"
+                                Command="{Binding RemoveOverlapRangeCommand}"
+                                ToolTip.Tip="Удалить этот пересекающийся диапазон" />
+                    </StackPanel>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Row 4: куда сохранять (на всю ширину) -->
+        <Border Grid.Row="4" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
                 Padding="10" Margin="0,0,0,8">
             <Grid ColumnDefinitions="Auto,*,Auto">
                 <TextBlock Grid.Column="0" Text="Сохранить результаты в:" FontWeight="Bold"
@@ -248,8 +265,8 @@
             </Grid>
         </Border>
 
-        <!-- Row 4: баннер обновления + кнопка Обработать + статус (выше блока результатов) -->
-        <StackPanel Grid.Row="4">
+        <!-- Row 5: баннер обновления + кнопка Обработать + статус (выше блока результатов) -->
+        <StackPanel Grid.Row="5">
             <!-- Баннер обновления (виден только когда обновление скачано) -->
             <Border Background="#E7F3E8" BorderBrush="#3A8A3F" BorderThickness="1" CornerRadius="6"
                     Padding="10,8" Margin="0,0,0,8" IsVisible="{Binding IsUpdateReady}">
@@ -277,8 +294,8 @@
             </Grid>
         </StackPanel>
 
-        <!-- Row 5: результаты (созданные файлы) -->
-        <Border Grid.Row="5" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
+        <!-- Row 6: результаты (созданные файлы) -->
+        <Border Grid.Row="6" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
                 Padding="10" IsVisible="{Binding HasResults}">
             <Grid RowDefinitions="Auto,*">
                 <DockPanel Grid.Row="0" Margin="0,0,0,6">

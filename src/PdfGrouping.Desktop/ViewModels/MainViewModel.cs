@@ -11,6 +11,9 @@ using PdfGrouping.Desktop.Services;
 
 namespace PdfGrouping.Desktop.ViewModels;
 
+/// <summary>Описание одного пересечения: добавленный диапазон vs диапазон прежней группы.</summary>
+public record OverlapInfo(string NewPages, string ExistingPages, string GroupLabel);
+
 public partial class MainViewModel : ObservableObject
 {
     private readonly PdfDocumentService _pdfService = new();
@@ -141,14 +144,18 @@ public partial class MainViewModel : ObservableObject
         RangeEndText = TotalPages.ToString();
 
         // Пересечение со страницами УЖЕ СОЗДАННЫХ групп — показываем баннер с действиями.
-        bool overlapsPrevGroups = Groups
-            .SelectMany(g => g.Ranges)
-            .Any(r => start <= r.EndPage && end >= r.StartPage);
+        var prevOverlaps = Groups
+            .SelectMany(g => g.Ranges.Select(r => (g.Label, Range: r)))
+            .Where(x => start <= x.Range.EndPage && end >= x.Range.StartPage)
+            .ToList();
 
-        if (overlapsPrevGroups)
+        Overlaps.Clear();
+        if (prevOverlaps.Count > 0)
         {
+            foreach (var (label, r) in prevOverlaps)
+                Overlaps.Add(new OverlapInfo($"{start}–{end}", $"{r.StartPage}–{r.EndPage}", label));
+
             _overlapRange = range;
-            OverlapWarningText = "Некоторые страницы уже выбраны в предыдущих диапазонах.";
             HasOverlapWarning = true;
             SetWarning($"Диапазон {range}: часть страниц уже в других группах.");
         }
@@ -166,8 +173,8 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasOverlapWarning;
 
-    [ObservableProperty]
-    private string _overlapWarningText = string.Empty;
+    /// <summary>Список пересечений добавленного диапазона с диапазонами прежних групп.</summary>
+    public ObservableCollection<OverlapInfo> Overlaps { get; } = new();
 
     private PageRange? _overlapRange;
 
@@ -176,6 +183,7 @@ public partial class MainViewModel : ObservableObject
     private void KeepOverlapRange()
     {
         HasOverlapWarning = false;
+        Overlaps.Clear();
         _overlapRange = null;
         SetInfo("Диапазон оставлен (страницы продублируются).");
     }
@@ -191,6 +199,7 @@ public partial class MainViewModel : ObservableObject
         }
         _overlapRange = null;
         HasOverlapWarning = false;
+        Overlaps.Clear();
         SetInfo("Пересекающийся диапазон убран.");
     }
 
@@ -198,7 +207,7 @@ public partial class MainViewModel : ObservableObject
     private void RemoveRange(PageRange? range)
     {
         if (range == null) return;
-        if (ReferenceEquals(range, _overlapRange)) { _overlapRange = null; HasOverlapWarning = false; }
+        if (ReferenceEquals(range, _overlapRange)) { _overlapRange = null; HasOverlapWarning = false; Overlaps.Clear(); }
         Ranges.Remove(range);
         UpdateRangesDisplay();
         SetInfo($"Диапазон {range} убран");
@@ -323,6 +332,7 @@ public partial class MainViewModel : ObservableObject
         Ranges.Clear();
         _overlapRange = null;
         HasOverlapWarning = false;
+        Overlaps.Clear();
         UpdateRangesDisplay();
         SetInfo("Диапазоны очищены");
     }
@@ -360,6 +370,7 @@ public partial class MainViewModel : ObservableObject
         Ranges.Clear();
         _overlapRange = null;
         HasOverlapWarning = false;
+        Overlaps.Clear();
         UpdateRangesDisplay();
         GroupLabelText = string.Empty;
     }
@@ -512,6 +523,7 @@ public partial class MainViewModel : ObservableObject
         HasResults = false;
         _overlapRange = null;
         HasOverlapWarning = false;
+        Overlaps.Clear();
         SelectedRange = null;
         StartThumb = null;
         EndThumb = null;

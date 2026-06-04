@@ -26,6 +26,31 @@ public partial class MainWindow : Window
 
         // Фоновая проверка обновлений (no-op в dev-запуске).
         _ = _viewModel.CheckForUpdatesAsync();
+
+        // Окно «расширяется вниз», когда появляются предупреждения о пересечениях.
+        _viewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainViewModel.HasOverlapWarning))
+                AdjustHeightForWarnings();
+        };
+    }
+
+    private double? _baselineHeight;
+
+    private void AdjustHeightForWarnings()
+    {
+        if (_viewModel.HasOverlapWarning)
+        {
+            _baselineHeight ??= Height;
+            int lines = _viewModel.Overlaps.Count;
+            double target = (_baselineHeight ?? Height) + 130 + lines * 30;
+            Height = System.Math.Min(target, 1100);
+        }
+        else if (_baselineHeight is double h)
+        {
+            Height = h;
+            _baselineHeight = null;
+        }
     }
 
     /// <summary>Версия приложения из сборки (источник — &lt;Version&gt; в csproj).</summary>
