@@ -177,11 +177,22 @@ public partial class MainViewModel : ObservableObject
             DuplicatedPagesText = PageRangeUtils.ExpandToString(dupIntervals);
             _overlapRange = range;
             HasOverlapWarning = true;
-            SetWarning($"Диапазон {range}: часть страниц уже в других группах.");
+            SetWarning($"Диапазон {range} пересекается с Диапазонами прежних групп — " +
+                       $"страницы продублируются: {PageRangeUtils.MergeToString(dupIntervals)}.");
         }
         else if (curOverlaps.Count > 0)
         {
-            SetWarning($"Диапазон {range} пересекается с {curOverlaps[0]} — страницы продублируются.");
+            var dupCur = curOverlaps
+                .Select(r => (Math.Max(start, r.StartPage), Math.Min(end, r.EndPage)))
+                .ToList();
+            string dupc = PageRangeUtils.MergeToString(dupCur);
+
+            if (curOverlaps.Count == 1)
+                SetWarning($"Диапазон {range} пересекается с Диапазоном {curOverlaps[0]} — " +
+                           $"страницы продублируются: {dupc}.");
+            else
+                SetWarning($"Диапазон {range} пересекается с {curOverlaps.Count} Диапазонами — " +
+                           $"страницы продублируются: {dupc}.");
         }
         else
         {
@@ -263,6 +274,10 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private Bitmap? _zoomImage;
 
+    /// <summary>Строка-разделитель между миниатюрами, напр. «↕ 233 стр.  (112 → 344)».</summary>
+    [ObservableProperty]
+    private string _previewRangeText = string.Empty;
+
     /// <summary>Есть ли загруженные миниатюры (для подсказки в панели).</summary>
     [ObservableProperty]
     private bool _hasPreview;
@@ -281,6 +296,10 @@ public partial class MainViewModel : ObservableObject
 
     partial void OnSelectedRangeChanged(PageRange? value)
     {
+        PreviewRangeText = value is null
+            ? string.Empty
+            : $"↕ {value.PageCount} стр.  ({value.StartPage} → {value.EndPage})";
+
         if (IsPreviewEnabled)
             _ = RefreshPreviewAsync();
     }

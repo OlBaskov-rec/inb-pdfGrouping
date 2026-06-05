@@ -27,29 +27,40 @@
                 IsVisible="{Binding IsPreviewEnabled}">
             <DockPanel>
                 <TextBlock DockPanel.Dock="Top" Text="Предпросмотр страниц"
-                           FontWeight="Bold" Margin="0,0,0,6" />
-                <TextBlock DockPanel.Dock="Top" Text="Выберите диапазон в списке, чтобы увидеть его начальную и конечную страницы."
-                           TextWrapping="Wrap" Foreground="#777" FontSize="12"
-                           IsVisible="{Binding !HasPreview}" />
+                           FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,8" />
+                <TextBlock DockPanel.Dock="Top"
+                           Text="Выберите диапазон в списке, чтобы увидеть его начальную и конечную страницы."
+                           TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center"
+                           Foreground="#777" FontSize="12" IsVisible="{Binding !HasPreview}" />
                 <ScrollViewer IsVisible="{Binding HasPreview}">
                     <StackPanel>
+                        <!-- Начальная страница -->
                         <TextBlock Text="{Binding SelectedRange.StartPage, StringFormat='Начальная страница: {0}'}"
-                                   FontWeight="SemiBold" Margin="0,0,0,2" />
-                        <Border Background="#F7F7F7" BorderBrush="#E0E0E0" BorderThickness="1" Padding="4">
+                                   FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,3" />
+                        <Border Background="#F7F7F7" BorderBrush="#E0E0E0" BorderThickness="1" Padding="4"
+                                HorizontalAlignment="Center">
                             <Image Source="{Binding StartThumb}" Stretch="Uniform" MaxHeight="230" />
                         </Border>
-                        <Button Content="🔍 Увеличить" Margin="0,4,0,12"
-                                HorizontalAlignment="Center"
+                        <Button Content="🔍 Увеличить" Margin="0,4,0,0" HorizontalAlignment="Center"
                                 Command="{Binding ZoomStartCommand}"
                                 ToolTip.Tip="Открыть начальную страницу почти на весь экран" />
 
+                        <!-- Разделитель с информацией о диапазоне -->
+                        <Grid ColumnDefinitions="*,Auto,*" Margin="0,12">
+                            <Border Grid.Column="0" Height="1" Background="#D8D8D8" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Margin="8,0" FontSize="12" Foreground="#666"
+                                       VerticalAlignment="Center" Text="{Binding PreviewRangeText}" />
+                            <Border Grid.Column="2" Height="1" Background="#D8D8D8" VerticalAlignment="Center" />
+                        </Grid>
+
+                        <!-- Конечная страница -->
                         <TextBlock Text="{Binding SelectedRange.EndPage, StringFormat='Конечная страница: {0}'}"
-                                   FontWeight="SemiBold" Margin="0,0,0,2" />
-                        <Border Background="#F7F7F7" BorderBrush="#E0E0E0" BorderThickness="1" Padding="4">
+                                   FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,3" />
+                        <Border Background="#F7F7F7" BorderBrush="#E0E0E0" BorderThickness="1" Padding="4"
+                                HorizontalAlignment="Center">
                             <Image Source="{Binding EndThumb}" Stretch="Uniform" MaxHeight="230" />
                         </Border>
-                        <Button Content="🔍 Увеличить" Margin="0,4,0,0"
-                                HorizontalAlignment="Center"
+                        <Button Content="🔍 Увеличить" Margin="0,4,0,0" HorizontalAlignment="Center"
                                 Command="{Binding ZoomEndCommand}"
                                 ToolTip.Tip="Открыть конечную страницу почти на весь экран" />
                     </StackPanel>
@@ -67,7 +78,7 @@
                     <Flyout Placement="BottomEdgeAlignedRight">
                         <StackPanel Width="300">
                             <TextBlock Text="PDF Grouping" FontWeight="Bold" FontSize="16" />
-                            <TextBlock Text="кроим pdf" FontStyle="Italic" Foreground="#555" Margin="0,0,0,4" />
+                            <TextBlock Text="slice &amp; group PDF" FontStyle="Italic" Foreground="#555" Margin="0,0,0,4" />
                             <TextBlock Text="{Binding AppVersion, StringFormat='Версия {0}'}"
                                        Foreground="#555" Margin="0,0,0,4" />
                             <TextBlock Text="Автор: Inbasko" Margin="0,0,0,2" />
