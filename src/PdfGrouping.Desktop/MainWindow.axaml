@@ -320,9 +320,14 @@
                     <ProgressBar Width="120" Margin="12,0" IsIndeterminate="{Binding IsProcessing}"
                                  IsVisible="{Binding IsProcessing}" VerticalAlignment="Center" />
                 </StackPanel>
-                <TextBlock Grid.Column="1" Text="{Binding StatusText}" VerticalAlignment="Center"
-                           Margin="16,0,0,0" FontSize="13" TextWrapping="Wrap"
-                           Foreground="{Binding StatusIsError, Converter={StaticResource BoolToBrush}}" />
+                <DockPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
+                    <TextBlock DockPanel.Dock="Left" Text="⚠" FontSize="24" FontWeight="Bold"
+                               Foreground="#C42B1C" VerticalAlignment="Center" Margin="0,0,8,0"
+                               IsVisible="{Binding StatusIsWarning}" />
+                    <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center"
+                               FontSize="13" TextWrapping="Wrap"
+                               Foreground="{Binding StatusIsError, Converter={StaticResource BoolToBrush}}" />
+                </DockPanel>
             </Grid>
         </StackPanel>
 

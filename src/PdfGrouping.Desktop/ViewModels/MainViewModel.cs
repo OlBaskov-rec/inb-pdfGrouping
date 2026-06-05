@@ -41,6 +41,10 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _statusIsError;
 
+    /// <summary>Статус — предупреждение (показывает красный значок ⚠ в статусной строке).</summary>
+    [ObservableProperty]
+    private bool _statusIsWarning;
+
     // --- Диапазоны (до группировки) ---
     public ObservableCollection<PageRange> Ranges { get; } = new();
 
@@ -628,19 +632,22 @@ public partial class MainViewModel : ObservableObject
     private void SetInfo(string text)
     {
         StatusIsError = false;
+        StatusIsWarning = false;
         StatusText = text;
     }
 
     private void SetError(string text)
     {
         StatusIsError = true;
+        StatusIsWarning = false;
         StatusText = text;
     }
 
     private void SetWarning(string text)
     {
-        // Действие выполнено, но требует внимания — помечаем значком, не красным.
-        StatusIsError = false;
-        StatusText = "⚠ " + text;
+        // Предупреждение: красный значок ⚠ в статусной строке + акцентный текст.
+        StatusIsError = true;
+        StatusIsWarning = true;
+        StatusText = text;
     }
 }
