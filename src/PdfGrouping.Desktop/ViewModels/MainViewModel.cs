@@ -27,7 +27,13 @@ public partial class MainViewModel : ObservableObject
     {
         _filePicker = filePicker;
         _updateService = updateService;
+
+        // Высота списка диапазонов зависит от числа строк (3..5), дальше — прокрутка.
+        Ranges.CollectionChanged += (_, _) => OnPropertyChanged(nameof(RangesListHeight));
     }
+
+    /// <summary>Высота списка диапазонов: 3 строки по умолчанию, до 5 — растёт, дальше прокрутка.</summary>
+    public double RangesListHeight => Math.Clamp(Ranges.Count, 3, 5) * 48 + 20;
 
     // --- Исходный PDF ---
     [ObservableProperty]
@@ -176,7 +182,8 @@ public partial class MainViewModel : ObservableObject
             DuplicatedPagesText = PageRangeUtils.MergeToString(dupIntervals);
             _overlapRange = range;
             HasOverlapWarning = true;
-            SetInfo($"Добавлен диапазон {range} — есть пересечения (см. предупреждение).");
+            // Сообщение у кнопок не дублируем — предупреждение показано в баннере.
+            SetInfo(string.Empty);
         }
         else
         {

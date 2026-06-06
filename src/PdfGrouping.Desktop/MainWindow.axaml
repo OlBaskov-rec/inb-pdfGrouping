@@ -99,7 +99,8 @@
 
         <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto">
-        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+        <!-- Правый отступ — зазор под вертикальную полосу прокрутки, чтобы она не наезжала -->
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="0,0,16,0">
 
         <!-- Row 0: исходный файл -->
         <Border Grid.Row="0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
@@ -127,12 +128,12 @@
             </TextBlock>
         </Border>
 
-        <!-- Row 2: диапазоны | метка | группы (фикс. высота — не сжимается внахлёст) -->
-        <Grid Grid.Row="2" ColumnDefinitions="*,Auto,*" Height="300" Margin="0,0,0,8">
+        <!-- Row 2: диапазоны | метка | группы (высота по списку диапазонов; колонки тянутся вместе) -->
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto,*" Margin="0,0,0,8">
 
             <!-- Диапазоны -->
             <Border Grid.Column="0" MinWidth="240" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
-                <Grid RowDefinitions="Auto,Auto,Auto,*">
+                <Grid RowDefinitions="Auto,Auto,Auto,Auto">
                     <TextBlock Grid.Row="0" Text="Диапазоны страниц" FontWeight="Bold" Margin="0,0,0,6" />
 
                     <WrapPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,6">
@@ -158,6 +159,8 @@
                     </WrapPanel>
 
                     <ListBox Grid.Row="3" ItemsSource="{Binding Ranges}"
+                             Height="{Binding RangesListHeight}"
+                             Padding="2,2,10,2"
                              SelectionMode="Single"
                              SelectedItem="{Binding SelectedRange}">
                         <ListBox.ItemTemplate>
