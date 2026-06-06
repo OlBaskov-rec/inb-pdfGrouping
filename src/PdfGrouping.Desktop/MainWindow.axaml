@@ -100,7 +100,7 @@
         <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto">
         <!-- Правый отступ — зазор под вертикальную полосу прокрутки, чтобы она не наезжала -->
-        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="0,0,16,0">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="0,0,24,0">
 
         <!-- Row 0: исходный файл -->
         <Border Grid.Row="0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
@@ -160,7 +160,7 @@
 
                     <ListBox Grid.Row="3" ItemsSource="{Binding Ranges}"
                              Height="{Binding RangesListHeight}"
-                             Padding="2,2,10,2"
+                             Padding="2,2,18,2"
                              SelectionMode="Single"
                              SelectedItem="{Binding SelectedRange}">
                         <ListBox.ItemTemplate>
@@ -187,15 +187,27 @@
 
             <!-- Метка группы -->
             <Border Grid.Column="1" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
-                    Padding="10" Margin="8,0" Width="190">
+                    Padding="10" Margin="8,0" Width="210">
                 <StackPanel>
                     <TextBlock Text="Метка группы" FontWeight="Bold" Margin="0,0,0,6" />
                     <TextBlock Text="Текущие диапазоны:" FontWeight="SemiBold" FontSize="12" />
-                    <TextBlock Text="{Binding RangesDisplayText}" TextWrapping="Wrap"
-                               FontSize="11" Foreground="#555" Margin="0,2,0,8" />
-                    <TextBlock Text="Метка (буква/номер):" FontSize="12" Margin="0,4,0,2" />
-                    <TextBox Text="{Binding GroupLabelText}" PlaceholderText="напр. А, Б, 1, Часть1" />
-                    <Button Content="Создать группу ►" Margin="0,10,0,0"
+                    <ScrollViewer MaxHeight="150" HorizontalScrollBarVisibility="Disabled" Margin="0,2,0,8">
+                        <TextBlock Text="{Binding RangesDisplayText}" TextWrapping="Wrap" Foreground="#555" />
+                    </ScrollViewer>
+                    <TextBlock Text="Метка (буква/число — любые, 15 симв.):"
+                               FontSize="12" TextWrapping="Wrap" Margin="0,4,0,2" />
+                    <TextBox Text="{Binding GroupLabelText}" MaxLength="15"
+                             PlaceholderText="напр. А, Б, 1, Часть1" />
+                    <!-- Быстрый выбор метки -->
+                    <WrapPanel Margin="0,6,0,0">
+                        <Button Content="A" Width="30" Margin="0,0,4,4" Command="{Binding PickLabelCommand}" CommandParameter="A" />
+                        <Button Content="B" Width="30" Margin="0,0,4,4" Command="{Binding PickLabelCommand}" CommandParameter="B" />
+                        <Button Content="C" Width="30" Margin="0,0,4,4" Command="{Binding PickLabelCommand}" CommandParameter="C" />
+                        <Button Content="D" Width="30" Margin="0,0,4,4" Command="{Binding PickLabelCommand}" CommandParameter="D" />
+                        <Button Content="E" Width="30" Margin="0,0,4,4" Command="{Binding PickLabelCommand}" CommandParameter="E" />
+                        <Button Content="F" Width="30" Margin="0,0,4,4" Command="{Binding PickLabelCommand}" CommandParameter="F" />
+                    </WrapPanel>
+                    <Button Content="Создать группу ►" Margin="0,8,0,0"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                             Command="{Binding AddGroupCommand}" IsEnabled="{Binding !IsProcessing}" />
                 </StackPanel>
@@ -230,8 +242,9 @@
             </Border>
         </Grid>
 
-        <!-- Row 3: предупреждение о пересечениях (на всю ширину, расширяется вниз) -->
-        <Border Grid.Row="3" x:Name="WarningBlock"
+        <!-- Row 3: область сообщений (предупреждение о пересечениях + запрос на объединение) -->
+        <StackPanel Grid.Row="3">
+        <Border x:Name="WarningBlock"
                 Background="#FDECEA" BorderBrush="#C42B1C" BorderThickness="2"
                 CornerRadius="6" Padding="12" Margin="0,0,0,8"
                 IsVisible="{Binding HasOverlapWarning}">
@@ -261,7 +274,7 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                     <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" FontSize="12">
-                        <Run Text="Дублирующиеся страницы: " FontWeight="Bold" />
+                        <Run Text="Дублируются: " FontWeight="Bold" />
                         <Run Text="{Binding DuplicatedPagesText}" FontWeight="Bold" Foreground="#C42B1C" />
                     </TextBlock>
                     <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
@@ -274,6 +287,27 @@
                 </StackPanel>
             </DockPanel>
         </Border>
+
+        <!-- Запрос на объединение с существующей группой -->
+        <Border Background="#EAF3FE" BorderBrush="#0078D4" BorderThickness="2"
+                CornerRadius="6" Padding="12" Margin="0,0,0,8"
+                IsVisible="{Binding HasMergePrompt}">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Left" Text="❓" FontSize="28" Foreground="#0078D4"
+                           VerticalAlignment="Top" Margin="0,0,12,0" />
+                <StackPanel>
+                    <TextBlock Text="{Binding MergePromptText}" TextWrapping="Wrap"
+                               FontWeight="SemiBold" Foreground="#0A4A82" FontSize="13" />
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button Content="Добавить в группу" Command="{Binding ConfirmMergeCommand}"
+                                Background="#0078D4" Foreground="White" FontWeight="Bold" />
+                        <Button Content="Другое название" Margin="8,0,0,0"
+                                Command="{Binding CancelMergeCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+        </StackPanel>
 
         <!-- Row 4: куда сохранять (на всю ширину) -->
         <Border Grid.Row="4" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
@@ -308,18 +342,11 @@
                             IsEnabled="{Binding !IsProcessing}"
                             Padding="20,8" FontSize="15" FontWeight="Bold"
                             Background="#0078D4" Foreground="White" />
-                    <!-- Тумблер «Без пересечений»: запрещает добавлять пересекающиеся диапазоны -->
+                    <!-- Тумблер «Без пересечений»: запрещает добавлять пересекающиеся диапазоны/группы -->
                     <ToggleButton Content="🚫 Без пересечений" Margin="10,0,0,0"
                                   VerticalAlignment="Center"
                                   IsChecked="{Binding BlockOverlaps}"
-                                  ToolTip.Tip="Во включённом состоянии нельзя добавить диапазон со страницами, уже выбранными ранее" />
-                    <!-- Крупный индикатор предупреждения рядом с кнопкой -->
-                    <Border IsVisible="{Binding HasOverlapWarning}" Margin="12,0,0,0"
-                            VerticalAlignment="Center"
-                            ToolTip.Tip="Есть пересечения диапазонов — страницы продублируются (см. предупреждение выше)">
-                        <TextBlock Text="⚠" FontSize="34" FontWeight="Bold" Foreground="#C42B1C"
-                                   VerticalAlignment="Center" />
-                    </Border>
+                                  ToolTip.Tip="Во включённом состоянии нельзя выбрать пересекающиеся страницы (диапазоны и группы)" />
                     <ProgressBar Width="120" Margin="12,0" IsIndeterminate="{Binding IsProcessing}"
                                  IsVisible="{Binding IsProcessing}" VerticalAlignment="Center" />
                 </StackPanel>

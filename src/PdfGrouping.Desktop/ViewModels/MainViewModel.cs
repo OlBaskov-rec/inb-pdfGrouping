@@ -179,7 +179,7 @@ public partial class MainViewModel : ObservableObject
             foreach (var (label, r) in prevOverlaps)
                 Overlaps.Add(MakeOverlap(start, end, r, $"группа {label}"));
 
-            DuplicatedPagesText = PageRangeUtils.MergeToString(dupIntervals);
+            DuplicatedPagesText = WithUnit(PageRangeUtils.MergeToString(dupIntervals));
             _overlapRange = range;
             HasOverlapWarning = true;
             // Сообщение у кнопок не дублируем — предупреждение показано в баннере.
@@ -195,8 +195,16 @@ public partial class MainViewModel : ObservableObject
     {
         int ds = Math.Max(start, existing.StartPage);
         int de = Math.Min(end, existing.EndPage);
-        string dup = ds == de ? $"{ds}" : $"{ds}–{de}";
+        string dup = WithUnit(ds == de ? $"{ds}" : $"{ds}–{de}");
         return new OverlapInfo($"{start}–{end}", $"{existing.StartPage}–{existing.EndPage}", source, dup);
+    }
+
+    /// <summary>Добавляет единицу измерения: «страница 10» / «страницы 70–90».</summary>
+    private static string WithUnit(string pages)
+    {
+        if (string.IsNullOrEmpty(pages)) return pages;
+        bool plural = pages.Contains('–') || pages.Contains(',');
+        return plural ? $"страницы {pages}" : $"страница {pages}";
     }
 
     // Баннер пересечения с предыдущими группами
@@ -383,13 +391,32 @@ public partial class MainViewModel : ObservableObject
         SetInfo("Диапазоны очищены");
     }
 
+    // Запрос на объединение с существующей группой
+    [ObservableProperty]
+    private bool _hasMergePrompt;
+
+    [ObservableProperty]
+    private string _mergePromptText = string.Empty;
+
+    private PdfGroup? _mergeTarget;
+
+    /// <summary>Быстрый выбор метки группы кнопкой (A, B, C …).</summary>
+    [RelayCommand]
+    private void PickLabel(string? letter)
+    {
+        if (!string.IsNullOrEmpty(letter))
+            GroupLabelText = letter;
+    }
+
     [RelayCommand]
     private void AddGroup()
     {
-        string label = GroupLabelText?.Trim() ?? string.Empty;
-        if (string.IsNullOrEmpty(label))
+        string label = (GroupLabelText ?? string.Empty).Trim();
+
+        var labelError = FileNameValidator.Validate(label);
+        if (labelError != null)
         {
-            SetError("Введите метку группы (букву или номер).");
+            SetError(labelError);
             return;
         }
 
@@ -399,18 +426,80 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
-        if (Groups.Any(g => string.Equals(g.Label, label, StringComparison.OrdinalIgnoreCase)))
+        var existing = Groups.FirstOrDefault(g => string.Equals(g.Label, label, StringComparison.OrdinalIgnoreCase));
+        if (existing != null)
         {
-            SetError($"Группа с меткой «{label}» уже существует. Выберите другую метку.");
+            // Спрашиваем: добавить выбранные диапазоны в уже существующую группу?
+            _mergeTarget = existing;
+            MergePromptText = $"Группа «{existing.Label}» уже существует. Добавить выбранные диапазоны в неё?";
+            HasMergePrompt = true;
             return;
         }
 
-        var group = new PdfGroup { Label = label };
-        foreach (var r in Ranges)
-            group.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage });
+        CreateOrMergeGroup(label, null);
+    }
 
-        Groups.Add(group);
-        SetInfo($"Группа «{label}» добавлена ({group.TotalPages} стр.)");
+    /// <summary>«Добавить в группу» — подтверждение объединения.</summary>
+    [RelayCommand]
+    private void ConfirmMerge()
+    {
+        HasMergePrompt = false;
+        var target = _mergeTarget;
+        _mergeTarget = null;
+        if (target != null)
+            CreateOrMergeGroup(target.Label, target);
+    }
+
+    /// <summary>«Другое название» — отмена объединения.</summary>
+    [RelayCommand]
+    private void CancelMerge()
+    {
+        HasMergePrompt = false;
+        _mergeTarget = null;
+        SetError("Выберите другое название группы.");
+    }
+
+    private void CreateOrMergeGroup(string label, PdfGroup? target)
+    {
+        // Режим «Без пересечений»: запрещаем создавать/объединять при пересечении страниц.
+        if (BlockOverlaps)
+        {
+            var others = Groups.Where(g => g != target).SelectMany(g => g.Ranges)
+                .Concat(target?.Ranges ?? Enumerable.Empty<PageRange>());
+            var conflicts = others
+                .SelectMany(r => Ranges
+                    .Where(cur => cur.StartPage <= r.EndPage && cur.EndPage >= r.StartPage)
+                    .Select(cur => (Math.Max(cur.StartPage, r.StartPage), Math.Min(cur.EndPage, r.EndPage))))
+                .ToList();
+
+            if (conflicts.Count > 0)
+            {
+                SetError($"Страницы {WithUnit(PageRangeUtils.MergeToString(conflicts))} пересекаются с уже выбранными — " +
+                         "в режиме «Без пересечений» действие недопустимо.");
+                return;
+            }
+        }
+
+        if (target != null)
+        {
+            // Объединяем: заменяем элемент в коллекции, чтобы обновился вывод (PdfGroup — не INPC).
+            int idx = Groups.IndexOf(target);
+            var merged = new PdfGroup { Label = target.Label };
+            foreach (var r in target.Ranges)
+                merged.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage });
+            foreach (var r in Ranges)
+                merged.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage });
+            Groups[idx] = merged;
+            SetInfo($"Диапазоны добавлены в группу «{merged.Label}» ({merged.TotalPages} стр.)");
+        }
+        else
+        {
+            var group = new PdfGroup { Label = label };
+            foreach (var r in Ranges)
+                group.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage });
+            Groups.Add(group);
+            SetInfo($"Группа «{label}» добавлена ({group.TotalPages} стр.)");
+        }
 
         // Готовимся к следующей группе
         Ranges.Clear();
@@ -570,6 +659,8 @@ public partial class MainViewModel : ObservableObject
         _overlapRange = null;
         HasOverlapWarning = false;
         Overlaps.Clear();
+        _mergeTarget = null;
+        HasMergePrompt = false;
         SelectedRange = null;
         StartThumb = null;
         EndThumb = null;
@@ -619,9 +710,10 @@ public partial class MainViewModel : ObservableObject
 
     private void UpdateRangesDisplay()
     {
+        // По одному диапазону на строке для лучшей читаемости.
         RangesDisplayText = Ranges.Count == 0
             ? "(пусто)"
-            : string.Join(", ", Ranges.Select(r => r.ToString()));
+            : string.Join("\n", Ranges.Select(r => r.ToString()));
     }
 
     private void SetInfo(string text)
