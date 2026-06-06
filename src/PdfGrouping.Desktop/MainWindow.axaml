@@ -233,23 +233,23 @@
                 CornerRadius="6" Padding="12" Margin="0,0,0,8"
                 IsVisible="{Binding HasOverlapWarning}">
             <DockPanel>
-                <TextBlock DockPanel.Dock="Left" Text="⚠" FontSize="40" Foreground="#C42B1C"
-                           VerticalAlignment="Top" Margin="0,0,14,0" />
+                <TextBlock DockPanel.Dock="Left" Text="⚠" FontSize="32" Foreground="#C42B1C"
+                           VerticalAlignment="Top" Margin="0,0,12,0" />
                 <StackPanel>
                     <TextBlock Text="Внимание: пересечение с уже выбранными страницами"
-                               FontWeight="Bold" FontSize="16" Foreground="#C42B1C"
-                               TextWrapping="Wrap" Margin="0,0,0,8" />
+                               FontWeight="Bold" FontSize="13" Foreground="#C42B1C"
+                               TextWrapping="Wrap" Margin="0,0,0,6" />
                     <ItemsControl ItemsSource="{Binding Overlaps}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:OverlapInfo">
-                                <TextBlock TextWrapping="Wrap" FontSize="15" Margin="0,3">
+                                <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,2">
                                     <Run Text="Диапазон " FontWeight="Bold" />
                                     <Run Text="{Binding NewPages}" FontWeight="Bold" />
                                     <Run Text="  пересекает  " Foreground="#C42B1C" FontWeight="Bold" />
                                     <Run Text="Диапазон " FontWeight="Bold" />
                                     <Run Text="{Binding ExistingPages}" FontWeight="Bold" />
-                                    <Run Text="  ·  группа " Foreground="#888" />
-                                    <Run Text="{Binding GroupLabel}" Foreground="#888" />
+                                    <Run Text="  ·  " Foreground="#888" />
+                                    <Run Text="{Binding Source}" Foreground="#888" />
                                     <Run Text="   (дубли: " Foreground="#C42B1C" FontWeight="Bold" />
                                     <Run Text="{Binding Dup}" Foreground="#C42B1C" FontWeight="Bold" />
                                     <Run Text=")" Foreground="#C42B1C" FontWeight="Bold" />
@@ -257,11 +257,11 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" FontSize="15">
+                    <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" FontSize="12">
                         <Run Text="Дублирующиеся страницы: " FontWeight="Bold" />
                         <Run Text="{Binding DuplicatedPagesText}" FontWeight="Bold" Foreground="#C42B1C" />
                     </TextBlock>
-                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                         <Button Content="Добавить ещё раз" Command="{Binding KeepOverlapRangeCommand}"
                                 ToolTip.Tip="Оставить диапазон, страницы продублируются" />
                         <Button Content="Убрать" Margin="8,0,0,0" Foreground="#C42B1C"
@@ -320,14 +320,9 @@
                     <ProgressBar Width="120" Margin="12,0" IsIndeterminate="{Binding IsProcessing}"
                                  IsVisible="{Binding IsProcessing}" VerticalAlignment="Center" />
                 </StackPanel>
-                <DockPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
-                    <TextBlock DockPanel.Dock="Left" Text="⚠" FontSize="24" FontWeight="Bold"
-                               Foreground="#C42B1C" VerticalAlignment="Center" Margin="0,0,8,0"
-                               IsVisible="{Binding StatusIsWarning}" />
-                    <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center"
-                               FontSize="13" TextWrapping="Wrap"
-                               Foreground="{Binding StatusIsError, Converter={StaticResource BoolToBrush}}" />
-                </DockPanel>
+                <TextBlock Grid.Column="1" Text="{Binding StatusText}" VerticalAlignment="Center"
+                           Margin="16,0,0,0" FontSize="13" TextWrapping="Wrap"
+                           Foreground="{Binding StatusIsError, Converter={StaticResource BoolToBrush}}" />
             </Grid>
         </StackPanel>
 

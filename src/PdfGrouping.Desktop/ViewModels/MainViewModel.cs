@@ -12,8 +12,9 @@ using PdfGrouping.Desktop.Services;
 
 namespace PdfGrouping.Desktop.ViewModels;
 
-/// <summary>Описание одного пересечения: добавленный диапазон vs диапазон прежней группы.</summary>
-public record OverlapInfo(string NewPages, string ExistingPages, string GroupLabel, string Dup);
+/// <summary>Описание одного пересечения: добавленный диапазон vs уже выбранный диапазон.</summary>
+/// <param name="Source">Источник пересечения, напр. «группа 12» или «текущие диапазоны».</param>
+public record OverlapInfo(string NewPages, string ExistingPages, string Source, string Dup);
 
 public partial class MainViewModel : ObservableObject
 {
@@ -40,10 +41,6 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _statusIsError;
-
-    /// <summary>Статус — предупреждение (показывает красный значок ⚠ в статусной строке).</summary>
-    [ObservableProperty]
-    private bool _statusIsWarning;
 
     // --- Диапазоны (до группировки) ---
     public ObservableCollection<PageRange> Ranges { get; } = new();
@@ -168,40 +165,31 @@ public partial class MainViewModel : ObservableObject
         RangeEndText = TotalPages.ToString();
 
         Overlaps.Clear();
-        if (prevOverlaps.Count > 0)
+        if (dupIntervals.Count > 0)
         {
+            // Единое место вывода: все пересечения (и текущие, и с прежними группами) — в баннере.
+            foreach (var r in curOverlaps)
+                Overlaps.Add(MakeOverlap(start, end, r, "текущие диапазоны"));
             foreach (var (label, r) in prevOverlaps)
-            {
-                int dupStart = Math.Max(start, r.StartPage);
-                int dupEnd = Math.Min(end, r.EndPage);
-                string dup = dupStart == dupEnd ? $"{dupStart}" : $"{dupStart}–{dupEnd}";
-                Overlaps.Add(new OverlapInfo($"{start}–{end}", $"{r.StartPage}–{r.EndPage}", label, dup));
-            }
+                Overlaps.Add(MakeOverlap(start, end, r, $"группа {label}"));
 
-            DuplicatedPagesText = PageRangeUtils.ExpandToString(dupIntervals);
+            DuplicatedPagesText = PageRangeUtils.MergeToString(dupIntervals);
             _overlapRange = range;
             HasOverlapWarning = true;
-            SetWarning($"Диапазон {range} пересекается с Диапазонами прежних групп — " +
-                       $"страницы продублируются: {PageRangeUtils.MergeToString(dupIntervals)}.");
-        }
-        else if (curOverlaps.Count > 0)
-        {
-            var dupCur = curOverlaps
-                .Select(r => (Math.Max(start, r.StartPage), Math.Min(end, r.EndPage)))
-                .ToList();
-            string dupc = PageRangeUtils.MergeToString(dupCur);
-
-            if (curOverlaps.Count == 1)
-                SetWarning($"Диапазон {range} пересекается с Диапазоном {curOverlaps[0]} — " +
-                           $"страницы продублируются: {dupc}.");
-            else
-                SetWarning($"Диапазон {range} пересекается с {curOverlaps.Count} Диапазонами — " +
-                           $"страницы продублируются: {dupc}.");
+            SetInfo($"Добавлен диапазон {range} — есть пересечения (см. предупреждение).");
         }
         else
         {
             SetInfo($"Добавлен диапазон: {range}");
         }
+    }
+
+    private static OverlapInfo MakeOverlap(int start, int end, PageRange existing, string source)
+    {
+        int ds = Math.Max(start, existing.StartPage);
+        int de = Math.Min(end, existing.EndPage);
+        string dup = ds == de ? $"{ds}" : $"{ds}–{de}";
+        return new OverlapInfo($"{start}–{end}", $"{existing.StartPage}–{existing.EndPage}", source, dup);
     }
 
     // Баннер пересечения с предыдущими группами
@@ -632,22 +620,12 @@ public partial class MainViewModel : ObservableObject
     private void SetInfo(string text)
     {
         StatusIsError = false;
-        StatusIsWarning = false;
         StatusText = text;
     }
 
     private void SetError(string text)
     {
         StatusIsError = true;
-        StatusIsWarning = false;
-        StatusText = text;
-    }
-
-    private void SetWarning(string text)
-    {
-        // Предупреждение: красный значок ⚠ в статусной строке + акцентный текст.
-        StatusIsError = true;
-        StatusIsWarning = true;
         StatusText = text;
     }
 }
