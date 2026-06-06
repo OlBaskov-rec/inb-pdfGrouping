@@ -228,9 +228,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void KeepOverlapRange()
     {
-        HasOverlapWarning = false;
-        Overlaps.Clear();
-        _overlapRange = null;
+        // Область предупреждения НЕ убираем — она остаётся как информация о пересечении.
         SetInfo("Диапазон оставлен (страницы продублируются).");
     }
 

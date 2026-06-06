@@ -189,24 +189,25 @@
             <Border Grid.Column="1" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
                     Padding="10" Margin="8,0" Width="210">
                 <StackPanel>
-                    <TextBlock Text="Метка группы" FontWeight="Bold" Margin="0,0,0,6" />
-                    <TextBlock Text="Текущие диапазоны:" FontWeight="SemiBold" FontSize="12" />
-                    <ScrollViewer MaxHeight="150" HorizontalScrollBarVisibility="Disabled" Margin="0,2,0,8">
-                        <TextBlock Text="{Binding RangesDisplayText}" TextWrapping="Wrap" Foreground="#555" />
-                    </ScrollViewer>
-                    <TextBlock Text="Метка (буква/число — любые, 15 симв.):"
-                               FontSize="12" TextWrapping="Wrap" Margin="0,4,0,2" />
+                    <TextBlock Text="Метка группы" FontWeight="Bold" Margin="0,0,0,2" />
+                    <TextBlock Text="(любые 15 симв.)" FontSize="12" Foreground="#777" Margin="0,0,0,2" />
                     <TextBox Text="{Binding GroupLabelText}" MaxLength="15"
                              PlaceholderText="напр. А, Б, 1, Часть1" />
-                    <!-- Быстрый выбор метки -->
+                    <!-- Быстрый выбор метки: 5 кнопок в один ряд -->
                     <WrapPanel Margin="0,6,0,0">
-                        <Button Content="A" Width="30" Margin="0,0,4,4" Command="{Binding PickLabelCommand}" CommandParameter="A" />
-                        <Button Content="B" Width="30" Margin="0,0,4,4" Command="{Binding PickLabelCommand}" CommandParameter="B" />
-                        <Button Content="C" Width="30" Margin="0,0,4,4" Command="{Binding PickLabelCommand}" CommandParameter="C" />
-                        <Button Content="D" Width="30" Margin="0,0,4,4" Command="{Binding PickLabelCommand}" CommandParameter="D" />
-                        <Button Content="E" Width="30" Margin="0,0,4,4" Command="{Binding PickLabelCommand}" CommandParameter="E" />
-                        <Button Content="F" Width="30" Margin="0,0,4,4" Command="{Binding PickLabelCommand}" CommandParameter="F" />
+                        <Button Content="A" Width="30" Margin="0,0,4,0" Command="{Binding PickLabelCommand}" CommandParameter="A" />
+                        <Button Content="B" Width="30" Margin="0,0,4,0" Command="{Binding PickLabelCommand}" CommandParameter="B" />
+                        <Button Content="C" Width="30" Margin="0,0,4,0" Command="{Binding PickLabelCommand}" CommandParameter="C" />
+                        <Button Content="D" Width="30" Margin="0,0,4,0" Command="{Binding PickLabelCommand}" CommandParameter="D" />
+                        <Button Content="E" Width="30" Command="{Binding PickLabelCommand}" CommandParameter="E" />
                     </WrapPanel>
+
+                    <!-- Текущие диапазоны (под кнопками выбора метки) -->
+                    <TextBlock Text="Текущие диапазоны:" FontWeight="SemiBold" FontSize="12" Margin="0,12,0,2" />
+                    <ScrollViewer MaxHeight="120" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,4">
+                        <TextBlock Text="{Binding RangesDisplayText}" TextWrapping="Wrap" Foreground="#555" />
+                    </ScrollViewer>
+
                     <Button Content="Создать группу ►" Margin="0,8,0,0"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                             Command="{Binding AddGroupCommand}" IsEnabled="{Binding !IsProcessing}" />
