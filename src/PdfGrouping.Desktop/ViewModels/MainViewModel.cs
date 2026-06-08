@@ -154,11 +154,13 @@ public partial class MainViewModel : ObservableObject
             .Concat(prevOverlaps.Select(x => (Math.Max(start, x.Range.StartPage), Math.Min(end, x.Range.EndPage))))
             .ToList();
 
+        HasBlockMessage = false;
+
         // Режим «Без пересечений»: диапазон с пересекающимися страницами не добавляется.
         if (BlockOverlaps && dupIntervals.Count > 0)
         {
-            string conflict = PageRangeUtils.MergeToString(dupIntervals);
-            SetError($"Пересечения запрещены: страницы {conflict} уже выбраны. Диапазон не добавлен.");
+            ShowBlockMessage($"Пересечения запрещены: {WithUnit(PageRangeUtils.MergeToString(dupIntervals))} уже выбраны. " +
+                             "Диапазон не добавлен.");
             return;
         }
 
@@ -171,6 +173,7 @@ public partial class MainViewModel : ObservableObject
         RangeEndText = TotalPages.ToString();
 
         Overlaps.Clear();
+        _overlapBatch.Clear();
         if (dupIntervals.Count > 0)
         {
             // Единое место вывода: все пересечения (и текущие, и с прежними группами) — в баннере.
@@ -180,14 +183,70 @@ public partial class MainViewModel : ObservableObject
                 Overlaps.Add(MakeOverlap(start, end, r, $"группа {label}"));
 
             DuplicatedPagesText = WithUnit(PageRangeUtils.MergeToString(dupIntervals));
-            _overlapRange = range;
+            _overlapBatch.Add(range);
             HasOverlapWarning = true;
-            // Сообщение у кнопок не дублируем — предупреждение показано в баннере.
             SetInfo(string.Empty);
         }
         else
         {
             SetInfo($"Добавлен диапазон: {range}");
+        }
+    }
+
+    /// <summary>«+ Добавить диапазон постранично» — раскидать выбранные страницы по 1-страничным диапазонам.</summary>
+    [RelayCommand]
+    private void AddRangePaginated()
+    {
+        if (TotalPages <= 0) { SetError("Сначала откройте PDF-файл."); return; }
+        if (!int.TryParse(RangeStartText, out int start) || !int.TryParse(RangeEndText, out int end))
+        { SetError("Введите корректные номера страниц (целые числа)."); return; }
+        if (start < 1 || end < 1 || start > TotalPages || end > TotalPages)
+        { SetError($"Номера страниц должны быть от 1 до {TotalPages}."); return; }
+        if (start > end) { SetError("Начальная страница не может быть больше конечной."); return; }
+
+        var curOverlaps = Ranges.Where(r => start <= r.EndPage && end >= r.StartPage).ToList();
+        var prevOverlaps = Groups
+            .SelectMany(g => g.Ranges.Select(r => (g.Label, Range: r)))
+            .Where(x => start <= x.Range.EndPage && end >= x.Range.StartPage)
+            .ToList();
+        var dupIntervals = curOverlaps.Select(r => (Math.Max(start, r.StartPage), Math.Min(end, r.EndPage)))
+            .Concat(prevOverlaps.Select(x => (Math.Max(start, x.Range.StartPage), Math.Min(end, x.Range.EndPage))))
+            .ToList();
+
+        HasBlockMessage = false;
+        if (BlockOverlaps && dupIntervals.Count > 0)
+        {
+            ShowBlockMessage($"Пересечения запрещены: {WithUnit(PageRangeUtils.MergeToString(dupIntervals))} уже выбраны. " +
+                             "Диапазоны не добавлены.");
+            return;
+        }
+
+        Overlaps.Clear();
+        _overlapBatch.Clear();
+        for (int p = start; p <= end; p++)
+        {
+            var pr = new PageRange { StartPage = p, EndPage = p };
+            Ranges.Add(pr);
+            _overlapBatch.Add(pr);
+        }
+        UpdateRangesDisplay();
+
+        RangeStartText = (end + 1 <= TotalPages ? end + 1 : TotalPages).ToString();
+        RangeEndText = TotalPages.ToString();
+
+        if (dupIntervals.Count > 0)
+        {
+            foreach (var r in curOverlaps)
+                Overlaps.Add(MakeOverlap(start, end, r, "текущие диапазоны"));
+            foreach (var (label, r) in prevOverlaps)
+                Overlaps.Add(MakeOverlap(start, end, r, $"группа {label}"));
+            DuplicatedPagesText = WithUnit(PageRangeUtils.MergeToString(dupIntervals));
+            HasOverlapWarning = true;
+            SetInfo(string.Empty);
+        }
+        else
+        {
+            SetInfo($"Добавлено постранично: {end - start + 1} диапазонов по 1 странице.");
         }
     }
 
@@ -222,7 +281,16 @@ public partial class MainViewModel : ObservableObject
     /// <summary>Список пересечений добавленного диапазона с диапазонами прежних групп.</summary>
     public ObservableCollection<OverlapInfo> Overlaps { get; } = new();
 
-    private PageRange? _overlapRange;
+    // Последняя добавленная «партия» диапазонов (для кнопки «Убрать»).
+    private readonly List<PageRange> _overlapBatch = new();
+
+    // --- Сообщение о запрете пересечений (в области уведомлений) ---
+
+    [ObservableProperty]
+    private bool _hasBlockMessage;
+
+    [ObservableProperty]
+    private string _blockMessage = string.Empty;
 
     // --- Разрешение конфликта при включении «Без пересечений» ---
 
@@ -232,8 +300,17 @@ public partial class MainViewModel : ObservableObject
     /// <summary>Предлагаемые непересекающиеся диапазоны (для отображения), напр. «Стр. 10–110».</summary>
     public ObservableCollection<string> ResolvedRanges { get; } = new();
 
-    /// <summary>Видна ли область сообщений (предупреждение ИЛИ запрос разрешения конфликта).</summary>
-    public bool IsMessageVisible => HasOverlapWarning || HasConflictPrompt;
+    /// <summary>Видна ли область сообщений (предупреждение / конфликт / запрет).</summary>
+    public bool IsMessageVisible => HasOverlapWarning || HasConflictPrompt || HasBlockMessage;
+
+    partial void OnHasBlockMessageChanged(bool value) => OnPropertyChanged(nameof(IsMessageVisible));
+
+    private void ShowBlockMessage(string text)
+    {
+        BlockMessage = text;
+        HasBlockMessage = true;
+        SetInfo(string.Empty);
+    }
 
     partial void OnHasOverlapWarningChanged(bool value) => OnPropertyChanged(nameof(IsMessageVisible));
     partial void OnHasConflictPromptChanged(bool value) => OnPropertyChanged(nameof(IsMessageVisible));
@@ -311,7 +388,8 @@ public partial class MainViewModel : ObservableObject
         ResolvedRanges.Clear();
         HasOverlapWarning = false;
         Overlaps.Clear();
-        _overlapRange = null;
+        _overlapBatch.Clear();
+        HasBlockMessage = false;
     }
 
     /// <summary>«Добавить ещё раз» — оставить диапазон несмотря на пересечение.</summary>
@@ -322,26 +400,28 @@ public partial class MainViewModel : ObservableObject
         SetInfo("Диапазон оставлен (страницы продублируются).");
     }
 
-    /// <summary>«Убрать» — удалить только что добавленный пересекающийся диапазон.</summary>
+    /// <summary>«Убрать» — удалить только что добавленные пересекающиеся диапазоны (всю партию).</summary>
     [RelayCommand]
     private void RemoveOverlapRange()
     {
-        if (_overlapRange != null)
-        {
-            Ranges.Remove(_overlapRange);
-            UpdateRangesDisplay();
-        }
-        _overlapRange = null;
+        foreach (var r in _overlapBatch)
+            Ranges.Remove(r);
+        _overlapBatch.Clear();
         HasOverlapWarning = false;
         Overlaps.Clear();
-        SetInfo("Пересекающийся диапазон убран.");
+        UpdateRangesDisplay();
+        SetInfo("Пересекающиеся диапазоны убраны.");
     }
 
     [RelayCommand]
     private void RemoveRange(PageRange? range)
     {
         if (range == null) return;
-        if (ReferenceEquals(range, _overlapRange)) { _overlapRange = null; HasOverlapWarning = false; Overlaps.Clear(); }
+        if (_overlapBatch.Remove(range) && _overlapBatch.Count == 0)
+        {
+            HasOverlapWarning = false;
+            Overlaps.Clear();
+        }
         Ranges.Remove(range);
         UpdateRangesDisplay();
         SetInfo($"Диапазон {range} убран");
@@ -472,11 +552,7 @@ public partial class MainViewModel : ObservableObject
     private void ClearRanges()
     {
         Ranges.Clear();
-        _overlapRange = null;
-        HasOverlapWarning = false;
-        Overlaps.Clear();
-        HasConflictPrompt = false;
-        ResolvedRanges.Clear();
+        ClearOverlapState();
         UpdateRangesDisplay();
         SetInfo("Диапазоны очищены");
     }
@@ -564,8 +640,8 @@ public partial class MainViewModel : ObservableObject
 
             if (conflicts.Count > 0)
             {
-                SetError($"Страницы {WithUnit(PageRangeUtils.MergeToString(conflicts))} пересекаются с уже выбранными — " +
-                         "в режиме «Без пересечений» действие недопустимо.");
+                ShowBlockMessage($"Пересечения запрещены: {WithUnit(PageRangeUtils.MergeToString(conflicts))} " +
+                                 "пересекаются с уже выбранными. В режиме «Без пересечений» действие недопустимо.");
                 return;
             }
         }
@@ -593,13 +669,79 @@ public partial class MainViewModel : ObservableObject
 
         // Готовимся к следующей группе
         Ranges.Clear();
-        _overlapRange = null;
-        HasOverlapWarning = false;
-        Overlaps.Clear();
-        HasConflictPrompt = false;
-        ResolvedRanges.Clear();
+        ClearOverlapState();
         UpdateRangesDisplay();
         GroupLabelText = string.Empty;
+    }
+
+    /// <summary>«Создать группу на каждый диапазон» — каждый текущий диапазон → отдельная группа.</summary>
+    [RelayCommand]
+    private void AddGroupPerRange()
+    {
+        if (Ranges.Count == 0)
+        {
+            SetError("Сначала добавьте диапазоны страниц.");
+            return;
+        }
+
+        string prefix = (GroupLabelText ?? string.Empty).Trim();
+        if (prefix.Length > 0)
+        {
+            var err = FileNameValidator.Validate(prefix);
+            if (err != null) { SetError(err); return; }
+        }
+
+        HasBlockMessage = false;
+        // Режим «Без пересечений»: запрещаем, если диапазоны пересекаются между собой или с группами.
+        if (BlockOverlaps)
+        {
+            var rangeList = Ranges.Select(r => (r.StartPage, r.EndPage)).ToList();
+            var conflicts = new List<(int, int)>();
+            for (int i = 0; i < rangeList.Count; i++)
+                for (int j = i + 1; j < rangeList.Count; j++)
+                    if (rangeList[i].StartPage <= rangeList[j].EndPage && rangeList[i].EndPage >= rangeList[j].StartPage)
+                        conflicts.Add((Math.Max(rangeList[i].StartPage, rangeList[j].StartPage),
+                                       Math.Min(rangeList[i].EndPage, rangeList[j].EndPage)));
+            foreach (var gr in Groups.SelectMany(g => g.Ranges))
+                foreach (var cur in Ranges)
+                    if (cur.StartPage <= gr.EndPage && cur.EndPage >= gr.StartPage)
+                        conflicts.Add((Math.Max(cur.StartPage, gr.StartPage), Math.Min(cur.EndPage, gr.EndPage)));
+
+            if (conflicts.Count > 0)
+            {
+                ShowBlockMessage($"Пересечения запрещены: {WithUnit(PageRangeUtils.MergeToString(conflicts))} " +
+                                 "пересекаются. В режиме «Без пересечений» действие недопустимо.");
+                return;
+            }
+        }
+
+        int created = 0;
+        foreach (var r in Ranges.ToList())
+        {
+            string rangeStr = r.StartPage == r.EndPage ? $"{r.StartPage}" : $"{r.StartPage}-{r.EndPage}";
+            string label = prefix.Length == 0 ? rangeStr : $"{prefix} {rangeStr}";
+            label = UniqueGroupLabel(label);
+
+            var g = new PdfGroup { Label = label };
+            g.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage });
+            Groups.Add(g);
+            created++;
+        }
+
+        Ranges.Clear();
+        ClearOverlapState();
+        UpdateRangesDisplay();
+        GroupLabelText = string.Empty;
+        SetInfo($"Создано групп: {created} (по одной на диапазон).");
+    }
+
+    private string UniqueGroupLabel(string baseLabel)
+    {
+        string label = baseLabel;
+        int n = 1;
+        while (Groups.Any(g => string.Equals(g.Label, label, StringComparison.OrdinalIgnoreCase)))
+            label = $"{baseLabel}_{++n}";
+        return label;
     }
 
     [RelayCommand]
@@ -748,13 +890,9 @@ public partial class MainViewModel : ObservableObject
         Groups.Clear();
         OutputFiles.Clear();
         HasResults = false;
-        _overlapRange = null;
-        HasOverlapWarning = false;
-        Overlaps.Clear();
+        ClearOverlapState();
         _mergeTarget = null;
         HasMergePrompt = false;
-        HasConflictPrompt = false;
-        ResolvedRanges.Clear();
         SelectedRange = null;
         StartThumb = null;
         EndThumb = null;

@@ -149,14 +149,19 @@
                         </TextBlock>
                     </WrapPanel>
 
-                    <WrapPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,6">
-                        <Button Content="+ Добавить диапазон" Margin="0,0,6,4" Command="{Binding AddRangeCommand}"
-                                IsEnabled="{Binding !IsProcessing}" />
-                        <Button Content="Очистить" Margin="0,0,6,4" Command="{Binding ClearRangesCommand}" />
-                        <ToggleButton Content="👁 Предпросмотр" Margin="0,0,0,4"
-                                      IsChecked="{Binding IsPreviewEnabled}"
-                                      ToolTip.Tip="Показать миниатюры начальной и конечной страниц выбранного диапазона" />
-                    </WrapPanel>
+                    <StackPanel Grid.Row="2" Margin="0,0,0,6">
+                        <Button Content="+ Добавить диапазон" Margin="0,0,0,4" HorizontalAlignment="Left"
+                                Command="{Binding AddRangeCommand}" IsEnabled="{Binding !IsProcessing}" />
+                        <Button Content="+ Добавить диапазон постранично" Margin="0,0,0,6" HorizontalAlignment="Left"
+                                Command="{Binding AddRangePaginatedCommand}" IsEnabled="{Binding !IsProcessing}"
+                                ToolTip.Tip="Раскидать выбранные страницы на отдельные диапазоны по 1 странице" />
+                        <WrapPanel>
+                            <Button Content="Очистить" Margin="0,0,6,4" Command="{Binding ClearRangesCommand}" />
+                            <ToggleButton Content="👁 Предпросмотр" Margin="0,0,0,4"
+                                          IsChecked="{Binding IsPreviewEnabled}"
+                                          ToolTip.Tip="Показать миниатюры начальной и конечной страниц выбранного диапазона" />
+                        </WrapPanel>
+                    </StackPanel>
 
                     <ListBox Grid.Row="3" ItemsSource="{Binding Ranges}"
                              Height="{Binding RangesListHeight}"
@@ -211,6 +216,12 @@
                     <Button Content="Создать группу ►" Margin="0,8,0,0"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                             Command="{Binding AddGroupCommand}" IsEnabled="{Binding !IsProcessing}" />
+                    <Button Margin="0,6,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                            Command="{Binding AddGroupPerRangeCommand}" IsEnabled="{Binding !IsProcessing}"
+                            ToolTip.Tip="Каждый текущий диапазон станет отдельной группой (отдельным файлом)">
+                        <TextBlock Text="Создать группу на каждый диапазон"
+                                   TextWrapping="Wrap" TextAlignment="Center" />
+                    </Button>
                 </StackPanel>
             </Border>
 
@@ -253,6 +264,10 @@
                 <TextBlock DockPanel.Dock="Left" Text="⚠" FontSize="32" Foreground="#C42B1C"
                            VerticalAlignment="Top" Margin="0,0,12,0" />
                 <StackPanel>
+                    <!-- Запрет пересечений -->
+                    <TextBlock Text="{Binding BlockMessage}" IsVisible="{Binding HasBlockMessage}"
+                               FontWeight="Bold" FontSize="13" Foreground="#C42B1C" TextWrapping="Wrap" />
+
                     <!-- Предупреждение о пересечении -->
                     <StackPanel IsVisible="{Binding HasOverlapWarning}">
                         <TextBlock Text="Внимание: пересечение с уже выбранными страницами"

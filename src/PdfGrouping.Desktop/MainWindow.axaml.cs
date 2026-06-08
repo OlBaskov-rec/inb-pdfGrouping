@@ -31,7 +31,8 @@ public partial class MainWindow : Window
         _viewModel.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName is nameof(MainViewModel.HasOverlapWarning)
-                or nameof(MainViewModel.HasConflictPrompt))
+                or nameof(MainViewModel.HasConflictPrompt)
+                or nameof(MainViewModel.HasBlockMessage))
                 AdjustHeightForWarnings();
             else if (e.PropertyName == nameof(MainViewModel.IsPreviewEnabled))
                 AdjustWidthForPreview();
@@ -82,6 +83,7 @@ public partial class MainWindow : Window
                 int lines = 0;
                 if (_viewModel.HasOverlapWarning) lines += _viewModel.Overlaps.Count + 2;
                 if (_viewModel.HasConflictPrompt) lines += _viewModel.ResolvedRanges.Count + 3;
+                if (_viewModel.HasBlockMessage) lines += 2;
                 lines = System.Math.Max(1, lines);
                 double target = System.Math.Min(
                     (_baselineHeight ?? Height) + 120 + lines * 30,
