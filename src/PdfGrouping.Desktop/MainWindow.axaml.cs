@@ -30,12 +30,14 @@ public partial class MainWindow : Window
         // Окно подстраивается: вниз — при предупреждениях, в ширину — при предпросмотре.
         _viewModel.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(MainViewModel.HasOverlapWarning))
+            if (e.PropertyName is nameof(MainViewModel.HasOverlapWarning)
+                or nameof(MainViewModel.HasConflictPrompt))
                 AdjustHeightForWarnings();
             else if (e.PropertyName == nameof(MainViewModel.IsPreviewEnabled))
                 AdjustWidthForPreview();
         };
         _viewModel.Overlaps.CollectionChanged += (_, _) => AdjustHeightForWarnings();
+        _viewModel.ResolvedRanges.CollectionChanged += (_, _) => AdjustHeightForWarnings();
 
         AdjustWidthForPreview();
     }
@@ -74,12 +76,15 @@ public partial class MainWindow : Window
         _adjustingHeight = true;
         try
         {
-            if (_viewModel.HasOverlapWarning)
+            if (_viewModel.IsMessageVisible)
             {
                 _baselineHeight ??= Height;
-                int lines = System.Math.Max(1, _viewModel.Overlaps.Count);
+                int lines = 0;
+                if (_viewModel.HasOverlapWarning) lines += _viewModel.Overlaps.Count + 2;
+                if (_viewModel.HasConflictPrompt) lines += _viewModel.ResolvedRanges.Count + 3;
+                lines = System.Math.Max(1, lines);
                 double target = System.Math.Min(
-                    (_baselineHeight ?? Height) + 160 + lines * 32,
+                    (_baselineHeight ?? Height) + 120 + lines * 30,
                     MaxAllowedHeight());
                 if (System.Math.Abs(Height - target) > 1)
                     Height = target;

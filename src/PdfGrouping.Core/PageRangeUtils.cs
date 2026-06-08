@@ -55,4 +55,55 @@ public static class PageRangeUtils
 
         return string.Join(", ", pages.Take(maxCount)) + $", … (всего {pages.Count})";
     }
+
+    /// <summary>
+    /// Делает набор диапазонов непересекающимся: каждый следующий диапазон обрезается по уже
+    /// занятым страницам (приоритет — у того, кто занял страницы раньше). Из одного диапазона
+    /// при этом может получиться несколько «заполняющих» кусков. Порядок сохраняется.
+    /// </summary>
+    public static List<(int Start, int End)> ResolveOverlaps(IEnumerable<(int Start, int End)> ranges)
+    {
+        var result = new List<(int, int)>();
+        var covered = new List<(int s, int e)>(); // отсортированный, слитый список занятых страниц
+
+        foreach (var (s, e) in ranges)
+        {
+            if (e < s) continue;
+            foreach (var piece in SubtractCovered(s, e, covered))
+                result.Add(piece);
+            covered = AddAndMerge(covered, s, e);
+        }
+
+        return result;
+    }
+
+    private static IEnumerable<(int, int)> SubtractCovered(int s, int e, List<(int s, int e)> covered)
+    {
+        int cur = s;
+        foreach (var (cs, ce) in covered)
+        {
+            if (ce < cur) continue;
+            if (cs > e) break;
+            if (cs > cur) yield return (cur, Math.Min(cs - 1, e));
+            cur = Math.Max(cur, ce + 1);
+            if (cur > e) yield break;
+        }
+        if (cur <= e) yield return (cur, e);
+    }
+
+    private static List<(int, int)> AddAndMerge(List<(int s, int e)> covered, int s, int e)
+    {
+        var all = new List<(int s, int e)>(covered) { (s, e) };
+        all.Sort((a, b) => a.s.CompareTo(b.s));
+
+        var merged = new List<(int, int)>();
+        var (cs, ce) = all[0];
+        foreach (var (ns, ne) in all.Skip(1))
+        {
+            if (ns <= ce + 1) ce = Math.Max(ce, ne);
+            else { merged.Add((cs, ce)); cs = ns; ce = ne; }
+        }
+        merged.Add((cs, ce));
+        return merged;
+    }
 }

@@ -7,7 +7,7 @@
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <Version>0.1.9</Version>
+    <Version>0.1.10</Version>
     <AssemblyName>PdfGrouping</AssemblyName>
     <ApplicationTitle>PDF Grouping</ApplicationTitle>
   </PropertyGroup>

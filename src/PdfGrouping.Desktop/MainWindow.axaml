@@ -248,42 +248,69 @@
         <Border x:Name="WarningBlock"
                 Background="#FDECEA" BorderBrush="#C42B1C" BorderThickness="2"
                 CornerRadius="6" Padding="12" Margin="0,0,0,8"
-                IsVisible="{Binding HasOverlapWarning}">
+                IsVisible="{Binding IsMessageVisible}">
             <DockPanel>
                 <TextBlock DockPanel.Dock="Left" Text="⚠" FontSize="32" Foreground="#C42B1C"
                            VerticalAlignment="Top" Margin="0,0,12,0" />
                 <StackPanel>
-                    <TextBlock Text="Внимание: пересечение с уже выбранными страницами"
-                               FontWeight="Bold" FontSize="13" Foreground="#C42B1C"
-                               TextWrapping="Wrap" Margin="0,0,0,6" />
-                    <ItemsControl ItemsSource="{Binding Overlaps}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:OverlapInfo">
-                                <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,2">
-                                    <Run Text="Диапазон " FontWeight="Bold" />
-                                    <Run Text="{Binding NewPages}" FontWeight="Bold" />
-                                    <Run Text="  пересекает  " Foreground="#C42B1C" FontWeight="Bold" />
-                                    <Run Text="Диапазон " FontWeight="Bold" />
-                                    <Run Text="{Binding ExistingPages}" FontWeight="Bold" />
-                                    <Run Text="  ·  " Foreground="#888" />
-                                    <Run Text="{Binding Source}" Foreground="#888" />
-                                    <Run Text="   (дубли: " Foreground="#C42B1C" FontWeight="Bold" />
-                                    <Run Text="{Binding Dup}" Foreground="#C42B1C" FontWeight="Bold" />
-                                    <Run Text=")" Foreground="#C42B1C" FontWeight="Bold" />
-                                </TextBlock>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                    <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" FontSize="12">
-                        <Run Text="Дублируются: " FontWeight="Bold" />
-                        <Run Text="{Binding DuplicatedPagesText}" FontWeight="Bold" Foreground="#C42B1C" />
-                    </TextBlock>
-                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                        <Button Content="Добавить ещё раз" Command="{Binding KeepOverlapRangeCommand}"
-                                ToolTip.Tip="Оставить диапазон, страницы продублируются" />
-                        <Button Content="Убрать" Margin="8,0,0,0" Foreground="#C42B1C"
-                                Command="{Binding RemoveOverlapRangeCommand}"
-                                ToolTip.Tip="Удалить этот пересекающийся диапазон" />
+                    <!-- Предупреждение о пересечении -->
+                    <StackPanel IsVisible="{Binding HasOverlapWarning}">
+                        <TextBlock Text="Внимание: пересечение с уже выбранными страницами"
+                                   FontWeight="Bold" FontSize="13" Foreground="#C42B1C"
+                                   TextWrapping="Wrap" Margin="0,0,0,6" />
+                        <ItemsControl ItemsSource="{Binding Overlaps}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:OverlapInfo">
+                                    <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,2">
+                                        <Run Text="Диапазон " FontWeight="Bold" />
+                                        <Run Text="{Binding NewPages}" FontWeight="Bold" />
+                                        <Run Text="  пересекает  " Foreground="#C42B1C" FontWeight="Bold" />
+                                        <Run Text="Диапазон " FontWeight="Bold" />
+                                        <Run Text="{Binding ExistingPages}" FontWeight="Bold" />
+                                        <Run Text="  ·  " Foreground="#888" />
+                                        <Run Text="{Binding Source}" Foreground="#888" />
+                                        <Run Text="   (дубли: " Foreground="#C42B1C" FontWeight="Bold" />
+                                        <Run Text="{Binding Dup}" Foreground="#C42B1C" FontWeight="Bold" />
+                                        <Run Text=")" Foreground="#C42B1C" FontWeight="Bold" />
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" FontSize="12">
+                            <Run Text="Дублируются: " FontWeight="Bold" />
+                            <Run Text="{Binding DuplicatedPagesText}" FontWeight="Bold" Foreground="#C42B1C" />
+                        </TextBlock>
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <Button Content="Добавить ещё раз" Command="{Binding KeepOverlapRangeCommand}"
+                                    ToolTip.Tip="Оставить диапазон, страницы продублируются" />
+                            <Button Content="Убрать" Margin="8,0,0,0" Foreground="#C42B1C"
+                                    Command="{Binding RemoveOverlapRangeCommand}"
+                                    ToolTip.Tip="Удалить этот пересекающийся диапазон" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Разрешение конфликта (режим «Без пересечений» при уже имеющихся пересечениях) -->
+                    <StackPanel IsVisible="{Binding HasConflictPrompt}" Margin="0,12,0,0">
+                        <TextBlock Text="Решение конфликта по пересечению страниц диапазонов"
+                                   FontWeight="Bold" FontSize="13" Foreground="#1B7F34"
+                                   TextWrapping="Wrap" Margin="0,0,0,6" />
+                        <TextBlock Text="Предлагаемые непересекающиеся диапазоны:"
+                                   FontSize="12" Foreground="#555" Margin="0,0,0,4" />
+                        <ItemsControl ItemsSource="{Binding ResolvedRanges}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <TextBlock Text="{Binding}" FontWeight="SemiBold" Margin="0,1" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <Button Content="Подтвердить" Command="{Binding ConfirmResolveCommand}"
+                                    Background="#1B7F34" Foreground="White" FontWeight="Bold"
+                                    ToolTip.Tip="Применить непересекающиеся диапазоны (обрезка/разбиение)" />
+                            <Button Content="Убрать пересекающиеся" Margin="8,0,0,0" Foreground="#C42B1C"
+                                    Command="{Binding RemoveOverlappingRangesCommand}"
+                                    ToolTip.Tip="Оставить только первые занявшие страницы диапазоны" />
+                        </StackPanel>
                     </StackPanel>
                 </StackPanel>
             </DockPanel>

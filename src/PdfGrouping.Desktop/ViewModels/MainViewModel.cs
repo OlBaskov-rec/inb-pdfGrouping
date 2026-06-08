@@ -224,6 +224,96 @@ public partial class MainViewModel : ObservableObject
 
     private PageRange? _overlapRange;
 
+    // --- Разрешение конфликта при включении «Без пересечений» ---
+
+    [ObservableProperty]
+    private bool _hasConflictPrompt;
+
+    /// <summary>Предлагаемые непересекающиеся диапазоны (для отображения), напр. «Стр. 10–110».</summary>
+    public ObservableCollection<string> ResolvedRanges { get; } = new();
+
+    /// <summary>Видна ли область сообщений (предупреждение ИЛИ запрос разрешения конфликта).</summary>
+    public bool IsMessageVisible => HasOverlapWarning || HasConflictPrompt;
+
+    partial void OnHasOverlapWarningChanged(bool value) => OnPropertyChanged(nameof(IsMessageVisible));
+    partial void OnHasConflictPromptChanged(bool value) => OnPropertyChanged(nameof(IsMessageVisible));
+
+    partial void OnBlockOverlapsChanged(bool value)
+    {
+        if (value)
+        {
+            var intervals = Ranges.Select(r => (r.StartPage, r.EndPage)).ToList();
+            if (HasInternalOverlaps(intervals))
+            {
+                var resolved = PageRangeUtils.ResolveOverlaps(intervals);
+                ResolvedRanges.Clear();
+                foreach (var (s, e) in resolved)
+                    ResolvedRanges.Add(s == e ? $"Стр. {s}" : $"Стр. {s}–{e}");
+                HasConflictPrompt = true;
+            }
+        }
+        else
+        {
+            HasConflictPrompt = false;
+            ResolvedRanges.Clear();
+        }
+    }
+
+    private static bool HasInternalOverlaps(List<(int Start, int End)> ranges)
+    {
+        for (int i = 0; i < ranges.Count; i++)
+            for (int j = i + 1; j < ranges.Count; j++)
+                if (ranges[i].Start <= ranges[j].End && ranges[i].End >= ranges[j].Start)
+                    return true;
+        return false;
+    }
+
+    /// <summary>«Подтвердить» — применить непересекающиеся диапазоны (обрезка/разбиение).</summary>
+    [RelayCommand]
+    private void ConfirmResolve()
+    {
+        var intervals = Ranges.Select(r => (r.StartPage, r.EndPage)).ToList();
+        var resolved = PageRangeUtils.ResolveOverlaps(intervals);
+
+        Ranges.Clear();
+        foreach (var (s, e) in resolved)
+            Ranges.Add(new PageRange { StartPage = s, EndPage = e });
+
+        ClearOverlapState();
+        UpdateRangesDisplay();
+        SetInfo("Пересечения устранены: диапазоны обрезаны.");
+    }
+
+    /// <summary>«Убрать пересекающиеся» — оставить только первые занявшие страницы диапазоны.</summary>
+    [RelayCommand]
+    private void RemoveOverlappingRanges()
+    {
+        var kept = new List<PageRange>();
+        foreach (var r in Ranges)
+        {
+            bool overlapsKept = kept.Any(k => r.StartPage <= k.EndPage && r.EndPage >= k.StartPage);
+            if (!overlapsKept)
+                kept.Add(r);
+        }
+
+        Ranges.Clear();
+        foreach (var r in kept)
+            Ranges.Add(r);
+
+        ClearOverlapState();
+        UpdateRangesDisplay();
+        SetInfo("Пересекающиеся диапазоны убраны.");
+    }
+
+    private void ClearOverlapState()
+    {
+        HasConflictPrompt = false;
+        ResolvedRanges.Clear();
+        HasOverlapWarning = false;
+        Overlaps.Clear();
+        _overlapRange = null;
+    }
+
     /// <summary>«Добавить ещё раз» — оставить диапазон несмотря на пересечение.</summary>
     [RelayCommand]
     private void KeepOverlapRange()
@@ -385,6 +475,8 @@ public partial class MainViewModel : ObservableObject
         _overlapRange = null;
         HasOverlapWarning = false;
         Overlaps.Clear();
+        HasConflictPrompt = false;
+        ResolvedRanges.Clear();
         UpdateRangesDisplay();
         SetInfo("Диапазоны очищены");
     }
@@ -504,6 +596,8 @@ public partial class MainViewModel : ObservableObject
         _overlapRange = null;
         HasOverlapWarning = false;
         Overlaps.Clear();
+        HasConflictPrompt = false;
+        ResolvedRanges.Clear();
         UpdateRangesDisplay();
         GroupLabelText = string.Empty;
     }
@@ -659,6 +753,8 @@ public partial class MainViewModel : ObservableObject
         Overlaps.Clear();
         _mergeTarget = null;
         HasMergePrompt = false;
+        HasConflictPrompt = false;
+        ResolvedRanges.Clear();
         SelectedRange = null;
         StartThumb = null;
         EndThumb = null;

@@ -49,4 +49,32 @@ public class PageRangeUtilsTests
         Assert.StartsWith("1, 2, 3, 4, 5, …", s);
         Assert.Contains("всего 100", s);
     }
+
+    [Fact]
+    public void Resolve_ContainedRanges_AreDropped_TailKept()
+    {
+        var r = PageRangeUtils.ResolveOverlaps(new[] { (111, 516), (215, 345), (377, 500), (10, 516) });
+        Assert.Equal(new[] { (111, 516), (10, 110) }, r);
+    }
+
+    [Fact]
+    public void Resolve_SimpleOverlap_TrimsSecond()
+    {
+        var r = PageRangeUtils.ResolveOverlaps(new[] { (1, 10), (5, 20) });
+        Assert.Equal(new[] { (1, 10), (11, 20) }, r);
+    }
+
+    [Fact]
+    public void Resolve_ProducesFillerSplit()
+    {
+        var r = PageRangeUtils.ResolveOverlaps(new[] { (20, 30), (10, 50) });
+        Assert.Equal(new[] { (20, 30), (10, 19), (31, 50) }, r);
+    }
+
+    [Fact]
+    public void Resolve_NoOverlap_Unchanged()
+    {
+        var r = PageRangeUtils.ResolveOverlaps(new[] { (1, 5), (6, 10) });
+        Assert.Equal(new[] { (1, 5), (6, 10) }, r);
+    }
 }
