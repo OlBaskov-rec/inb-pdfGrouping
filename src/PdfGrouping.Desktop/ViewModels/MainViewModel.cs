@@ -98,11 +98,7 @@ public partial class MainViewModel : ObservableObject
     {
         var path = await _filePicker.PickPdfAsync();
         if (!string.IsNullOrEmpty(path))
-        {
-            SourceFilePath = path;
-            OutputDirectory = Path.GetDirectoryName(path) ?? string.Empty;
-            LoadPdfInfo();
-        }
+            LoadFromPath(path);
     }
 
     [RelayCommand]
@@ -116,6 +112,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void AddRange()
     {
+        if (GuardPendingDecision()) return;
         if (TotalPages <= 0)
         {
             SetError("Сначала откройте PDF-файл.");
@@ -165,38 +162,37 @@ public partial class MainViewModel : ObservableObject
         }
 
         var range = new PageRange { StartPage = start, EndPage = end };
-        Ranges.Add(range);
-        UpdateRangesDisplay();
 
-        // Подготовить следующий ввод
-        RangeStartText = (end + 1 <= TotalPages ? end + 1 : TotalPages).ToString();
-        RangeEndText = TotalPages.ToString();
-
-        Overlaps.Clear();
-        _overlapBatch.Clear();
         if (dupIntervals.Count > 0)
         {
-            // Единое место вывода: все пересечения (и текущие, и с прежними группами) — в баннере.
+            // Пересечение: НЕ добавляем сразу — ждём решения пользователя (кнопки в баннере).
+            Overlaps.Clear();
             foreach (var r in curOverlaps)
                 Overlaps.Add(MakeOverlap(start, end, r, "текущие диапазоны"));
             foreach (var (label, r) in prevOverlaps)
                 Overlaps.Add(MakeOverlap(start, end, r, $"группа {label}"));
 
             DuplicatedPagesText = WithUnit(PageRangeUtils.MergeToString(dupIntervals));
-            _overlapBatch.Add(range);
+            _pendingRanges.Clear();
+            _pendingRanges.Add(range);
+            HasPendingDecision = true;
             HasOverlapWarning = true;
             SetInfo(string.Empty);
+            return;
         }
-        else
-        {
-            SetInfo($"Добавлен диапазон: {range}");
-        }
+
+        // Без пересечений — добавляем сразу.
+        Ranges.Add(range);
+        UpdateRangesDisplay();
+        AdvanceRangeInput(end);
+        SetInfo($"Добавлен диапазон: {range}");
     }
 
     /// <summary>«+ Добавить диапазон постранично» — раскидать выбранные страницы по 1-страничным диапазонам.</summary>
     [RelayCommand]
     private void AddRangePaginated()
     {
+        if (GuardPendingDecision()) return;
         if (TotalPages <= 0) { SetError("Сначала откройте PDF-файл."); return; }
         if (!int.TryParse(RangeStartText, out int start) || !int.TryParse(RangeEndText, out int end))
         { SetError("Введите корректные номера страниц (целые числа)."); return; }
@@ -221,33 +217,33 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
-        Overlaps.Clear();
-        _overlapBatch.Clear();
+        // Готовим 1-страничные диапазоны.
+        var pages = new List<PageRange>();
         for (int p = start; p <= end; p++)
-        {
-            var pr = new PageRange { StartPage = p, EndPage = p };
-            Ranges.Add(pr);
-            _overlapBatch.Add(pr);
-        }
-        UpdateRangesDisplay();
-
-        RangeStartText = (end + 1 <= TotalPages ? end + 1 : TotalPages).ToString();
-        RangeEndText = TotalPages.ToString();
+            pages.Add(new PageRange { StartPage = p, EndPage = p });
 
         if (dupIntervals.Count > 0)
         {
+            // Пересечение: НЕ добавляем сразу — ждём решения.
+            Overlaps.Clear();
             foreach (var r in curOverlaps)
                 Overlaps.Add(MakeOverlap(start, end, r, "текущие диапазоны"));
             foreach (var (label, r) in prevOverlaps)
                 Overlaps.Add(MakeOverlap(start, end, r, $"группа {label}"));
             DuplicatedPagesText = WithUnit(PageRangeUtils.MergeToString(dupIntervals));
+            _pendingRanges.Clear();
+            _pendingRanges.AddRange(pages);
+            HasPendingDecision = true;
             HasOverlapWarning = true;
             SetInfo(string.Empty);
+            return;
         }
-        else
-        {
-            SetInfo($"Добавлено постранично: {end - start + 1} диапазонов по 1 странице.");
-        }
+
+        foreach (var pr in pages)
+            Ranges.Add(pr);
+        UpdateRangesDisplay();
+        AdvanceRangeInput(end);
+        SetInfo($"Добавлено постранично: {end - start + 1} диапазонов по 1 странице.");
     }
 
     private static OverlapInfo MakeOverlap(int start, int end, PageRange existing, string source)
@@ -283,6 +279,35 @@ public partial class MainViewModel : ObservableObject
 
     // Последняя добавленная «партия» диапазонов (для кнопки «Убрать»).
     private readonly List<PageRange> _overlapBatch = new();
+
+    // Диапазоны, ожидающие решения пользователя (ещё НЕ добавлены в список).
+    private readonly List<PageRange> _pendingRanges = new();
+
+    /// <summary>Есть ли нерешённое пересечение (нужно нажать «Добавить ещё раз» или «Убрать»).</summary>
+    [ObservableProperty]
+    private bool _hasPendingDecision;
+
+    private void AdvanceRangeInput(int end)
+    {
+        RangeStartText = (end + 1 <= TotalPages ? end + 1 : TotalPages).ToString();
+        RangeEndText = TotalPages.ToString();
+    }
+
+    /// <summary>Если есть нерешённое пересечение/конфликт — нельзя продолжать, пока не решат.</summary>
+    private bool GuardPendingDecision()
+    {
+        if (HasPendingDecision)
+        {
+            ShowBlockMessage("Сначала примите решение по пересечению: «Добавить ещё раз» или «Убрать».");
+            return true;
+        }
+        if (HasConflictPrompt)
+        {
+            ShowBlockMessage("Сначала решите конфликт пересечений: «Подтвердить» или «Убрать пересекающиеся».");
+            return true;
+        }
+        return false;
+    }
 
     // --- Сообщение о запрете пересечений (в области уведомлений) ---
 
@@ -389,28 +414,54 @@ public partial class MainViewModel : ObservableObject
         HasOverlapWarning = false;
         Overlaps.Clear();
         _overlapBatch.Clear();
+        _pendingRanges.Clear();
+        HasPendingDecision = false;
         HasBlockMessage = false;
     }
 
-    /// <summary>«Добавить ещё раз» — оставить диапазон несмотря на пересечение.</summary>
+    /// <summary>«Добавить ещё раз» — добавить ожидающий решения диапазон несмотря на пересечение.</summary>
     [RelayCommand]
     private void KeepOverlapRange()
     {
-        // Область предупреждения НЕ убираем — она остаётся как информация о пересечении.
-        SetInfo("Диапазон оставлен (страницы продублируются).");
+        HasBlockMessage = false;
+        if (_pendingRanges.Count == 0) return;
+
+        int lastEnd = _pendingRanges.Max(r => r.EndPage);
+        foreach (var r in _pendingRanges)
+            Ranges.Add(r);
+
+        _overlapBatch.Clear();
+        _overlapBatch.AddRange(_pendingRanges);
+        _pendingRanges.Clear();
+        HasPendingDecision = false;
+
+        UpdateRangesDisplay();
+        AdvanceRangeInput(lastEnd);
+        // Область предупреждения НЕ убираем — остаётся как информация.
+        SetInfo("Диапазон добавлен (страницы продублируются).");
     }
 
-    /// <summary>«Убрать» — удалить только что добавленные пересекающиеся диапазоны (всю партию).</summary>
+    /// <summary>«Убрать» — отклонить ожидающий диапазон или удалить только что добавленную партию.</summary>
     [RelayCommand]
     private void RemoveOverlapRange()
     {
-        foreach (var r in _overlapBatch)
-            Ranges.Remove(r);
+        HasBlockMessage = false;
+        if (_pendingRanges.Count > 0)
+        {
+            _pendingRanges.Clear();
+            HasPendingDecision = false;
+            SetInfo("Пересекающийся диапазон не добавлен.");
+        }
+        else
+        {
+            foreach (var r in _overlapBatch)
+                Ranges.Remove(r);
+            UpdateRangesDisplay();
+            SetInfo("Пересекающиеся диапазоны убраны.");
+        }
         _overlapBatch.Clear();
         HasOverlapWarning = false;
         Overlaps.Clear();
-        UpdateRangesDisplay();
-        SetInfo("Пересекающиеся диапазоны убраны.");
     }
 
     [RelayCommand]
@@ -577,6 +628,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void AddGroup()
     {
+        if (GuardPendingDecision()) return;
         string label = (GroupLabelText ?? string.Empty).Trim();
 
         var labelError = FileNameValidator.Validate(label);
@@ -678,6 +730,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void AddGroupPerRange()
     {
+        if (GuardPendingDecision()) return;
         if (Ranges.Count == 0)
         {
             SetError("Сначала добавьте диапазоны страниц.");
@@ -881,11 +934,9 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
-    private void ClearAll()
+    /// <summary>Сбрасывает все рабочие данные (диапазоны, группы, предупреждения, предпросмотр).</summary>
+    private void ResetWorkspace()
     {
-        SourceFilePath = string.Empty;
-        TotalPages = 0;
         Ranges.Clear();
         Groups.Clear();
         OutputFiles.Clear();
@@ -898,8 +949,16 @@ public partial class MainViewModel : ObservableObject
         EndThumb = null;
         HasPreview = false;
         CloseZoom();
-        UpdateRangesDisplay();
         GroupLabelText = string.Empty;
+        UpdateRangesDisplay();
+    }
+
+    [RelayCommand]
+    private void ClearAll()
+    {
+        ResetWorkspace();
+        SourceFilePath = string.Empty;
+        TotalPages = 0;
         OutputDirectory = string.Empty;
         RangeStartText = "1";
         RangeEndText = "1";
@@ -910,7 +969,7 @@ public partial class MainViewModel : ObservableObject
     // ВСПОМОГАТЕЛЬНОЕ
     // -------------------------------------------------------------------
 
-    /// <summary>Загрузка PDF по пути (используется кнопкой и drag&drop).</summary>
+    /// <summary>Загрузка PDF по пути (кнопка/drag&amp;drop). Новый файл = новая сессия: всё обнуляется.</summary>
     public void LoadFromPath(string path)
     {
         if (!path.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
@@ -919,6 +978,7 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
+        ResetWorkspace();
         SourceFilePath = path;
         OutputDirectory = Path.GetDirectoryName(path) ?? string.Empty;
         LoadPdfInfo();

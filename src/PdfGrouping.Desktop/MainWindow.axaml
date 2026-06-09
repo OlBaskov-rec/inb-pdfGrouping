@@ -150,11 +150,15 @@
                     </WrapPanel>
 
                     <StackPanel Grid.Row="2" Margin="0,0,0,6">
-                        <Button Content="+ Добавить диапазон" Margin="0,0,0,4" HorizontalAlignment="Left"
-                                Command="{Binding AddRangeCommand}" IsEnabled="{Binding !IsProcessing}" />
-                        <Button Content="+ Добавить диапазон постранично" Margin="0,0,0,6" HorizontalAlignment="Left"
+                        <Button Margin="0,0,0,8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                Command="{Binding AddRangeCommand}" IsEnabled="{Binding !IsProcessing}">
+                            <TextBlock Text="+ Добавить диапазон" TextWrapping="Wrap" TextAlignment="Center" />
+                        </Button>
+                        <Button Margin="0,0,0,18" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                                 Command="{Binding AddRangePaginatedCommand}" IsEnabled="{Binding !IsProcessing}"
-                                ToolTip.Tip="Раскидать выбранные страницы на отдельные диапазоны по 1 странице" />
+                                ToolTip.Tip="Раскидать выбранные страницы на отдельные диапазоны по 1 странице">
+                            <TextBlock Text="+ Добавить диапазон постранично" TextWrapping="Wrap" TextAlignment="Center" />
+                        </Button>
                         <WrapPanel>
                             <Button Content="Очистить" Margin="0,0,6,4" Command="{Binding ClearRangesCommand}" />
                             <ToggleButton Content="👁 Предпросмотр" Margin="0,0,0,4"
@@ -216,10 +220,10 @@
                     <Button Content="Создать группу ►" Margin="0,8,0,0"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                             Command="{Binding AddGroupCommand}" IsEnabled="{Binding !IsProcessing}" />
-                    <Button Margin="0,6,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    <Button Margin="0,8,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                             Command="{Binding AddGroupPerRangeCommand}" IsEnabled="{Binding !IsProcessing}"
                             ToolTip.Tip="Каждый текущий диапазон станет отдельной группой (отдельным файлом)">
-                        <TextBlock Text="Создать группу на каждый диапазон"
+                        <TextBlock Text="Создать группу на каждый диапазон ►"
                                    TextWrapping="Wrap" TextAlignment="Center" />
                     </Button>
                 </StackPanel>
