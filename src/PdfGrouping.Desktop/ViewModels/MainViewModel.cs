@@ -42,6 +42,11 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private int _totalPages;
 
+    /// <summary>Максимум для полей ввода страниц (минимум 1, чтобы NumericUpDown был корректен).</summary>
+    public decimal MaxPage => Math.Max(1, TotalPages);
+
+    partial void OnTotalPagesChanged(int value) => OnPropertyChanged(nameof(MaxPage));
+
     [ObservableProperty]
     private string _statusText = "Готов к работе";
 
@@ -57,12 +62,12 @@ public partial class MainViewModel : ObservableObject
     // --- Группы ---
     public ObservableCollection<PdfGroup> Groups { get; } = new();
 
-    // --- Ввод диапазона ---
+    // --- Ввод диапазона (числовые поля со стрелками) ---
     [ObservableProperty]
-    private string _rangeStartText = "1";
+    private decimal _rangeStart = 1;
 
     [ObservableProperty]
-    private string _rangeEndText = "1";
+    private decimal _rangeEnd = 1;
 
     // --- Метка группы ---
     [ObservableProperty]
@@ -119,11 +124,8 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
-        if (!int.TryParse(RangeStartText, out int start) || !int.TryParse(RangeEndText, out int end))
-        {
-            SetError("Введите корректные номера страниц (целые числа).");
-            return;
-        }
+        int start = (int)RangeStart;
+        int end = (int)RangeEnd;
 
         if (start < 1 || end < 1 || start > TotalPages || end > TotalPages)
         {
@@ -175,6 +177,7 @@ public partial class MainViewModel : ObservableObject
             DuplicatedPagesText = WithUnit(PageRangeUtils.MergeToString(dupIntervals));
             _pendingRanges.Clear();
             _pendingRanges.Add(range);
+            ComputePendingTrim();
             HasPendingDecision = true;
             HasOverlapWarning = true;
             SetInfo(string.Empty);
@@ -194,8 +197,8 @@ public partial class MainViewModel : ObservableObject
     {
         if (GuardPendingDecision()) return;
         if (TotalPages <= 0) { SetError("Сначала откройте PDF-файл."); return; }
-        if (!int.TryParse(RangeStartText, out int start) || !int.TryParse(RangeEndText, out int end))
-        { SetError("Введите корректные номера страниц (целые числа)."); return; }
+        int start = (int)RangeStart;
+        int end = (int)RangeEnd;
         if (start < 1 || end < 1 || start > TotalPages || end > TotalPages)
         { SetError($"Номера страниц должны быть от 1 до {TotalPages}."); return; }
         if (start > end) { SetError("Начальная страница не может быть больше конечной."); return; }
@@ -233,6 +236,7 @@ public partial class MainViewModel : ObservableObject
             DuplicatedPagesText = WithUnit(PageRangeUtils.MergeToString(dupIntervals));
             _pendingRanges.Clear();
             _pendingRanges.AddRange(pages);
+            ComputePendingTrim();
             HasPendingDecision = true;
             HasOverlapWarning = true;
             SetInfo(string.Empty);
@@ -283,14 +287,68 @@ public partial class MainViewModel : ObservableObject
     // Диапазоны, ожидающие решения пользователя (ещё НЕ добавлены в список).
     private readonly List<PageRange> _pendingRanges = new();
 
-    /// <summary>Есть ли нерешённое пересечение (нужно нажать «Добавить ещё раз» или «Убрать»).</summary>
+    // Те же диапазоны, обрезанные до свободных страниц (для «Добавить без пересечения»).
+    private readonly List<PageRange> _pendingTrimmed = new();
+
+    /// <summary>Есть ли нерешённое пересечение (нужно нажать «Добавить ещё раз» / «без пересечения» / «Убрать»).</summary>
     [ObservableProperty]
     private bool _hasPendingDecision;
 
+    /// <summary>Что будет добавлено в режиме «без пересечения», напр. «страницы 46–52».</summary>
+    [ObservableProperty]
+    private string _pendingResolveText = string.Empty;
+
+    private void ComputePendingTrim()
+    {
+        var covered = Ranges.Select(r => (r.StartPage, r.EndPage))
+            .Concat(Groups.SelectMany(g => g.Ranges).Select(r => (r.StartPage, r.EndPage)));
+        var trimmed = PageRangeUtils.Subtract(_pendingRanges.Select(r => (r.StartPage, r.EndPage)), covered);
+
+        _pendingTrimmed.Clear();
+        foreach (var (s, e) in trimmed)
+            _pendingTrimmed.Add(new PageRange { StartPage = s, EndPage = e });
+
+        PendingResolveText = trimmed.Count == 0
+            ? "свободных страниц нет"
+            : WithUnit(PageRangeUtils.MergeToString(trimmed));
+    }
+
+    /// <summary>«Добавить без пересечения» — добавить ожидающий диапазон, обрезанный до свободных страниц.</summary>
+    [RelayCommand]
+    private void KeepWithoutOverlap()
+    {
+        HasBlockMessage = false;
+        if (_pendingTrimmed.Count == 0)
+        {
+            _pendingRanges.Clear();
+            HasPendingDecision = false;
+            HasOverlapWarning = false;
+            Overlaps.Clear();
+            SetInfo("Все страницы уже выбраны — добавлять нечего.");
+            return;
+        }
+
+        int lastEnd = _pendingTrimmed.Max(r => r.EndPage);
+        foreach (var r in _pendingTrimmed)
+            Ranges.Add(r);
+
+        _overlapBatch.Clear();
+        _overlapBatch.AddRange(_pendingTrimmed);
+        _pendingTrimmed.Clear();
+        _pendingRanges.Clear();
+        HasPendingDecision = false;
+        HasOverlapWarning = false; // конфликт разрешён — пересечений нет
+        Overlaps.Clear();
+
+        UpdateRangesDisplay();
+        AdvanceRangeInput(lastEnd);
+        SetInfo("Добавлено без пересечения.");
+    }
+
     private void AdvanceRangeInput(int end)
     {
-        RangeStartText = (end + 1 <= TotalPages ? end + 1 : TotalPages).ToString();
-        RangeEndText = TotalPages.ToString();
+        RangeStart = end + 1 <= TotalPages ? end + 1 : TotalPages;
+        RangeEnd = TotalPages;
     }
 
     /// <summary>Если есть нерешённое пересечение/конфликт — нельзя продолжать, пока не решат.</summary>
@@ -415,6 +473,7 @@ public partial class MainViewModel : ObservableObject
         Overlaps.Clear();
         _overlapBatch.Clear();
         _pendingRanges.Clear();
+        _pendingTrimmed.Clear();
         HasPendingDecision = false;
         HasBlockMessage = false;
     }
@@ -433,6 +492,7 @@ public partial class MainViewModel : ObservableObject
         _overlapBatch.Clear();
         _overlapBatch.AddRange(_pendingRanges);
         _pendingRanges.Clear();
+        _pendingTrimmed.Clear();
         HasPendingDecision = false;
 
         UpdateRangesDisplay();
@@ -449,6 +509,7 @@ public partial class MainViewModel : ObservableObject
         if (_pendingRanges.Count > 0)
         {
             _pendingRanges.Clear();
+            _pendingTrimmed.Clear();
             HasPendingDecision = false;
             SetInfo("Пересекающийся диапазон не добавлен.");
         }
@@ -960,8 +1021,8 @@ public partial class MainViewModel : ObservableObject
         SourceFilePath = string.Empty;
         TotalPages = 0;
         OutputDirectory = string.Empty;
-        RangeStartText = "1";
-        RangeEndText = "1";
+        RangeStart = 1;
+        RangeEnd = 1;
         SetInfo("Готов к работе");
     }
 
@@ -989,8 +1050,11 @@ public partial class MainViewModel : ObservableObject
         try
         {
             TotalPages = _pdfService.GetPageCount(SourceFilePath);
-            RangeStartText = "1";
-            RangeEndText = TotalPages.ToString();
+            RangeStart = 1;
+            RangeEnd = TotalPages;
+            // Если групп ещё нет — подставим первую метку «A» (можно изменить).
+            if (Groups.Count == 0 && string.IsNullOrEmpty(GroupLabelText))
+                GroupLabelText = "A";
             SetInfo($"Загружен: {Path.GetFileName(SourceFilePath)} ({TotalPages} стр.)");
         }
         catch (Exception ex)

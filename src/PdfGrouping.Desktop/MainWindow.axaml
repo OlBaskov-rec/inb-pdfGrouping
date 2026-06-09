@@ -136,18 +136,22 @@
                 <Grid RowDefinitions="Auto,Auto,Auto,Auto">
                     <TextBlock Grid.Row="0" Text="Диапазоны страниц" FontWeight="Bold" Margin="0,0,0,6" />
 
-                    <WrapPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,6">
-                        <TextBlock Text="Страницы:" VerticalAlignment="Center" Margin="0,0,4,4" />
-                        <TextBox Text="{Binding RangeStartText}" Width="56" TextAlignment="Center"
-                                 VerticalAlignment="Center" Margin="0,0,0,4" ToolTip.Tip="Начальная страница" />
-                        <TextBlock Text="–" VerticalAlignment="Center" Margin="4,0,4,4" />
-                        <TextBox Text="{Binding RangeEndText}" Width="56" TextAlignment="Center"
-                                 VerticalAlignment="Center" Margin="0,0,0,4" ToolTip.Tip="Конечная страница" />
-                        <TextBlock VerticalAlignment="Center" Margin="6,0,0,4" Foreground="#666">
-                            <Run Text="из" />
+                    <StackPanel Grid.Row="1" Margin="0,0,0,6">
+                        <TextBlock Margin="0,0,0,4" Foreground="#444">
+                            <Run Text="Страницы (из " />
                             <Run Text="{Binding TotalPages}" FontWeight="Bold" />
+                            <Run Text="):" />
                         </TextBlock>
-                    </WrapPanel>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <NumericUpDown Value="{Binding RangeStart}" Minimum="1" Maximum="{Binding MaxPage}"
+                                           Increment="1" FormatString="0" Width="120" FontSize="16"
+                                           ToolTip.Tip="Начальная страница" />
+                            <TextBlock Text="–" VerticalAlignment="Center" Margin="8,0" FontSize="16" />
+                            <NumericUpDown Value="{Binding RangeEnd}" Minimum="1" Maximum="{Binding MaxPage}"
+                                           Increment="1" FormatString="0" Width="120" FontSize="16"
+                                           ToolTip.Tip="Конечная страница" />
+                        </StackPanel>
+                    </StackPanel>
 
                     <StackPanel Grid.Row="2" Margin="0,0,0,6">
                         <Button Margin="0,0,0,8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
@@ -299,13 +303,23 @@
                             <Run Text="Дублируются: " FontWeight="Bold" />
                             <Run Text="{Binding DuplicatedPagesText}" FontWeight="Bold" Foreground="#C42B1C" />
                         </TextBlock>
-                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                            <Button Content="Добавить ещё раз" Command="{Binding KeepOverlapRangeCommand}"
-                                    ToolTip.Tip="Оставить диапазон, страницы продублируются" />
-                            <Button Content="Убрать" Margin="8,0,0,0" Foreground="#C42B1C"
+                        <TextBlock Margin="0,4,0,0" TextWrapping="Wrap" FontSize="12"
+                                   IsVisible="{Binding HasPendingDecision}">
+                            <Run Text="Без пересечения добавится: " FontWeight="Bold" Foreground="#1B7F34" />
+                            <Run Text="{Binding PendingResolveText}" FontWeight="Bold" Foreground="#1B7F34" />
+                        </TextBlock>
+                        <WrapPanel Margin="0,8,0,0">
+                            <Button Content="Добавить ещё раз" Margin="0,0,8,4"
+                                    Command="{Binding KeepOverlapRangeCommand}"
+                                    ToolTip.Tip="Оставить диапазон как есть — страницы продублируются" />
+                            <Button Content="Добавить без пересечения" Margin="0,0,8,4"
+                                    Background="#1B7F34" Foreground="White" FontWeight="Bold"
+                                    Command="{Binding KeepWithoutOverlapCommand}"
+                                    ToolTip.Tip="Добавить только свободные страницы (диапазон обрезается)" />
+                            <Button Content="Убрать" Margin="0,0,0,4" Foreground="#C42B1C"
                                     Command="{Binding RemoveOverlapRangeCommand}"
-                                    ToolTip.Tip="Удалить этот пересекающийся диапазон" />
-                        </StackPanel>
+                                    ToolTip.Tip="Не добавлять этот диапазон" />
+                        </WrapPanel>
                     </StackPanel>
 
                     <!-- Разрешение конфликта (режим «Без пересечений» при уже имеющихся пересечениях) -->

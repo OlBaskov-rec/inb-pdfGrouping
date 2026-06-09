@@ -77,6 +77,40 @@ public static class PageRangeUtils
         return result;
     }
 
+    /// <summary>
+    /// Вычитает из диапазонов <paramref name="ranges"/> уже занятые страницы
+    /// <paramref name="covered"/>. Возвращает непересекающиеся «свободные» куски.
+    /// </summary>
+    public static List<(int Start, int End)> Subtract(
+        IEnumerable<(int Start, int End)> ranges,
+        IEnumerable<(int Start, int End)> covered)
+    {
+        var cov = Merge(covered);
+        var result = new List<(int, int)>();
+        foreach (var (s, e) in ranges)
+        {
+            if (e < s) continue;
+            result.AddRange(SubtractCovered(s, e, cov));
+        }
+        return result;
+    }
+
+    private static List<(int s, int e)> Merge(IEnumerable<(int Start, int End)> intervals)
+    {
+        var list = intervals.Where(i => i.End >= i.Start).OrderBy(i => i.Start).ToList();
+        var merged = new List<(int, int)>();
+        if (list.Count == 0) return merged;
+
+        var (cs, ce) = (list[0].Start, list[0].End);
+        foreach (var (s, e) in list.Skip(1))
+        {
+            if (s <= ce + 1) ce = Math.Max(ce, e);
+            else { merged.Add((cs, ce)); cs = s; ce = e; }
+        }
+        merged.Add((cs, ce));
+        return merged;
+    }
+
     private static IEnumerable<(int, int)> SubtractCovered(int s, int e, List<(int s, int e)> covered)
     {
         int cur = s;

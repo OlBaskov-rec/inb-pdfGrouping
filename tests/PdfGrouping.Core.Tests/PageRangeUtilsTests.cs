@@ -77,4 +77,26 @@ public class PageRangeUtilsTests
         var r = PageRangeUtils.ResolveOverlaps(new[] { (1, 5), (6, 10) });
         Assert.Equal(new[] { (1, 5), (6, 10) }, r);
     }
+
+    [Fact]
+    public void Subtract_TrimsAndSplits()
+    {
+        // [10–50] минус занятые [20–30] → [10–19], [31–50]
+        var r = PageRangeUtils.Subtract(new[] { (10, 50) }, new[] { (20, 30) });
+        Assert.Equal(new[] { (10, 19), (31, 50) }, r);
+    }
+
+    [Fact]
+    public void Subtract_FullyCovered_Empty()
+    {
+        var r = PageRangeUtils.Subtract(new[] { (24, 45) }, new[] { (10, 45) });
+        Assert.Empty(r);
+    }
+
+    [Fact]
+    public void Subtract_NoCoverage_Unchanged()
+    {
+        var r = PageRangeUtils.Subtract(new[] { (5, 8) }, new[] { (100, 110) });
+        Assert.Equal(new[] { (5, 8) }, r);
+    }
 }
