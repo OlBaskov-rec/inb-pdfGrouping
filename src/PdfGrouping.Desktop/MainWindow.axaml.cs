@@ -27,25 +27,19 @@ public partial class MainWindow : Window
         // Фоновая проверка обновлений (no-op в dev-запуске).
         _ = _viewModel.CheckForUpdatesAsync();
 
-        // Окно подстраивается: вниз — при предупреждениях, в ширину — при предпросмотре.
+        // В ширину окно подстраивается при включении предпросмотра.
         _viewModel.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName is nameof(MainViewModel.HasOverlapWarning)
-                or nameof(MainViewModel.HasConflictPrompt)
-                or nameof(MainViewModel.HasBlockMessage))
-                AdjustHeightForWarnings();
-            else if (e.PropertyName == nameof(MainViewModel.IsPreviewEnabled))
+            if (e.PropertyName == nameof(MainViewModel.IsPreviewEnabled))
                 AdjustWidthForPreview();
         };
-        _viewModel.Overlaps.CollectionChanged += (_, _) => AdjustHeightForWarnings();
-        _viewModel.ResolvedRanges.CollectionChanged += (_, _) => AdjustHeightForWarnings();
 
         AdjustWidthForPreview();
     }
 
     /// <summary>
     /// Минимальные размеры окна, чтобы интерфейс не сжимался внахлёст.
-    /// При открытой панели предпросмотра требуется больше ширины/высоты.
+    /// При открытой панели предпросмотра требуется больше ширины.
     /// </summary>
     private void AdjustWidthForPreview()
     {
@@ -57,59 +51,6 @@ public partial class MainWindow : Window
 
         if (Width < minW) Width = minW;
         if (Height < minH) Height = minH;
-    }
-
-    private double? _baselineHeight;
-    private bool _adjustingHeight;
-
-    private void AdjustHeightForWarnings()
-    {
-        // Меняем высоту окна вне текущего прохода разметки.
-        Avalonia.Threading.Dispatcher.UIThread.Post(ApplyHeightForWarnings,
-            Avalonia.Threading.DispatcherPriority.Normal);
-    }
-
-    private void ApplyHeightForWarnings()
-    {
-        if (_adjustingHeight)
-            return;
-
-        _adjustingHeight = true;
-        try
-        {
-            if (_viewModel.IsMessageVisible)
-            {
-                _baselineHeight ??= Height;
-                int lines = 0;
-                if (_viewModel.HasOverlapWarning) lines += _viewModel.Overlaps.Count + 2;
-                if (_viewModel.HasConflictPrompt) lines += _viewModel.ResolvedRanges.Count + 3;
-                if (_viewModel.HasBlockMessage) lines += 2;
-                lines = System.Math.Max(1, lines);
-                double target = System.Math.Min(
-                    (_baselineHeight ?? Height) + 120 + lines * 30,
-                    MaxAllowedHeight());
-                if (System.Math.Abs(Height - target) > 1)
-                    Height = target;
-            }
-            else if (_baselineHeight is double h)
-            {
-                _baselineHeight = null;
-                if (System.Math.Abs(Height - h) > 1)
-                    Height = h;
-            }
-        }
-        finally
-        {
-            _adjustingHeight = false;
-        }
-    }
-
-    private double MaxAllowedHeight()
-    {
-        var screen = Screens.ScreenFromWindow(this);
-        if (screen is null)
-            return 1200;
-        return screen.WorkingArea.Height / RenderScaling - 48;
     }
 
     /// <summary>Версия приложения из сборки (источник — &lt;Version&gt; в csproj).</summary>

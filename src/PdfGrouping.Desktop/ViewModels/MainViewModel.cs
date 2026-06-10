@@ -62,12 +62,12 @@ public partial class MainViewModel : ObservableObject
     // --- Группы ---
     public ObservableCollection<PdfGroup> Groups { get; } = new();
 
-    // --- Ввод диапазона (числовые поля со стрелками) ---
+    // --- Ввод диапазона (числовые поля со стрелками; nullable — допускают временно пустое значение) ---
     [ObservableProperty]
-    private decimal _rangeStart = 1;
+    private decimal? _rangeStart = 1;
 
     [ObservableProperty]
-    private decimal _rangeEnd = 1;
+    private decimal? _rangeEnd = 1;
 
     // --- Метка группы ---
     [ObservableProperty]
@@ -124,8 +124,13 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
-        int start = (int)RangeStart;
-        int end = (int)RangeEnd;
+        if (RangeStart is null || RangeEnd is null)
+        {
+            SetError("Введите номера начальной и конечной страниц.");
+            return;
+        }
+        int start = (int)RangeStart.Value;
+        int end = (int)RangeEnd.Value;
 
         if (start < 1 || end < 1 || start > TotalPages || end > TotalPages)
         {
@@ -197,8 +202,13 @@ public partial class MainViewModel : ObservableObject
     {
         if (GuardPendingDecision()) return;
         if (TotalPages <= 0) { SetError("Сначала откройте PDF-файл."); return; }
-        int start = (int)RangeStart;
-        int end = (int)RangeEnd;
+        if (RangeStart is null || RangeEnd is null)
+        {
+            SetError("Введите номера начальной и конечной страниц.");
+            return;
+        }
+        int start = (int)RangeStart.Value;
+        int end = (int)RangeEnd.Value;
         if (start < 1 || end < 1 || start > TotalPages || end > TotalPages)
         { SetError($"Номера страниц должны быть от 1 до {TotalPages}."); return; }
         if (start > end) { SetError("Начальная страница не может быть больше конечной."); return; }

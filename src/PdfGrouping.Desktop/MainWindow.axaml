@@ -144,11 +144,11 @@
                         </TextBlock>
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <NumericUpDown Value="{Binding RangeStart}" Minimum="1" Maximum="{Binding MaxPage}"
-                                           Increment="1" FormatString="0" Width="120" FontSize="16"
+                                           Increment="1" FormatString="0" Width="140" FontSize="16"
                                            ToolTip.Tip="Начальная страница" />
                             <TextBlock Text="–" VerticalAlignment="Center" Margin="8,0" FontSize="16" />
                             <NumericUpDown Value="{Binding RangeEnd}" Minimum="1" Maximum="{Binding MaxPage}"
-                                           Increment="1" FormatString="0" Width="120" FontSize="16"
+                                           Increment="1" FormatString="0" Width="140" FontSize="16"
                                            ToolTip.Tip="Конечная страница" />
                         </StackPanel>
                     </StackPanel>
@@ -163,12 +163,13 @@
                                 ToolTip.Tip="Раскидать выбранные страницы на отдельные диапазоны по 1 странице">
                             <TextBlock Text="+ Добавить диапазон постранично" TextWrapping="Wrap" TextAlignment="Center" />
                         </Button>
-                        <WrapPanel>
-                            <Button Content="Очистить" Margin="0,0,6,4" Command="{Binding ClearRangesCommand}" />
-                            <ToggleButton Content="👁 Предпросмотр" Margin="0,0,0,4"
+                        <DockPanel LastChildFill="False">
+                            <Button DockPanel.Dock="Left" Content="Очистить"
+                                    Command="{Binding ClearRangesCommand}" />
+                            <ToggleButton DockPanel.Dock="Right" Content="👁 Предпросмотр"
                                           IsChecked="{Binding IsPreviewEnabled}"
                                           ToolTip.Tip="Показать миниатюры начальной и конечной страниц выбранного диапазона" />
-                        </WrapPanel>
+                        </DockPanel>
                     </StackPanel>
 
                     <ListBox Grid.Row="3" ItemsSource="{Binding Ranges}"
