@@ -37,17 +37,28 @@ public partial class MainWindow : Window
         AdjustWidthForPreview();
     }
 
+    private double _widthBeforePreview;
+
     /// <summary>
     /// Минимальная ширина окна, чтобы секции не сжимались внахлёст.
     /// При открытой панели предпросмотра она забирает ~312px слева — нужна бо́льшая ширина.
+    /// При отключении предпросмотра возвращаем прежнюю ширину (окно не должно остаться шире).
     /// Высоту не трогаем: панель предпросмотра прокручивается, окно не должно расти вниз.
     /// </summary>
     private void AdjustWidthForPreview()
     {
-        double minW = _viewModel.IsPreviewEnabled ? 1190 : 880;
-
-        MinWidth = minW;
-        if (Width < minW) Width = minW;
+        if (_viewModel.IsPreviewEnabled)
+        {
+            _widthBeforePreview = Width;     // запоминаем ширину до открытия панели
+            MinWidth = 1190;
+            if (Width < 1190) Width = 1190;
+        }
+        else
+        {
+            MinWidth = 880;
+            double target = _widthBeforePreview > 0 ? _widthBeforePreview : Width;
+            Width = System.Math.Max(880, System.Math.Min(Width, target));
+        }
     }
 
     /// <summary>Версия приложения из сборки (источник — &lt;Version&gt; в csproj).</summary>

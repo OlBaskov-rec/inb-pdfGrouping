@@ -404,24 +404,20 @@
                 </DockPanel>
             </Border>
 
-            <Grid ColumnDefinitions="Auto,*" Margin="0,0,0,8">
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="▶ Обработать" Command="{Binding ProcessCommand}"
-                            IsEnabled="{Binding !IsProcessing}"
-                            Padding="20,8" FontSize="15" FontWeight="Bold"
-                            Background="#0078D4" Foreground="White" />
-                    <!-- Тумблер «Без пересечений»: запрещает добавлять пересекающиеся диапазоны/группы -->
-                    <ToggleButton Content="🚫 Без пересечений" Margin="10,0,0,0"
-                                  VerticalAlignment="Center"
-                                  IsChecked="{Binding BlockOverlaps}"
-                                  ToolTip.Tip="Во включённом состоянии нельзя выбрать пересекающиеся страницы (диапазоны и группы)" />
-                    <ProgressBar Width="120" Margin="12,0" IsIndeterminate="{Binding IsProcessing}"
-                                 IsVisible="{Binding IsProcessing}" VerticalAlignment="Center" />
-                </StackPanel>
-                <TextBlock Grid.Column="1" Text="{Binding StatusText}" VerticalAlignment="Center"
-                           Margin="16,0,0,0" FontSize="13" TextWrapping="Wrap"
-                           Foreground="{Binding StatusIsError, Converter={StaticResource BoolToBrush}}" />
-            </Grid>
+            <!-- Сообщения выводятся в области уведомлений (баннер выше), а не рядом с кнопками. -->
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,8">
+                <Button Content="▶ Обработать" Command="{Binding ProcessCommand}"
+                        IsEnabled="{Binding !IsProcessing}"
+                        Padding="20,8" FontSize="15" FontWeight="Bold"
+                        Background="#0078D4" Foreground="White" />
+                <!-- Тумблер «Без пересечений»: запрещает добавлять пересекающиеся диапазоны/группы -->
+                <ToggleButton Content="🚫 Без пересечений" Margin="10,0,0,0"
+                              VerticalAlignment="Center"
+                              IsChecked="{Binding BlockOverlaps}"
+                              ToolTip.Tip="Во включённом состоянии нельзя выбрать пересекающиеся страницы (диапазоны и группы)" />
+                <ProgressBar Width="120" Margin="12,0" IsIndeterminate="{Binding IsProcessing}"
+                             IsVisible="{Binding IsProcessing}" VerticalAlignment="Center" />
+            </StackPanel>
         </StackPanel>
 
         <!-- Row 6: результаты (созданные файлы) -->

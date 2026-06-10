@@ -1082,15 +1082,19 @@ public partial class MainViewModel : ObservableObject
             : string.Join("\n", Ranges.Select(r => r.ToString()));
     }
 
+    // Рутинные подтверждения у кнопок больше не выводятся: любое инфо-сообщение
+    // лишь скрывает баннер ошибки. Ошибки выводятся в общую область сообщений (баннер).
     private void SetInfo(string text)
     {
         StatusIsError = false;
         StatusText = text;
+        HasBlockMessage = false;
     }
 
     private void SetError(string text)
     {
         StatusIsError = true;
         StatusText = text;
+        ShowBlockMessage(text);
     }
 }
