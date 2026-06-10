@@ -68,7 +68,7 @@
             </DockPanel>
         </Border>
 
-        <Grid Grid.Column="1" RowDefinitions="Auto,*">
+        <Grid Grid.Column="1" RowDefinitions="Auto,*,Auto">
 
         <!-- Верхняя панель: справа кнопка «О программе» -->
         <DockPanel Grid.Row="0" Margin="0,0,0,8">
@@ -142,7 +142,7 @@
                 <Grid RowDefinitions="Auto,Auto,Auto,Auto">
                     <TextBlock Grid.Row="0" Text="Диапазоны страниц" FontWeight="Bold" Margin="0,0,0,6" />
 
-                    <StackPanel Grid.Row="1" Margin="0,0,0,6">
+                    <StackPanel Grid.Row="1" Margin="0,0,0,0">
                         <TextBlock Margin="0,0,0,4" Foreground="#444">
                             <Run Text="Страницы (из " />
                             <Run Text="{Binding TotalPages}" FontWeight="Bold" />
@@ -160,16 +160,16 @@
                     </StackPanel>
 
                     <StackPanel Grid.Row="2" Margin="0,0,0,6">
-                        <Button Margin="0,0,0,8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        <Button Margin="0,12,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                                 Command="{Binding AddRangeCommand}" IsEnabled="{Binding !IsProcessing}">
                             <TextBlock Text="+ Добавить диапазон" TextWrapping="Wrap" TextAlignment="Center" />
                         </Button>
-                        <Button Margin="0,0,0,18" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        <Button Margin="0,12,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                                 Command="{Binding AddRangePaginatedCommand}" IsEnabled="{Binding !IsProcessing}"
                                 ToolTip.Tip="Раскидать выбранные страницы на отдельные диапазоны по 1 странице">
                             <TextBlock Text="+ Добавить диапазон постранично" TextWrapping="Wrap" TextAlignment="Center" />
                         </Button>
-                        <DockPanel LastChildFill="False">
+                        <DockPanel LastChildFill="False" Margin="0,18,0,0">
                             <Button DockPanel.Dock="Left" Content="Очистить"
                                     Command="{Binding ClearRangesCommand}" />
                             <ToggleButton DockPanel.Dock="Right" Content="👁 Предпросмотр"
@@ -289,12 +289,12 @@
                 <StackPanel>
                     <!-- Запрет пересечений -->
                     <TextBlock Text="{Binding BlockMessage}" IsVisible="{Binding HasBlockMessage}"
-                               FontWeight="Bold" FontSize="13" Foreground="#C42B1C" TextWrapping="Wrap" />
+                               FontWeight="Bold" FontSize="14" Foreground="#C42B1C" TextWrapping="Wrap" />
 
                     <!-- Предупреждение о пересечении -->
                     <StackPanel IsVisible="{Binding HasOverlapWarning}">
                         <TextBlock Text="Внимание: пересечение с уже выбранными страницами"
-                                   FontWeight="Bold" FontSize="13" Foreground="#C42B1C"
+                                   FontWeight="Bold" FontSize="14" Foreground="#C42B1C"
                                    TextWrapping="Wrap" Margin="0,0,0,6" />
                         <ItemsControl ItemsSource="{Binding Overlaps}">
                             <ItemsControl.ItemTemplate>
@@ -323,7 +323,8 @@
                             <Run Text="Без пересечения добавится: " FontWeight="Bold" Foreground="#1B7F34" />
                             <Run Text="{Binding PendingResolveText}" FontWeight="Bold" Foreground="#1B7F34" />
                         </TextBlock>
-                        <WrapPanel Margin="0,12,0,0">
+                        <!-- Кнопки решения видны только пока решение не принято (после «Добавить ещё раз» — скрыты) -->
+                        <WrapPanel Margin="0,12,0,0" IsVisible="{Binding HasPendingDecision}">
                             <Button Content="Добавить ещё раз" Margin="0,0,8,4"
                                     Command="{Binding KeepOverlapRangeCommand}"
                                     ToolTip.Tip="Оставить диапазон как есть — страницы продублируются" />
@@ -340,7 +341,7 @@
                     <!-- Разрешение конфликта (режим «Без пересечений» при уже имеющихся пересечениях) -->
                     <StackPanel IsVisible="{Binding HasConflictPrompt}" Margin="0,12,0,0">
                         <TextBlock Text="Решение конфликта по пересечению страниц диапазонов"
-                                   FontWeight="Bold" FontSize="13" Foreground="#1B7F34"
+                                   FontWeight="Bold" FontSize="14" Foreground="#1B7F34"
                                    TextWrapping="Wrap" Margin="0,0,0,6" />
                         <TextBlock Text="Предлагаемые непересекающиеся диапазоны:"
                                    FontSize="12" Foreground="#555" Margin="0,0,0,4" />
@@ -398,36 +399,6 @@
             </Grid>
         </Border>
 
-        <!-- Row 5: баннер обновления + кнопка Обработать + статус (выше блока результатов) -->
-        <StackPanel Grid.Row="5">
-            <!-- Баннер обновления (виден только когда обновление скачано) -->
-            <Border Background="#E7F3E8" BorderBrush="#3A8A3F" BorderThickness="1" CornerRadius="6"
-                    Padding="10,8" Margin="0,0,0,8" IsVisible="{Binding IsUpdateReady}">
-                <DockPanel>
-                    <Button DockPanel.Dock="Right" Content="⟳ Обновить и перезапустить"
-                            Command="{Binding ApplyUpdateCommand}"
-                            Background="#3A8A3F" Foreground="White" FontWeight="Bold" />
-                    <TextBlock Text="{Binding UpdateText}" VerticalAlignment="Center"
-                               Foreground="#1E5E22" FontWeight="SemiBold" />
-                </DockPanel>
-            </Border>
-
-            <!-- Сообщения выводятся в области уведомлений (баннер выше), а не рядом с кнопками. -->
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,8">
-                <Button Content="▶ Обработать" Command="{Binding ProcessCommand}"
-                        IsEnabled="{Binding !IsProcessing}"
-                        Padding="20,8" FontSize="15" FontWeight="Bold"
-                        Background="#0078D4" Foreground="White" />
-                <!-- Тумблер «Без пересечений»: запрещает добавлять пересекающиеся диапазоны/группы -->
-                <ToggleButton Content="🚫 Без пересечений" Margin="10,0,0,0"
-                              VerticalAlignment="Center"
-                              IsChecked="{Binding BlockOverlaps}"
-                              ToolTip.Tip="Во включённом состоянии нельзя выбрать пересекающиеся страницы (диапазоны и группы)" />
-                <ProgressBar Width="120" Margin="12,0" IsIndeterminate="{Binding IsProcessing}"
-                             IsVisible="{Binding IsProcessing}" VerticalAlignment="Center" />
-            </StackPanel>
-        </StackPanel>
-
         <!-- Row 6: результаты (созданные файлы) -->
         <Border Grid.Row="6" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
                 Padding="10" IsVisible="{Binding HasResults}">
@@ -448,6 +419,39 @@
         </Border>
         </Grid>
         </ScrollViewer>
+
+        <!-- Закреплённый низ: кнопки «Обработать»/«Без пересечений» всегда видны (вне прокрутки) -->
+        <Border Grid.Row="2" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0"
+                Padding="0,8,0,0" Margin="0,4,24,0">
+            <StackPanel>
+                <!-- Баннер обновления (виден только когда обновление скачано) -->
+                <Border Background="#E7F3E8" BorderBrush="#3A8A3F" BorderThickness="1" CornerRadius="6"
+                        Padding="10,8" Margin="0,0,0,8" IsVisible="{Binding IsUpdateReady}">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Content="⟳ Обновить и перезапустить"
+                                Command="{Binding ApplyUpdateCommand}"
+                                Background="#3A8A3F" Foreground="White" FontWeight="Bold" />
+                        <TextBlock Text="{Binding UpdateText}" VerticalAlignment="Center"
+                                   Foreground="#1E5E22" FontWeight="SemiBold" />
+                    </DockPanel>
+                </Border>
+
+                <!-- Сообщения выводятся в области уведомлений (баннер выше), а не рядом с кнопками. -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="▶ Обработать" Command="{Binding ProcessCommand}"
+                            IsEnabled="{Binding !IsProcessing}"
+                            Padding="20,8" FontSize="15" FontWeight="Bold"
+                            Background="#0078D4" Foreground="White" />
+                    <!-- Тумблер «Без пересечений»: запрещает добавлять пересекающиеся диапазоны/группы -->
+                    <ToggleButton Content="🚫 Без пересечений" Margin="10,0,0,0"
+                                  VerticalAlignment="Center"
+                                  IsChecked="{Binding BlockOverlaps}"
+                                  ToolTip.Tip="Во включённом состоянии нельзя выбрать пересекающиеся страницы (диапазоны и группы)" />
+                    <ProgressBar Width="120" Margin="12,0" IsIndeterminate="{Binding IsProcessing}"
+                                 IsVisible="{Binding IsProcessing}" VerticalAlignment="Center" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
         </Grid>
       </Grid>
 

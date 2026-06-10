@@ -400,9 +400,10 @@ public partial class MainViewModel : ObservableObject
 
     private void ShowBlockMessage(string text)
     {
+        StatusText = string.Empty;
+        StatusIsError = false;
         BlockMessage = text;
         HasBlockMessage = true;
-        SetInfo(string.Empty);
     }
 
     partial void OnHasOverlapWarningChanged(bool value) => OnPropertyChanged(nameof(IsMessageVisible));
@@ -412,6 +413,15 @@ public partial class MainViewModel : ObservableObject
     {
         if (value)
         {
+            // Одновременно — только один вопрос. Если ждём решения по добавлению диапазона,
+            // второй вопрос не показываем: сообщаем в области уведомлений и откатываем тумблер.
+            if (HasPendingDecision)
+            {
+                ShowBlockMessage("Сначала примите решение по добавлению диапазона.");
+                BlockOverlaps = false;
+                return;
+            }
+
             var intervals = Ranges.Select(r => (r.StartPage, r.EndPage)).ToList();
             if (HasInternalOverlaps(intervals))
             {
