@@ -208,36 +208,44 @@
             <!-- Метка группы -->
             <Border Grid.Column="1" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
                     Padding="10" Margin="8,0" Width="210">
-                <StackPanel>
-                    <TextBlock Text="Метка группы" FontWeight="Bold" Margin="0,0,0,2" />
-                    <TextBlock Text="(любые 15 симв.)" FontSize="12" Foreground="#777" Margin="0,0,0,2" />
-                    <TextBox Text="{Binding GroupLabelText}" MaxLength="15"
-                             PlaceholderText="напр. А, Б, 1, Часть1" />
-                    <!-- Быстрый выбор метки: 5 кнопок в один ряд -->
-                    <WrapPanel Margin="0,6,0,0">
-                        <Button Content="A" Width="30" Margin="0,0,4,0" Command="{Binding PickLabelCommand}" CommandParameter="A" />
-                        <Button Content="B" Width="30" Margin="0,0,4,0" Command="{Binding PickLabelCommand}" CommandParameter="B" />
-                        <Button Content="C" Width="30" Margin="0,0,4,0" Command="{Binding PickLabelCommand}" CommandParameter="C" />
-                        <Button Content="D" Width="30" Margin="0,0,4,0" Command="{Binding PickLabelCommand}" CommandParameter="D" />
-                        <Button Content="E" Width="30" Command="{Binding PickLabelCommand}" CommandParameter="E" />
-                    </WrapPanel>
+                <DockPanel>
+                    <!-- Верх: метка, поле ввода, быстрый выбор, заголовок списка -->
+                    <StackPanel DockPanel.Dock="Top">
+                        <TextBlock Text="Метка группы" FontWeight="Bold" Margin="0,0,0,2" />
+                        <TextBlock Text="(любые 15 симв.)" FontSize="12" Foreground="#777" Margin="0,0,0,2" />
+                        <TextBox Text="{Binding GroupLabelText}" MaxLength="15"
+                                 PlaceholderText="напр. А, Б, 1, Часть1" />
+                        <!-- Быстрый выбор метки: 5 кнопок в один ряд -->
+                        <WrapPanel Margin="0,6,0,0">
+                            <Button Content="A" Width="30" Margin="0,0,4,0" Command="{Binding PickLabelCommand}" CommandParameter="A" />
+                            <Button Content="B" Width="30" Margin="0,0,4,0" Command="{Binding PickLabelCommand}" CommandParameter="B" />
+                            <Button Content="C" Width="30" Margin="0,0,4,0" Command="{Binding PickLabelCommand}" CommandParameter="C" />
+                            <Button Content="D" Width="30" Margin="0,0,4,0" Command="{Binding PickLabelCommand}" CommandParameter="D" />
+                            <Button Content="E" Width="30" Command="{Binding PickLabelCommand}" CommandParameter="E" />
+                        </WrapPanel>
+                        <TextBlock Text="Текущие диапазоны:" FontWeight="SemiBold" FontSize="12" Margin="0,12,0,2" />
+                    </StackPanel>
 
-                    <!-- Текущие диапазоны (под кнопками выбора метки) -->
-                    <TextBlock Text="Текущие диапазоны:" FontWeight="SemiBold" FontSize="12" Margin="0,12,0,2" />
-                    <ScrollViewer MaxHeight="120" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,4">
+                    <!-- Низ: кнопки создания группы (отступы в 1.5× — до, между и после) -->
+                    <StackPanel DockPanel.Dock="Bottom">
+                        <Button Margin="0,12,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                Command="{Binding AddGroupCommand}" IsEnabled="{Binding !IsProcessing}">
+                            <TextBlock Text="Создать группу для вывода ►"
+                                       TextWrapping="Wrap" TextAlignment="Center" />
+                        </Button>
+                        <Button Margin="0,12,0,12" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                Command="{Binding AddGroupPerRangeCommand}" IsEnabled="{Binding !IsProcessing}"
+                                ToolTip.Tip="Каждый текущий диапазон станет отдельной группой (отдельным файлом)">
+                            <TextBlock Text="Создать группу для вывода по каждому диапазону ►"
+                                       TextWrapping="Wrap" TextAlignment="Center" />
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Середина: список выбранных диапазонов занимает всё свободное место -->
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,4">
                         <TextBlock Text="{Binding RangesDisplayText}" TextWrapping="Wrap" Foreground="#555" />
                     </ScrollViewer>
-
-                    <Button Content="Создать группу ►" Margin="0,8,0,0"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                            Command="{Binding AddGroupCommand}" IsEnabled="{Binding !IsProcessing}" />
-                    <Button Margin="0,8,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                            Command="{Binding AddGroupPerRangeCommand}" IsEnabled="{Binding !IsProcessing}"
-                            ToolTip.Tip="Каждый текущий диапазон станет отдельной группой (отдельным файлом)">
-                        <TextBlock Text="Создать группу на каждый диапазон ►"
-                                   TextWrapping="Wrap" TextAlignment="Center" />
-                    </Button>
-                </StackPanel>
+                </DockPanel>
             </Border>
 
             <!-- Группы -->
@@ -299,7 +307,7 @@
                                         <Run Text="{Binding ExistingPages}" FontWeight="Bold" />
                                         <Run Text="  ·  " Foreground="#888" />
                                         <Run Text="{Binding Source}" Foreground="#888" />
-                                        <Run Text="   (дубли: " Foreground="#C42B1C" FontWeight="Bold" />
+                                        <Run Text="   (повторяются: " Foreground="#C42B1C" FontWeight="Bold" />
                                         <Run Text="{Binding Dup}" Foreground="#C42B1C" FontWeight="Bold" />
                                         <Run Text=")" Foreground="#C42B1C" FontWeight="Bold" />
                                     </TextBlock>
@@ -310,12 +318,12 @@
                             <Run Text="Дублируются: " FontWeight="Bold" />
                             <Run Text="{Binding DuplicatedPagesText}" FontWeight="Bold" Foreground="#C42B1C" />
                         </TextBlock>
-                        <TextBlock Margin="0,4,0,0" TextWrapping="Wrap" FontSize="12"
+                        <TextBlock Margin="0,12,0,0" TextWrapping="Wrap" FontSize="14"
                                    IsVisible="{Binding HasPendingDecision}">
                             <Run Text="Без пересечения добавится: " FontWeight="Bold" Foreground="#1B7F34" />
                             <Run Text="{Binding PendingResolveText}" FontWeight="Bold" Foreground="#1B7F34" />
                         </TextBlock>
-                        <WrapPanel Margin="0,8,0,0">
+                        <WrapPanel Margin="0,12,0,0">
                             <Button Content="Добавить ещё раз" Margin="0,0,8,4"
                                     Command="{Binding KeepOverlapRangeCommand}"
                                     ToolTip.Tip="Оставить диапазон как есть — страницы продублируются" />
