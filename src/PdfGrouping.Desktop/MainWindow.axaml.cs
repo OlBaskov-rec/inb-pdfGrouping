@@ -38,19 +38,16 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Минимальные размеры окна, чтобы интерфейс не сжимался внахлёст.
-    /// При открытой панели предпросмотра требуется больше ширины.
+    /// Минимальная ширина окна, чтобы секции не сжимались внахлёст.
+    /// При открытой панели предпросмотра она забирает ~312px слева — нужна бо́льшая ширина.
+    /// Высоту не трогаем: панель предпросмотра прокручивается, окно не должно расти вниз.
     /// </summary>
     private void AdjustWidthForPreview()
     {
-        double minW = _viewModel.IsPreviewEnabled ? 1090 : 780;
-        double minH = _viewModel.IsPreviewEnabled ? 720 : 660;
+        double minW = _viewModel.IsPreviewEnabled ? 1190 : 880;
 
         MinWidth = minW;
-        MinHeight = minH;
-
         if (Width < minW) Width = minW;
-        if (Height < minH) Height = minH;
     }
 
     /// <summary>Версия приложения из сборки (источник — &lt;Version&gt; в csproj).</summary>
