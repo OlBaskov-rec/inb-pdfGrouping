@@ -385,6 +385,22 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string _blockMessage = string.Empty;
 
+    /// <summary>Тип блок-сообщения: спец-подсказка про «Без пересечений» при активном вопросе (цветной текст).</summary>
+    [ObservableProperty]
+    private bool _blockMessageIsOverlapHint;
+
+    /// <summary>Видно ли обычное (однотонное) блок-сообщение.</summary>
+    public bool ShowPlainBlock => HasBlockMessage && !BlockMessageIsOverlapHint;
+
+    /// <summary>Видна ли цветная подсказка про «Без пересечений».</summary>
+    public bool ShowOverlapHint => HasBlockMessage && BlockMessageIsOverlapHint;
+
+    partial void OnBlockMessageIsOverlapHintChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ShowPlainBlock));
+        OnPropertyChanged(nameof(ShowOverlapHint));
+    }
+
     // --- Разрешение конфликта при включении «Без пересечений» ---
 
     [ObservableProperty]
@@ -396,12 +412,18 @@ public partial class MainViewModel : ObservableObject
     /// <summary>Видна ли область сообщений (предупреждение / конфликт / запрет).</summary>
     public bool IsMessageVisible => HasOverlapWarning || HasConflictPrompt || HasBlockMessage;
 
-    partial void OnHasBlockMessageChanged(bool value) => OnPropertyChanged(nameof(IsMessageVisible));
+    partial void OnHasBlockMessageChanged(bool value)
+    {
+        OnPropertyChanged(nameof(IsMessageVisible));
+        OnPropertyChanged(nameof(ShowPlainBlock));
+        OnPropertyChanged(nameof(ShowOverlapHint));
+    }
 
     private void ShowBlockMessage(string text)
     {
         StatusText = string.Empty;
         StatusIsError = false;
+        BlockMessageIsOverlapHint = false;
         BlockMessage = text;
         HasBlockMessage = true;
     }
@@ -414,10 +436,13 @@ public partial class MainViewModel : ObservableObject
         if (value)
         {
             // Одновременно — только один вопрос. Если ждём решения по добавлению диапазона,
-            // второй вопрос не показываем: сообщаем в области уведомлений и откатываем тумблер.
+            // второй вопрос не показываем: цветная подсказка в области уведомлений + откат тумблера.
             if (HasPendingDecision)
             {
-                ShowBlockMessage("Сначала примите решение по добавлению диапазона.");
+                StatusText = string.Empty;
+                StatusIsError = false;
+                BlockMessageIsOverlapHint = true;
+                HasBlockMessage = true;
                 BlockOverlaps = false;
                 return;
             }

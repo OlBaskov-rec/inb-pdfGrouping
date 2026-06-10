@@ -287,9 +287,19 @@
                 <TextBlock DockPanel.Dock="Left" Text="⚠" FontSize="32" Foreground="#C42B1C"
                            VerticalAlignment="Top" Margin="0,0,12,0" />
                 <StackPanel>
-                    <!-- Запрет пересечений -->
-                    <TextBlock Text="{Binding BlockMessage}" IsVisible="{Binding HasBlockMessage}"
-                               FontWeight="Bold" FontSize="14" Foreground="#C42B1C" TextWrapping="Wrap" />
+                    <!-- Обычное блок-сообщение (запрет пересечений, ошибки и т.п.) -->
+                    <TextBlock Text="{Binding BlockMessage}" IsVisible="{Binding ShowPlainBlock}"
+                               FontWeight="Bold" FontSize="14" Foreground="#C42B1C" TextWrapping="Wrap"
+                               Margin="0,0,0,12" />
+
+                    <!-- Цветная подсказка: включили «Без пересечений» при неразрешённом вопросе -->
+                    <TextBlock IsVisible="{Binding ShowOverlapHint}" TextWrapping="Wrap"
+                               FontWeight="Bold" FontSize="14" Margin="0,0,0,12">
+                        <Run Text="Режим 🚫 " Foreground="#0078D4" />
+                        <Run Text="Без пересечений" Foreground="#C42B1C" />
+                        <Run Text=" не активирован, т.к. не решён текущий вопрос по добавлению пересекающегося диапазона"
+                             Foreground="#0078D4" />
+                    </TextBlock>
 
                     <!-- Предупреждение о пересечении -->
                     <StackPanel IsVisible="{Binding HasOverlapWarning}">
@@ -307,7 +317,7 @@
                                         <Run Text="{Binding ExistingPages}" FontWeight="Bold" />
                                         <Run Text="  ·  " Foreground="#888" />
                                         <Run Text="{Binding Source}" Foreground="#888" />
-                                        <Run Text="   (повторяются: " Foreground="#C42B1C" FontWeight="Bold" />
+                                        <Run Text="   (повторяются " Foreground="#C42B1C" FontWeight="Bold" />
                                         <Run Text="{Binding Dup}" Foreground="#C42B1C" FontWeight="Bold" />
                                         <Run Text=")" Foreground="#C42B1C" FontWeight="Bold" />
                                     </TextBlock>
@@ -386,19 +396,6 @@
         </Border>
         </StackPanel>
 
-        <!-- Row 4: куда сохранять (на всю ширину) -->
-        <Border Grid.Row="4" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
-                Padding="10" Margin="0,0,0,8">
-            <Grid ColumnDefinitions="Auto,*,Auto">
-                <TextBlock Grid.Column="0" Text="Сохранить результаты в:" FontWeight="Bold"
-                           VerticalAlignment="Center" Margin="0,0,8,0" />
-                <TextBox Grid.Column="1" Text="{Binding OutputDirectory}" IsReadOnly="True"
-                         VerticalAlignment="Center" PlaceholderText="папка для результатов" />
-                <Button Grid.Column="2" Content="Обзор…" Margin="8,0,0,0"
-                        Command="{Binding BrowseOutputDirectoryCommand}" ToolTip.Tip="Выбрать папку" />
-            </Grid>
-        </Border>
-
         <!-- Row 6: результаты (созданные файлы) -->
         <Border Grid.Row="6" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
                 Padding="10" IsVisible="{Binding HasResults}">
@@ -420,10 +417,23 @@
         </Grid>
         </ScrollViewer>
 
-        <!-- Закреплённый низ: кнопки «Обработать»/«Без пересечений» всегда видны (вне прокрутки) -->
+        <!-- Закреплённый низ: «Сохранить в» + кнопки «Обработать»/«Без пересечений» всегда видны (вне прокрутки) -->
         <Border Grid.Row="2" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0"
                 Padding="0,8,0,0" Margin="0,4,24,0">
             <StackPanel>
+                <!-- Куда сохранять (на всю ширину) -->
+                <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
+                        Padding="10" Margin="0,0,0,8">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <TextBlock Grid.Column="0" Text="Сохранить результаты в:" FontWeight="Bold"
+                                   VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBox Grid.Column="1" Text="{Binding OutputDirectory}" IsReadOnly="True"
+                                 VerticalAlignment="Center" PlaceholderText="папка для результатов" />
+                        <Button Grid.Column="2" Content="Обзор…" Margin="8,0,0,0"
+                                Command="{Binding BrowseOutputDirectoryCommand}" ToolTip.Tip="Выбрать папку" />
+                    </Grid>
+                </Border>
+
                 <!-- Баннер обновления (виден только когда обновление скачано) -->
                 <Border Background="#E7F3E8" BorderBrush="#3A8A3F" BorderThickness="1" CornerRadius="6"
                         Padding="10,8" Margin="0,0,0,8" IsVisible="{Binding IsUpdateReady}">
