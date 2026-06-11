@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PdfGrouping.Core;
@@ -443,7 +444,9 @@ public partial class MainViewModel : ObservableObject
                 StatusIsError = false;
                 BlockMessageIsOverlapHint = true;
                 HasBlockMessage = true;
-                BlockOverlaps = false;
+                // Откатываем тумблер отложенно: иначе ToggleButton, обрабатывающий свой клик,
+                // не сбросит визуальное состояние и останется «нажатым», хотя режим выключен.
+                Dispatcher.UIThread.Post(() => BlockOverlaps = false);
                 return;
             }
 
