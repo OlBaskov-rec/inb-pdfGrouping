@@ -5,6 +5,24 @@
 
 ---
 
+## Быстрый чек-лист
+
+- [ ] Поднять `<Version>` в `PdfGrouping.Desktop.csproj`
+- [ ] Создать `build/release-notes-X.Y.Z.md`
+- [ ] Добавить раздел в `CHANGELOG.md`
+- [ ] `dotnet build PdfGrouping.sln -c Release` + `dotnet test`
+- [ ] `git commit` + `git push`
+- [ ] Сборка пакета: `pwsh build/release.ps1 -Version X.Y.Z` *(делает publish + pack со
+      знаком и иконкой; см. ниже)* — либо вручную Этапы B
+- [ ] В `Releases/` появились `RELEASES`, `*-full.nupkg`, `*-delta.nupkg`, `Setup.exe`, `Portable.zip`
+- [ ] GitHub → Releases → Draft → тег `vX.Y.Z` → приложить **все файлы из `Releases/`** → Publish
+- [ ] Проверить обновление на установленной прошлой версии
+
+> Скрипт `build/release.ps1` автоматизирует шаги сборки (bump версии при `-BumpCsproj`,
+> publish, pack). Публикация в GitHub Releases — всегда вручную (см. Этап C).
+
+---
+
 ## Откуда программа берёт обновления
 
 `UpdateService` использует `GithubSource` →

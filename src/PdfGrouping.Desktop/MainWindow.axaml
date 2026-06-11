@@ -3,6 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:PdfGrouping.Desktop.ViewModels"
+        xmlns:l="clr-namespace:PdfGrouping.Desktop.Localization"
         xmlns:conv="clr-namespace:PdfGrouping.Desktop.Converters"
         xmlns:models="clr-namespace:PdfGrouping.Core.Models;assembly=PdfGrouping.Core"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
@@ -27,24 +28,27 @@
                 BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10"
                 IsVisible="{Binding IsPreviewEnabled}">
             <DockPanel>
-                <TextBlock DockPanel.Dock="Top" Text="Предпросмотр страниц"
+                <TextBlock DockPanel.Dock="Top" Text="{l:Tr Preview_Title}"
                            FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,8" />
                 <TextBlock DockPanel.Dock="Top"
-                           Text="Выберите диапазон в списке, чтобы увидеть его начальную и конечную страницы."
+                           Text="{l:Tr Preview_Hint}"
                            TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center"
                            Foreground="#777" FontSize="12" IsVisible="{Binding !HasPreview}" />
                 <ScrollViewer IsVisible="{Binding HasPreview}">
                     <StackPanel>
                         <!-- Начальная страница -->
-                        <TextBlock Text="{Binding SelectedRange.StartPage, StringFormat='Начальная страница: {0}'}"
-                                   FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,3" />
+                        <TextBlock FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,3">
+                            <Run Text="{l:Tr Preview_StartPageLabel}" />
+                            <Run Text=": " />
+                            <Run Text="{Binding SelectedRange.StartPage}" />
+                        </TextBlock>
                         <Border Background="#F7F7F7" BorderBrush="#E0E0E0" BorderThickness="1" Padding="4"
                                 HorizontalAlignment="Center">
                             <Image Source="{Binding StartThumb}" Stretch="Uniform" MaxHeight="230" />
                         </Border>
-                        <Button Content="🔍 Увеличить" Margin="0,4,0,0" HorizontalAlignment="Center"
+                        <Button Content="{l:Tr Btn_Zoom}" Margin="0,4,0,0" HorizontalAlignment="Center"
                                 Command="{Binding ZoomStartCommand}"
-                                ToolTip.Tip="Открыть начальную страницу почти на весь экран" />
+                                ToolTip.Tip="{l:Tr Tip_ZoomStart}" />
 
                         <!-- Разделитель с информацией о диапазоне -->
                         <Grid ColumnDefinitions="*,Auto,*" Margin="0,12">
@@ -55,15 +59,18 @@
                         </Grid>
 
                         <!-- Конечная страница -->
-                        <TextBlock Text="{Binding SelectedRange.EndPage, StringFormat='Конечная страница: {0}'}"
-                                   FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,3" />
+                        <TextBlock FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,3">
+                            <Run Text="{l:Tr Preview_EndPageLabel}" />
+                            <Run Text=": " />
+                            <Run Text="{Binding SelectedRange.EndPage}" />
+                        </TextBlock>
                         <Border Background="#F7F7F7" BorderBrush="#E0E0E0" BorderThickness="1" Padding="4"
                                 HorizontalAlignment="Center">
                             <Image Source="{Binding EndThumb}" Stretch="Uniform" MaxHeight="230" />
                         </Border>
-                        <Button Content="🔍 Увеличить" Margin="0,4,0,0" HorizontalAlignment="Center"
+                        <Button Content="{l:Tr Btn_Zoom}" Margin="0,4,0,0" HorizontalAlignment="Center"
                                 Command="{Binding ZoomEndCommand}"
-                                ToolTip.Tip="Открыть конечную страницу почти на весь экран" />
+                                ToolTip.Tip="{l:Tr Tip_ZoomEnd}" />
                     </StackPanel>
                 </ScrollViewer>
             </DockPanel>
@@ -71,30 +78,51 @@
 
         <Grid Grid.Column="1" RowDefinitions="Auto,*,Auto">
 
-        <!-- Верхняя панель: справа кнопка «О программе» -->
+        <!-- Верхняя панель: справа выбор языка + значок «О программе» -->
         <DockPanel Grid.Row="0" Margin="0,0,0,8">
-            <Button DockPanel.Dock="Right" Content="ℹ О программе" Padding="8,4"
-                    ToolTip.Tip="Сведения о программе и проверка обновлений">
-                <Button.Flyout>
-                    <Flyout Placement="BottomEdgeAlignedRight">
-                        <StackPanel Width="300">
-                            <TextBlock Text="PDF Grouping" FontWeight="Bold" FontSize="16" />
-                            <TextBlock Text="slice &amp; group PDF" FontStyle="Italic" Foreground="#555" Margin="0,0,0,4" />
-                            <TextBlock Text="{Binding AppVersion, StringFormat='Версия {0}'}"
-                                       Foreground="#555" Margin="0,0,0,4" />
-                            <TextBlock Text="Автор: Inbasko" Margin="0,0,0,2" />
-                            <TextBlock Text="github.com/OlBaskov-rec/inb-pdfGrouping"
-                                       Foreground="#777" FontSize="12" />
-                            <Border Height="1" Background="#E0E0E0" Margin="0,8" />
-                            <Button Content="Проверить обновление"
-                                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                                    Command="{Binding CheckUpdatesManualCommand}" />
-                            <TextBlock Text="{Binding UpdateCheckStatus}" TextWrapping="Wrap"
-                                       FontSize="12" Foreground="#555" Margin="0,6,0,0" />
-                        </StackPanel>
-                    </Flyout>
-                </Button.Flyout>
-            </Button>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <!-- Выбор языка: квадратная кнопка с кодом текущего языка -->
+                <Button Content="{Binding LanguageShort}" Width="40" Padding="6,4" Margin="0,0,6,0"
+                        FontWeight="Bold" HorizontalContentAlignment="Center"
+                        ToolTip.Tip="{l:Tr Tip_Language}">
+                    <Button.Flyout>
+                        <MenuFlyout>
+                            <MenuItem Header="Русский"   Command="{Binding SetLanguageCommand}" CommandParameter="ru" />
+                            <MenuItem Header="English"   Command="{Binding SetLanguageCommand}" CommandParameter="en" />
+                            <MenuItem Header="Français"  Command="{Binding SetLanguageCommand}" CommandParameter="fr" />
+                            <MenuItem Header="Español"   Command="{Binding SetLanguageCommand}" CommandParameter="es" />
+                            <MenuItem Header="Deutsch"   Command="{Binding SetLanguageCommand}" CommandParameter="de" />
+                            <MenuItem Header="Italiano"  Command="{Binding SetLanguageCommand}" CommandParameter="it" />
+                            <MenuItem Header="中文"       Command="{Binding SetLanguageCommand}" CommandParameter="zh" />
+                            <MenuItem Header="日本語"     Command="{Binding SetLanguageCommand}" CommandParameter="ja" />
+                            <MenuItem Header="한국어"     Command="{Binding SetLanguageCommand}" CommandParameter="ko" />
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
+                <!-- «О программе»: только значок -->
+                <Button Content="ℹ" Padding="9,4" FontSize="15" HorizontalContentAlignment="Center"
+                        ToolTip.Tip="{l:Tr Tip_About}">
+                    <Button.Flyout>
+                        <Flyout Placement="BottomEdgeAlignedRight">
+                            <StackPanel Width="300">
+                                <TextBlock Text="PDF Grouping" FontWeight="Bold" FontSize="16" />
+                                <TextBlock Text="slice &amp; group PDF" FontStyle="Italic" Foreground="#555" Margin="0,0,0,4" />
+                                <TextBlock Text="{Binding AppVersionText}"
+                                           Foreground="#555" Margin="0,0,0,4" />
+                                <TextBlock Text="{l:Tr About_Author}" Margin="0,0,0,2" />
+                                <TextBlock Text="github.com/OlBaskov-rec/inb-pdfGrouping"
+                                           Foreground="#777" FontSize="12" />
+                                <Border Height="1" Background="#E0E0E0" Margin="0,8" />
+                                <Button Content="{l:Tr About_CheckUpdate}"
+                                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                        Command="{Binding CheckUpdatesManualCommand}" />
+                                <TextBlock Text="{Binding UpdateCheckStatus}" TextWrapping="Wrap"
+                                           FontSize="12" Foreground="#555" Margin="0,6,0,0" />
+                            </StackPanel>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+            </StackPanel>
             <TextBlock />
         </DockPanel>
 
@@ -107,16 +135,16 @@
         <Border Grid.Row="0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
                 Padding="10" Margin="0,0,0,8">
             <DockPanel>
-                <TextBlock DockPanel.Dock="Top" Text="Исходный PDF-файл"
+                <TextBlock DockPanel.Dock="Top" Text="{l:Tr Source_Title}"
                            FontWeight="Bold" Margin="0,0,0,6" />
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="8,0,0,0">
-                    <Button Content="Обзор…" Command="{Binding BrowseSourceFileCommand}"
-                            ToolTip.Tip="Выбрать PDF-файл" />
+                    <Button Content="{l:Tr Btn_Browse}" Command="{Binding BrowseSourceFileCommand}"
+                            ToolTip.Tip="{l:Tr Tip_BrowseSource}" />
                     <Button Content="✕" Margin="6,0,0,0" Foreground="#C42B1C"
-                            Command="{Binding ClearAllCommand}" ToolTip.Tip="Сбросить всё" />
+                            Command="{Binding ClearAllCommand}" ToolTip.Tip="{l:Tr Tip_ClearAll}" />
                 </StackPanel>
                 <TextBox Text="{Binding SourceFilePath}" IsReadOnly="True"
-                         PlaceholderText="Перетащите PDF сюда или нажмите «Обзор…»"
+                         PlaceholderText="{l:Tr Source_Placeholder}"
                          VerticalAlignment="Center" />
             </DockPanel>
         </Border>
@@ -124,7 +152,7 @@
         <!-- Row 1: всего страниц (под блоком пути к файлу) -->
         <Border Grid.Row="1" Background="#F0F0F0" CornerRadius="4" Padding="8" Margin="0,0,0,8">
             <TextBlock>
-                <Run Text="Всего страниц в источнике:" Foreground="Gray" />
+                <Run Text="{l:Tr Total_Pages}" Foreground="Gray" />
                 <Run Text="{Binding TotalPages}" FontWeight="Bold" />
             </TextBlock>
         </Border>
@@ -141,41 +169,37 @@
             <!-- Диапазоны -->
             <Border Grid.Column="0" MinWidth="240" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
                 <Grid RowDefinitions="Auto,Auto,Auto,Auto">
-                    <TextBlock Grid.Row="0" Text="Диапазоны страниц" FontWeight="Bold" Margin="0,0,0,6" />
+                    <TextBlock Grid.Row="0" Text="{l:Tr Ranges_Title}" FontWeight="Bold" Margin="0,0,0,6" />
 
                     <StackPanel Grid.Row="1" Margin="0,0,0,0">
-                        <TextBlock Margin="0,0,0,4" Foreground="#444">
-                            <Run Text="Страницы (из " />
-                            <Run Text="{Binding TotalPages}" FontWeight="Bold" />
-                            <Run Text="):" />
-                        </TextBlock>
+                        <TextBlock Text="{Binding PagesOfText}" Margin="0,0,0,4" Foreground="#444" />
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <NumericUpDown Value="{Binding RangeStart}" Minimum="1" Maximum="{Binding MaxPage}"
                                            Increment="1" FormatString="0" Width="140" FontSize="16"
-                                           ToolTip.Tip="Начальная страница" />
+                                           ToolTip.Tip="{l:Tr Tip_RangeStart}" />
                             <TextBlock Text="–" VerticalAlignment="Center" Margin="8,0" FontSize="16" />
                             <NumericUpDown Value="{Binding RangeEnd}" Minimum="1" Maximum="{Binding MaxPage}"
                                            Increment="1" FormatString="0" Width="140" FontSize="16"
-                                           ToolTip.Tip="Конечная страница" />
+                                           ToolTip.Tip="{l:Tr Tip_RangeEnd}" />
                         </StackPanel>
                     </StackPanel>
 
                     <StackPanel Grid.Row="2" Margin="0,0,0,6">
                         <Button Margin="0,12,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                                 Command="{Binding AddRangeCommand}" IsEnabled="{Binding !IsProcessing}">
-                            <TextBlock Text="+ Добавить диапазон" TextWrapping="Wrap" TextAlignment="Center" />
+                            <TextBlock Text="{l:Tr Btn_AddRange}" TextWrapping="Wrap" TextAlignment="Center" />
                         </Button>
                         <Button Margin="0,12,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                                 Command="{Binding AddRangePaginatedCommand}" IsEnabled="{Binding !IsProcessing}"
-                                ToolTip.Tip="Раскидать выбранные страницы на отдельные диапазоны по 1 странице">
-                            <TextBlock Text="+ Добавить диапазон постранично" TextWrapping="Wrap" TextAlignment="Center" />
+                                ToolTip.Tip="{l:Tr Tip_AddRangePaginated}">
+                            <TextBlock Text="{l:Tr Btn_AddRangePaginated}" TextWrapping="Wrap" TextAlignment="Center" />
                         </Button>
                         <DockPanel LastChildFill="False" Margin="0,18,0,0">
-                            <Button DockPanel.Dock="Left" Content="Очистить"
+                            <Button DockPanel.Dock="Left" Content="{l:Tr Btn_Clear}"
                                     Command="{Binding ClearRangesCommand}" />
-                            <ToggleButton DockPanel.Dock="Right" Content="👁 Предпросмотр"
+                            <ToggleButton DockPanel.Dock="Right" Content="{l:Tr Btn_Preview}"
                                           IsChecked="{Binding IsPreviewEnabled}"
-                                          ToolTip.Tip="Показать миниатюры начальной и конечной страниц выбранного диапазона" />
+                                          ToolTip.Tip="{l:Tr Tip_Preview}" />
                         </DockPanel>
                     </StackPanel>
 
@@ -187,18 +211,21 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="models:PageRange">
                                 <Grid ColumnDefinitions="*,Auto">
-                                    <StackPanel Grid.Column="0" Orientation="Horizontal">
-                                        <TextBlock Text="Стр." FontSize="11" Foreground="Gray" VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="{l:Tr Range_PagesShort}" FontSize="11" Foreground="Gray" VerticalAlignment="Center" />
                                         <TextBlock Text="{Binding StartPage}" FontWeight="Bold" Margin="3,0,0,0" />
                                         <TextBlock Text="–" Margin="3,0" />
                                         <TextBlock Text="{Binding EndPage}" FontWeight="Bold" />
-                                        <TextBlock Text="{Binding PageCount, StringFormat=' ({0} стр.)'}"
-                                                   FontSize="11" Foreground="Gray" />
+                                        <TextBlock Text=" (" FontSize="11" Foreground="Gray" />
+                                        <TextBlock Text="{Binding PageCount}" FontSize="11" Foreground="Gray" />
+                                        <TextBlock Text=" " FontSize="11" Foreground="Gray" />
+                                        <TextBlock Text="{l:Tr Unit_PagesShort}" FontSize="11" Foreground="Gray" />
+                                        <TextBlock Text=")" FontSize="11" Foreground="Gray" />
                                     </StackPanel>
                                     <Button Grid.Column="1" Content="✕" Padding="6,2" Foreground="#C42B1C"
                                             Background="Transparent" BorderThickness="0"
                                             Command="{ReflectionBinding $parent[ListBox].DataContext.RemoveRangeCommand}"
-                                            CommandParameter="{Binding}" ToolTip.Tip="Убрать этот диапазон" />
+                                            CommandParameter="{Binding}" ToolTip.Tip="{l:Tr Tip_RemoveRange}" />
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -212,10 +239,10 @@
                 <Grid RowDefinitions="Auto,Auto,Auto">
                     <!-- Верх: метка, поле ввода, быстрый выбор, заголовок списка -->
                     <StackPanel Grid.Row="0">
-                        <TextBlock Text="Метка группы" FontWeight="Bold" Margin="0,0,0,2" />
-                        <TextBlock Text="(любые 15 симв.)" FontSize="12" Foreground="#777" Margin="0,0,0,2" />
+                        <TextBlock Text="{l:Tr Label_Title}" FontWeight="Bold" Margin="0,0,0,2" />
+                        <TextBlock Text="{l:Tr Label_Hint}" FontSize="12" Foreground="#777" Margin="0,0,0,2" />
                         <TextBox Text="{Binding GroupLabelText}" MaxLength="15"
-                                 PlaceholderText="напр. А, Б, 1, Часть1" />
+                                 PlaceholderText="{l:Tr Label_Placeholder}" />
                         <!-- Быстрый выбор метки: 5 кнопок в один ряд -->
                         <WrapPanel Margin="0,6,0,0">
                             <Button Content="A" Width="30" Margin="0,0,4,0" Command="{Binding PickLabelCommand}" CommandParameter="A" />
@@ -224,7 +251,7 @@
                             <Button Content="D" Width="30" Margin="0,0,4,0" Command="{Binding PickLabelCommand}" CommandParameter="D" />
                             <Button Content="E" Width="30" Command="{Binding PickLabelCommand}" CommandParameter="E" />
                         </WrapPanel>
-                        <TextBlock Text="Текущие диапазоны:" FontWeight="SemiBold" FontSize="12" Margin="0,12,0,2" />
+                        <TextBlock Text="{l:Tr Label_CurrentRanges}" FontWeight="SemiBold" FontSize="12" Margin="0,12,0,2" />
                     </StackPanel>
 
                     <!-- Середина: список выбранных диапазонов (прокрутка при большом числе) -->
@@ -237,13 +264,13 @@
                     <StackPanel Grid.Row="2">
                         <Button Margin="0,12,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                                 Command="{Binding AddGroupCommand}" IsEnabled="{Binding !IsProcessing}">
-                            <TextBlock Text="Создать группу для вывода ►"
+                            <TextBlock Text="{l:Tr Btn_CreateGroup}"
                                        TextWrapping="Wrap" TextAlignment="Center" />
                         </Button>
                         <Button Margin="0,12,0,12" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                                 Command="{Binding AddGroupPerRangeCommand}" IsEnabled="{Binding !IsProcessing}"
-                                ToolTip.Tip="Каждый текущий диапазон станет отдельной группой (отдельным файлом)">
-                            <TextBlock Text="Создать группу для вывода по каждому диапазону ►"
+                                ToolTip.Tip="{l:Tr Tip_CreateGroupPerRange}">
+                            <TextBlock Text="{l:Tr Btn_CreateGroupPerRange}"
                                        TextWrapping="Wrap" TextAlignment="Center" />
                         </Button>
                     </StackPanel>
@@ -253,7 +280,7 @@
             <!-- Группы -->
             <Border Grid.Column="2" MinWidth="240" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
                 <Grid RowDefinitions="Auto,*">
-                    <TextBlock Grid.Row="0" Text="Сформированные группы" FontWeight="Bold" Margin="0,0,0,6" />
+                    <TextBlock Grid.Row="0" Text="{l:Tr Groups_Title}" FontWeight="Bold" Margin="0,0,0,6" />
 
                     <ListBox Grid.Row="1" ItemsSource="{Binding Groups}">
                         <ListBox.ItemTemplate>
@@ -262,15 +289,19 @@
                                     <WrapPanel Grid.Column="0">
                                         <TextBlock Text="{Binding Label, StringFormat='[{0}]'}"
                                                    FontWeight="Bold" Foreground="#0078D4" />
-                                        <TextBlock Text="{Binding TotalPages, StringFormat=' — {0} стр.'}"
-                                                   FontWeight="SemiBold" />
-                                        <TextBlock Text="{Binding RangesText, StringFormat=' (диапазоны: {0})'}"
-                                                   FontSize="11" Foreground="#777" />
+                                        <TextBlock Text=" — " FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding TotalPages}" FontWeight="SemiBold" />
+                                        <TextBlock Text=" " FontWeight="SemiBold" />
+                                        <TextBlock Text="{l:Tr Unit_PagesShort}" FontWeight="SemiBold" />
+                                        <TextBlock Text="  " FontSize="11" Foreground="#777" />
+                                        <TextBlock Text="{l:Tr Group_RangesPrefix}" FontSize="11" Foreground="#777" />
+                                        <TextBlock Text="{Binding RangesText}" FontSize="11" Foreground="#777" />
+                                        <TextBlock Text=")" FontSize="11" Foreground="#777" />
                                     </WrapPanel>
                                     <Button Grid.Column="1" Content="✕" Padding="6,2" Foreground="#C42B1C"
                                             Background="Transparent" BorderThickness="0"
                                             Command="{ReflectionBinding $parent[ListBox].DataContext.RemoveGroupCommand}"
-                                            CommandParameter="{Binding}" ToolTip.Tip="Удалить группу" />
+                                            CommandParameter="{Binding}" ToolTip.Tip="{l:Tr Tip_RemoveGroup}" />
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -297,29 +328,28 @@
                     <!-- Цветная подсказка: включили «Без пересечений» при неразрешённом вопросе -->
                     <TextBlock IsVisible="{Binding ShowOverlapHint}" TextWrapping="Wrap"
                                FontWeight="Bold" FontSize="14" Margin="0,0,0,12">
-                        <Run Text="Режим 🚫 " Foreground="#0078D4" />
-                        <Run Text="Без пересечений" Foreground="#C42B1C" />
-                        <Run Text=" не активирован, т.к. не решён текущий вопрос по добавлению пересекающегося диапазона"
-                             Foreground="#0078D4" />
+                        <Run Text="{l:Tr Hint_BlockPrefix}" Foreground="#0078D4" />
+                        <Run Text="{l:Tr Hint_BlockName}" Foreground="#C42B1C" />
+                        <Run Text="{l:Tr Hint_BlockSuffix}" Foreground="#0078D4" />
                     </TextBlock>
 
                     <!-- Предупреждение о пересечении -->
                     <StackPanel IsVisible="{Binding HasOverlapWarning}">
-                        <TextBlock Text="Внимание: пересечение с уже выбранными страницами"
+                        <TextBlock Text="{l:Tr Overlap_Title}"
                                    FontWeight="Bold" FontSize="14" Foreground="#C42B1C"
                                    TextWrapping="Wrap" Margin="0,0,0,6" />
                         <ItemsControl ItemsSource="{Binding Overlaps}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:OverlapInfo">
                                     <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,2">
-                                        <Run Text="Диапазон " FontWeight="Bold" />
+                                        <Run Text="{l:Tr Overlap_RangeWord}" FontWeight="Bold" />
                                         <Run Text="{Binding NewPages}" FontWeight="Bold" />
-                                        <Run Text="  пересекает  " Foreground="#C42B1C" FontWeight="Bold" />
-                                        <Run Text="Диапазон " FontWeight="Bold" />
+                                        <Run Text="{l:Tr Overlap_Intersects}" Foreground="#C42B1C" FontWeight="Bold" />
+                                        <Run Text="{l:Tr Overlap_RangeWord}" FontWeight="Bold" />
                                         <Run Text="{Binding ExistingPages}" FontWeight="Bold" />
                                         <Run Text="  ·  " Foreground="#888" />
                                         <Run Text="{Binding Source}" Foreground="#888" />
-                                        <Run Text="   (повторяются " Foreground="#C42B1C" FontWeight="Bold" />
+                                        <Run Text="{l:Tr Overlap_RepeatOpen}" Foreground="#C42B1C" FontWeight="Bold" />
                                         <Run Text="{Binding Dup}" Foreground="#C42B1C" FontWeight="Bold" />
                                         <Run Text=")" Foreground="#C42B1C" FontWeight="Bold" />
                                     </TextBlock>
@@ -327,35 +357,35 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                         <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" FontSize="12">
-                            <Run Text="Дублируются: " FontWeight="Bold" />
+                            <Run Text="{l:Tr Overlap_Duplicated}" FontWeight="Bold" />
                             <Run Text="{Binding DuplicatedPagesText}" FontWeight="Bold" Foreground="#C42B1C" />
                         </TextBlock>
                         <TextBlock Margin="0,12,0,0" TextWrapping="Wrap" FontSize="14"
                                    IsVisible="{Binding HasPendingDecision}">
-                            <Run Text="Без пересечения добавится: " FontWeight="Bold" Foreground="#1B7F34" />
+                            <Run Text="{l:Tr Overlap_WithoutAdds}" FontWeight="Bold" Foreground="#1B7F34" />
                             <Run Text="{Binding PendingResolveText}" FontWeight="Bold" Foreground="#1B7F34" />
                         </TextBlock>
                         <!-- Кнопки решения видны только пока решение не принято (после «Добавить ещё раз» — скрыты) -->
                         <WrapPanel Margin="0,12,0,0" IsVisible="{Binding HasPendingDecision}">
-                            <Button Content="Добавить ещё раз" Margin="0,0,8,4"
+                            <Button Content="{l:Tr Btn_AddAgain}" Margin="0,0,8,4"
                                     Command="{Binding KeepOverlapRangeCommand}"
-                                    ToolTip.Tip="Оставить диапазон как есть — страницы продублируются" />
-                            <Button Content="Добавить без пересечения" Margin="0,0,8,4"
+                                    ToolTip.Tip="{l:Tr Tip_AddAgain}" />
+                            <Button Content="{l:Tr Btn_AddWithout}" Margin="0,0,8,4"
                                     Background="#1B7F34" Foreground="White" FontWeight="Bold"
                                     Command="{Binding KeepWithoutOverlapCommand}"
-                                    ToolTip.Tip="Добавить только свободные страницы (диапазон обрезается)" />
-                            <Button Content="Убрать" Margin="0,0,0,4" Foreground="#C42B1C"
+                                    ToolTip.Tip="{l:Tr Tip_AddWithout}" />
+                            <Button Content="{l:Tr Btn_Remove}" Margin="0,0,0,4" Foreground="#C42B1C"
                                     Command="{Binding RemoveOverlapRangeCommand}"
-                                    ToolTip.Tip="Не добавлять этот диапазон" />
+                                    ToolTip.Tip="{l:Tr Tip_Remove}" />
                         </WrapPanel>
                     </StackPanel>
 
                     <!-- Разрешение конфликта (режим «Без пересечений» при уже имеющихся пересечениях) -->
                     <StackPanel IsVisible="{Binding HasConflictPrompt}" Margin="0,12,0,0">
-                        <TextBlock Text="Решение конфликта по пересечению страниц выбранных диапазонов"
+                        <TextBlock Text="{l:Tr Conflict_Title}"
                                    FontWeight="Bold" FontSize="14" Foreground="#1B7F34"
                                    TextWrapping="Wrap" Margin="0,0,0,6" />
-                        <TextBlock Text="Предлагаемые непересекающиеся диапазоны:"
+                        <TextBlock Text="{l:Tr Conflict_Proposed}"
                                    FontSize="12" Foreground="#555" Margin="0,0,0,4" />
                         <ItemsControl ItemsSource="{Binding ResolvedRanges}">
                             <ItemsControl.ItemTemplate>
@@ -365,17 +395,17 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                         <WrapPanel Margin="0,8,0,0">
-                            <Button Content="Подтвердить" Margin="0,0,8,4" Command="{Binding ConfirmResolveCommand}"
+                            <Button Content="{l:Tr Btn_Confirm}" Margin="0,0,8,4" Command="{Binding ConfirmResolveCommand}"
                                     Background="#1B7F34" Foreground="White" FontWeight="Bold"
-                                    ToolTip.Tip="Применить непересекающиеся диапазоны (обрезка/разбиение)" />
-                            <Button Content="Убрать пересекающиеся" Margin="0,0,8,4" Foreground="#C42B1C"
+                                    ToolTip.Tip="{l:Tr Tip_Confirm}" />
+                            <Button Content="{l:Tr Btn_RemoveOverlapping}" Margin="0,0,8,4" Foreground="#C42B1C"
                                     Command="{Binding RemoveOverlappingRangesCommand}"
-                                    ToolTip.Tip="Оставить только первые занявшие страницы диапазоны" />
+                                    ToolTip.Tip="{l:Tr Tip_RemoveOverlapping}" />
                             <!-- Появляется с небольшой задержкой, чтобы не нажать случайно -->
-                            <Button Content="Оставить имеющиеся пересечения" Margin="0,0,0,4"
+                            <Button Content="{l:Tr Btn_KeepOverlaps}" Margin="0,0,0,4"
                                     IsVisible="{Binding ShowKeepOverlapsButton}"
                                     Command="{Binding KeepExistingOverlapsCommand}"
-                                    ToolTip.Tip="Не менять диапазоны; режим «Без пересечений» останется выключенным" />
+                                    ToolTip.Tip="{l:Tr Tip_KeepOverlaps}" />
                         </WrapPanel>
                     </StackPanel>
                 </StackPanel>
@@ -393,9 +423,9 @@
                     <TextBlock Text="{Binding MergePromptText}" TextWrapping="Wrap"
                                FontWeight="SemiBold" Foreground="#0A4A82" FontSize="13" />
                     <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                        <Button Content="Добавить в группу" Command="{Binding ConfirmMergeCommand}"
+                        <Button Content="{l:Tr Btn_AddToGroup}" Command="{Binding ConfirmMergeCommand}"
                                 Background="#0078D4" Foreground="White" FontWeight="Bold" />
-                        <Button Content="Другое название" Margin="8,0,0,0"
+                        <Button Content="{l:Tr Btn_OtherName}" Margin="8,0,0,0"
                                 Command="{Binding CancelMergeCommand}" />
                     </StackPanel>
                 </StackPanel>
@@ -408,9 +438,9 @@
                 Padding="10" IsVisible="{Binding HasResults}">
             <Grid RowDefinitions="Auto,*">
                 <DockPanel Grid.Row="0" Margin="0,0,0,6">
-                    <Button DockPanel.Dock="Right" Content="📂 Открыть папку"
+                    <Button DockPanel.Dock="Right" Content="{l:Tr Btn_OpenFolder}"
                             Command="{Binding OpenOutputFolderCommand}" />
-                    <TextBlock Text="Созданные файлы" FontWeight="Bold" VerticalAlignment="Center" />
+                    <TextBlock Text="{l:Tr Results_Title}" FontWeight="Bold" VerticalAlignment="Center" />
                 </DockPanel>
                 <ListBox Grid.Row="1" ItemsSource="{Binding OutputFiles}" Height="150">
                     <ListBox.ItemTemplate>
@@ -432,12 +462,12 @@
                 <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
                         Padding="10" Margin="0,0,0,8">
                     <Grid ColumnDefinitions="Auto,*,Auto">
-                        <TextBlock Grid.Column="0" Text="Сохранить результаты в:" FontWeight="Bold"
+                        <TextBlock Grid.Column="0" Text="{l:Tr Save_Title}" FontWeight="Bold"
                                    VerticalAlignment="Center" Margin="0,0,8,0" />
                         <TextBox Grid.Column="1" Text="{Binding OutputDirectory}" IsReadOnly="True"
-                                 VerticalAlignment="Center" PlaceholderText="папка для результатов" />
-                        <Button Grid.Column="2" Content="Обзор…" Margin="8,0,0,0"
-                                Command="{Binding BrowseOutputDirectoryCommand}" ToolTip.Tip="Выбрать папку" />
+                                 VerticalAlignment="Center" PlaceholderText="{l:Tr Save_Placeholder}" />
+                        <Button Grid.Column="2" Content="{l:Tr Btn_Browse}" Margin="8,0,0,0"
+                                Command="{Binding BrowseOutputDirectoryCommand}" ToolTip.Tip="{l:Tr Tip_BrowseOutput}" />
                     </Grid>
                 </Border>
 
@@ -445,7 +475,7 @@
                 <Border Background="#E7F3E8" BorderBrush="#3A8A3F" BorderThickness="1" CornerRadius="6"
                         Padding="10,8" Margin="0,0,0,8" IsVisible="{Binding IsUpdateReady}">
                     <DockPanel>
-                        <Button DockPanel.Dock="Right" Content="⟳ Обновить и перезапустить"
+                        <Button DockPanel.Dock="Right" Content="{l:Tr Btn_UpdateRestart}"
                                 Command="{Binding ApplyUpdateCommand}"
                                 Background="#3A8A3F" Foreground="White" FontWeight="Bold" />
                         <TextBlock Text="{Binding UpdateText}" VerticalAlignment="Center"
@@ -455,15 +485,15 @@
 
                 <!-- Сообщения выводятся в области уведомлений (баннер выше), а не рядом с кнопками. -->
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="▶ Обработать" Command="{Binding ProcessCommand}"
+                    <Button Content="{l:Tr Btn_Process}" Command="{Binding ProcessCommand}"
                             IsEnabled="{Binding !IsProcessing}"
                             Padding="20,8" FontSize="15" FontWeight="Bold"
                             Background="#0078D4" Foreground="White" />
                     <!-- Тумблер «Без пересечений»: запрещает добавлять пересекающиеся диапазоны/группы -->
-                    <ToggleButton Content="🚫 Без пересечений" Margin="10,0,0,0"
+                    <ToggleButton Content="{l:Tr Btn_BlockOverlaps}" Margin="10,0,0,0"
                                   VerticalAlignment="Center"
                                   IsChecked="{Binding BlockOverlaps}"
-                                  ToolTip.Tip="Во включённом состоянии нельзя выбрать пересекающиеся страницы (диапазоны и группы)" />
+                                  ToolTip.Tip="{l:Tr Tip_BlockOverlaps}" />
                     <ProgressBar Width="120" Margin="12,0" IsIndeterminate="{Binding IsProcessing}"
                                  IsVisible="{Binding IsProcessing}" VerticalAlignment="Center" />
                 </StackPanel>

@@ -3,6 +3,7 @@ using System.Reflection;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Platform.Storage;
+using PdfGrouping.Desktop.Localization;
 using PdfGrouping.Desktop.Services;
 using PdfGrouping.Desktop.ViewModels;
 
@@ -16,7 +17,8 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        Title = $"PDF Grouping v{GetAppVersion()} — Разделение и группировка PDF";
+        UpdateTitle();
+        Localizer.Instance.LanguageChanged += (_, _) => UpdateTitle();
 
         _viewModel = new MainViewModel(new StorageProviderFilePicker(() => this), new UpdateService());
         DataContext = _viewModel;
@@ -36,6 +38,9 @@ public partial class MainWindow : Window
 
         AdjustWidthForPreview();
     }
+
+    private void UpdateTitle() =>
+        Title = $"PDF Grouping v{GetAppVersion()} — {Localizer.Instance.Get("Win_Subtitle")}";
 
     private double _widthBeforePreview;
 

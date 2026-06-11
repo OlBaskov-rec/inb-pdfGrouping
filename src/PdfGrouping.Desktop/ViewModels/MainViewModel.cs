@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.Input;
 using PdfGrouping.Core;
 using PdfGrouping.Core.Models;
 using PdfGrouping.Core.Services;
+using PdfGrouping.Desktop.Localization;
 using PdfGrouping.Desktop.Services;
 
 namespace PdfGrouping.Desktop.ViewModels;
@@ -24,6 +25,9 @@ public partial class MainViewModel : ObservableObject
     private readonly IFilePickerService _filePicker;
     private readonly UpdateService _updateService;
 
+    /// <summary>Доступ к локализатору.</summary>
+    private static Localizer L => Localizer.Instance;
+
     public MainViewModel(IFilePickerService filePicker, UpdateService updateService)
     {
         _filePicker = filePicker;
@@ -31,7 +35,27 @@ public partial class MainViewModel : ObservableObject
 
         // Высота списка диапазонов зависит от числа строк (3..5), дальше — прокрутка.
         Ranges.CollectionChanged += (_, _) => OnPropertyChanged(nameof(RangesListHeight));
+
+        // Обновление зависящих от языка строк при переключении языка «на лету».
+        L.LanguageChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(LanguageShort));
+            OnPropertyChanged(nameof(AppVersionText));
+            OnPropertyChanged(nameof(PagesOfText));
+            UpdateRangesDisplay();
+        };
     }
+
+    // --- Язык интерфейса ---
+
+    /// <summary>Список языков для меню выбора.</summary>
+    public System.Collections.Generic.IReadOnlyList<Localizer.LanguageOption> Languages => Localizer.Languages;
+
+    /// <summary>Краткая подпись текущего языка для кнопки.</summary>
+    public string LanguageShort => L.CurrentShort;
+
+    [RelayCommand]
+    private void SetLanguage(string code) => L.SetLanguage(code);
 
     /// <summary>Высота списка диапазонов: 3 строки по умолчанию, до 5 — растёт, дальше прокрутка.</summary>
     public double RangesListHeight => Math.Clamp(Ranges.Count, 3, 5) * 48 + 20;
@@ -46,10 +70,17 @@ public partial class MainViewModel : ObservableObject
     /// <summary>Максимум для полей ввода страниц (минимум 1, чтобы NumericUpDown был корректен).</summary>
     public decimal MaxPage => Math.Max(1, TotalPages);
 
-    partial void OnTotalPagesChanged(int value) => OnPropertyChanged(nameof(MaxPage));
+    /// <summary>Локализованная подпись «Страницы (из N):» (число в середине — через шаблон).</summary>
+    public string PagesOfText => L.Format("Ranges_PagesOf", TotalPages);
+
+    partial void OnTotalPagesChanged(int value)
+    {
+        OnPropertyChanged(nameof(MaxPage));
+        OnPropertyChanged(nameof(PagesOfText));
+    }
 
     [ObservableProperty]
-    private string _statusText = "Готов к работе";
+    private string _statusText = Localizer.Instance.Get("Status_Ready");
 
     [ObservableProperty]
     private bool _statusIsError;
@@ -58,7 +89,7 @@ public partial class MainViewModel : ObservableObject
     public ObservableCollection<PageRange> Ranges { get; } = new();
 
     [ObservableProperty]
-    private string _rangesDisplayText = "(пусто)";
+    private string _rangesDisplayText = Localizer.Instance.Get("List_Empty");
 
     // --- Группы ---
     public ObservableCollection<PdfGroup> Groups { get; } = new();
@@ -121,13 +152,13 @@ public partial class MainViewModel : ObservableObject
         if (GuardPendingDecision()) return;
         if (TotalPages <= 0)
         {
-            SetError("Сначала откройте PDF-файл.");
+            SetError(L["Err_OpenPdfFirst"]);
             return;
         }
 
         if (RangeStart is null || RangeEnd is null)
         {
-            SetError("Введите номера начальной и конечной страниц.");
+            SetError(L["Err_EnterPageNumbers"]);
             return;
         }
         int start = (int)RangeStart.Value;
@@ -135,13 +166,13 @@ public partial class MainViewModel : ObservableObject
 
         if (start < 1 || end < 1 || start > TotalPages || end > TotalPages)
         {
-            SetError($"Номера страниц должны быть от 1 до {TotalPages}.");
+            SetError(L.Format("Err_PageRange", TotalPages));
             return;
         }
 
         if (start > end)
         {
-            SetError("Начальная страница не может быть больше конечной.");
+            SetError(L["Err_StartGtEnd"]);
             return;
         }
 
@@ -164,8 +195,7 @@ public partial class MainViewModel : ObservableObject
         // Режим «Без пересечений»: диапазон с пересекающимися страницами не добавляется.
         if (BlockOverlaps && dupIntervals.Count > 0)
         {
-            ShowBlockMessage($"Пересечения запрещены: {WithUnit(PageRangeUtils.MergeToString(dupIntervals))} уже выбраны. " +
-                             "Диапазон не добавлен.");
+            ShowBlockMessage(L.Format("Block_ForbiddenAddOne", WithUnit(PageRangeUtils.MergeToString(dupIntervals))));
             return;
         }
 
@@ -176,9 +206,9 @@ public partial class MainViewModel : ObservableObject
             // Пересечение: НЕ добавляем сразу — ждём решения пользователя (кнопки в баннере).
             Overlaps.Clear();
             foreach (var r in curOverlaps)
-                Overlaps.Add(MakeOverlap(start, end, r, "текущие диапазоны"));
+                Overlaps.Add(MakeOverlap(start, end, r, L["Src_CurrentRanges"]));
             foreach (var (label, r) in prevOverlaps)
-                Overlaps.Add(MakeOverlap(start, end, r, $"группа {label}"));
+                Overlaps.Add(MakeOverlap(start, end, r, L.Format("Src_Group", label)));
 
             DuplicatedPagesText = WithUnit(PageRangeUtils.MergeToString(dupIntervals));
             _pendingRanges.Clear();
@@ -194,7 +224,7 @@ public partial class MainViewModel : ObservableObject
         Ranges.Add(range);
         UpdateRangesDisplay();
         AdvanceRangeInput(end);
-        SetInfo($"Добавлен диапазон: {range}");
+        SetInfo(L.Format("Msg_RangeAdded", range));
     }
 
     /// <summary>«+ Добавить диапазон постранично» — раскидать выбранные страницы по 1-страничным диапазонам.</summary>
@@ -202,17 +232,17 @@ public partial class MainViewModel : ObservableObject
     private void AddRangePaginated()
     {
         if (GuardPendingDecision()) return;
-        if (TotalPages <= 0) { SetError("Сначала откройте PDF-файл."); return; }
+        if (TotalPages <= 0) { SetError(L["Err_OpenPdfFirst"]); return; }
         if (RangeStart is null || RangeEnd is null)
         {
-            SetError("Введите номера начальной и конечной страниц.");
+            SetError(L["Err_EnterPageNumbers"]);
             return;
         }
         int start = (int)RangeStart.Value;
         int end = (int)RangeEnd.Value;
         if (start < 1 || end < 1 || start > TotalPages || end > TotalPages)
-        { SetError($"Номера страниц должны быть от 1 до {TotalPages}."); return; }
-        if (start > end) { SetError("Начальная страница не может быть больше конечной."); return; }
+        { SetError(L.Format("Err_PageRange", TotalPages)); return; }
+        if (start > end) { SetError(L["Err_StartGtEnd"]); return; }
 
         var curOverlaps = Ranges.Where(r => start <= r.EndPage && end >= r.StartPage).ToList();
         var prevOverlaps = Groups
@@ -226,8 +256,7 @@ public partial class MainViewModel : ObservableObject
         HasBlockMessage = false;
         if (BlockOverlaps && dupIntervals.Count > 0)
         {
-            ShowBlockMessage($"Пересечения запрещены: {WithUnit(PageRangeUtils.MergeToString(dupIntervals))} уже выбраны. " +
-                             "Диапазоны не добавлены.");
+            ShowBlockMessage(L.Format("Block_ForbiddenAddMany", WithUnit(PageRangeUtils.MergeToString(dupIntervals))));
             return;
         }
 
@@ -241,9 +270,9 @@ public partial class MainViewModel : ObservableObject
             // Пересечение: НЕ добавляем сразу — ждём решения.
             Overlaps.Clear();
             foreach (var r in curOverlaps)
-                Overlaps.Add(MakeOverlap(start, end, r, "текущие диапазоны"));
+                Overlaps.Add(MakeOverlap(start, end, r, L["Src_CurrentRanges"]));
             foreach (var (label, r) in prevOverlaps)
-                Overlaps.Add(MakeOverlap(start, end, r, $"группа {label}"));
+                Overlaps.Add(MakeOverlap(start, end, r, L.Format("Src_Group", label)));
             DuplicatedPagesText = WithUnit(PageRangeUtils.MergeToString(dupIntervals));
             _pendingRanges.Clear();
             _pendingRanges.AddRange(pages);
@@ -258,7 +287,7 @@ public partial class MainViewModel : ObservableObject
             Ranges.Add(pr);
         UpdateRangesDisplay();
         AdvanceRangeInput(end);
-        SetInfo($"Добавлено постранично: {end - start + 1} диапазонов по 1 странице.");
+        SetInfo(L.Format("Msg_AddedPaginated", end - start + 1));
     }
 
     private static OverlapInfo MakeOverlap(int start, int end, PageRange existing, string source)
@@ -274,7 +303,7 @@ public partial class MainViewModel : ObservableObject
     {
         if (string.IsNullOrEmpty(pages)) return pages;
         bool plural = pages.Contains('–') || pages.Contains(',');
-        return plural ? $"страницы {pages}" : $"страница {pages}";
+        return plural ? L.Format("Unit_PageMany", pages) : L.Format("Unit_PageOne", pages);
     }
 
     // Баннер пересечения с предыдущими группами
@@ -320,7 +349,7 @@ public partial class MainViewModel : ObservableObject
             _pendingTrimmed.Add(new PageRange { StartPage = s, EndPage = e });
 
         PendingResolveText = trimmed.Count == 0
-            ? "свободных страниц нет"
+            ? L["Resolve_NoFree"]
             : WithUnit(PageRangeUtils.MergeToString(trimmed));
     }
 
@@ -335,7 +364,7 @@ public partial class MainViewModel : ObservableObject
             HasPendingDecision = false;
             HasOverlapWarning = false;
             Overlaps.Clear();
-            SetInfo("Все страницы уже выбраны — добавлять нечего.");
+            SetInfo(L["Msg_AllSelected"]);
             return;
         }
 
@@ -353,7 +382,7 @@ public partial class MainViewModel : ObservableObject
 
         UpdateRangesDisplay();
         AdvanceRangeInput(lastEnd);
-        SetInfo("Добавлено без пересечения.");
+        SetInfo(L["Msg_AddedWithout"]);
     }
 
     private void AdvanceRangeInput(int end)
@@ -367,12 +396,12 @@ public partial class MainViewModel : ObservableObject
     {
         if (HasPendingDecision)
         {
-            ShowBlockMessage("Сначала примите решение по пересечению: «Добавить ещё раз» или «Убрать».");
+            ShowBlockMessage(L["Block_DecideFirst"]);
             return true;
         }
         if (HasConflictPrompt)
         {
-            ShowBlockMessage("Сначала решите конфликт пересечений: «Подтвердить» или «Убрать пересекающиеся».");
+            ShowBlockMessage(L["Block_ResolveFirst"]);
             return true;
         }
         return false;
@@ -459,7 +488,7 @@ public partial class MainViewModel : ObservableObject
         ResolvedRanges.Clear();
         ShowKeepOverlapsButton = false;
         Dispatcher.UIThread.Post(() => BlockOverlaps = false);
-        SetInfo("Пересечения оставлены без изменений.");
+        SetInfo(L["Msg_OverlapsKept"]);
     }
 
     partial void OnBlockOverlapsChanged(bool value)
@@ -486,7 +515,7 @@ public partial class MainViewModel : ObservableObject
                 var resolved = PageRangeUtils.ResolveOverlaps(intervals);
                 ResolvedRanges.Clear();
                 foreach (var (s, e) in resolved)
-                    ResolvedRanges.Add(s == e ? $"Стр. {s}" : $"Стр. {s}–{e}");
+                    ResolvedRanges.Add(s == e ? L.Format("Resolved_Page", s) : L.Format("Resolved_PageRange", s, e));
                 HasConflictPrompt = true;
             }
         }
@@ -519,7 +548,7 @@ public partial class MainViewModel : ObservableObject
 
         ClearOverlapState();
         UpdateRangesDisplay();
-        SetInfo("Пересечения устранены: диапазоны обрезаны.");
+        SetInfo(L["Msg_OverlapsTrimmed"]);
     }
 
     /// <summary>«Убрать пересекающиеся» — оставить только первые занявшие страницы диапазоны.</summary>
@@ -540,7 +569,7 @@ public partial class MainViewModel : ObservableObject
 
         ClearOverlapState();
         UpdateRangesDisplay();
-        SetInfo("Пересекающиеся диапазоны убраны.");
+        SetInfo(L["Msg_OverlappingRemoved"]);
     }
 
     private void ClearOverlapState()
@@ -576,7 +605,7 @@ public partial class MainViewModel : ObservableObject
         UpdateRangesDisplay();
         AdvanceRangeInput(lastEnd);
         // Область предупреждения НЕ убираем — остаётся как информация.
-        SetInfo("Диапазон добавлен (страницы продублируются).");
+        SetInfo(L["Msg_RangeAddedDup"]);
     }
 
     /// <summary>«Убрать» — отклонить ожидающий диапазон или удалить только что добавленную партию.</summary>
@@ -589,14 +618,14 @@ public partial class MainViewModel : ObservableObject
             _pendingRanges.Clear();
             _pendingTrimmed.Clear();
             HasPendingDecision = false;
-            SetInfo("Пересекающийся диапазон не добавлен.");
+            SetInfo(L["Msg_OverlapNotAdded"]);
         }
         else
         {
             foreach (var r in _overlapBatch)
                 Ranges.Remove(r);
             UpdateRangesDisplay();
-            SetInfo("Пересекающиеся диапазоны убраны.");
+            SetInfo(L["Msg_OverlappingRemoved"]);
         }
         _overlapBatch.Clear();
         HasOverlapWarning = false;
@@ -614,7 +643,7 @@ public partial class MainViewModel : ObservableObject
         }
         Ranges.Remove(range);
         UpdateRangesDisplay();
-        SetInfo($"Диапазон {range} убран");
+        SetInfo(L.Format("Msg_RangeRemoved", range));
     }
 
     // -------------------------------------------------------------------
@@ -663,7 +692,7 @@ public partial class MainViewModel : ObservableObject
     {
         PreviewRangeText = value is null
             ? string.Empty
-            : $"↕ {value.PageCount} стр.  ({value.StartPage} → {value.EndPage})";
+            : L.Format("Preview_RangeInfo", value.PageCount, value.StartPage, value.EndPage);
 
         if (IsPreviewEnabled)
             _ = RefreshPreviewAsync();
@@ -744,7 +773,7 @@ public partial class MainViewModel : ObservableObject
         Ranges.Clear();
         ClearOverlapState();
         UpdateRangesDisplay();
-        SetInfo("Диапазоны очищены");
+        SetInfo(L["Msg_RangesCleared"]);
     }
 
     // Запрос на объединение с существующей группой
@@ -779,7 +808,7 @@ public partial class MainViewModel : ObservableObject
 
         if (Ranges.Count == 0)
         {
-            SetError("Сначала добавьте диапазоны страниц.");
+            SetError(L["Err_AddRangesFirst"]);
             return;
         }
 
@@ -788,7 +817,7 @@ public partial class MainViewModel : ObservableObject
         {
             // Спрашиваем: добавить выбранные диапазоны в уже существующую группу?
             _mergeTarget = existing;
-            MergePromptText = $"Группа «{existing.Label}» уже существует. Добавить выбранные диапазоны в неё?";
+            MergePromptText = L.Format("Merge_Prompt", existing.Label);
             HasMergePrompt = true;
             return;
         }
@@ -813,7 +842,7 @@ public partial class MainViewModel : ObservableObject
     {
         HasMergePrompt = false;
         _mergeTarget = null;
-        SetError("Выберите другое название группы.");
+        SetError(L["Err_ChooseOtherName"]);
     }
 
     private void CreateOrMergeGroup(string label, PdfGroup? target)
@@ -831,8 +860,7 @@ public partial class MainViewModel : ObservableObject
 
             if (conflicts.Count > 0)
             {
-                ShowBlockMessage($"Пересечения запрещены: {WithUnit(PageRangeUtils.MergeToString(conflicts))} " +
-                                 "пересекаются с уже выбранными. В режиме «Без пересечений» действие недопустимо.");
+                ShowBlockMessage(L.Format("Block_ForbiddenGroup", WithUnit(PageRangeUtils.MergeToString(conflicts))));
                 return;
             }
         }
@@ -847,7 +875,7 @@ public partial class MainViewModel : ObservableObject
             foreach (var r in Ranges)
                 merged.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage });
             Groups[idx] = merged;
-            SetInfo($"Диапазоны добавлены в группу «{merged.Label}» ({merged.TotalPages} стр.)");
+            SetInfo(L.Format("Msg_RangesAddedToGroup", merged.Label, merged.TotalPages));
         }
         else
         {
@@ -855,7 +883,7 @@ public partial class MainViewModel : ObservableObject
             foreach (var r in Ranges)
                 group.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage });
             Groups.Add(group);
-            SetInfo($"Группа «{label}» добавлена ({group.TotalPages} стр.)");
+            SetInfo(L.Format("Msg_GroupAdded", label, group.TotalPages));
         }
 
         // Готовимся к следующей группе
@@ -872,7 +900,7 @@ public partial class MainViewModel : ObservableObject
         if (GuardPendingDecision()) return;
         if (Ranges.Count == 0)
         {
-            SetError("Сначала добавьте диапазоны страниц.");
+            SetError(L["Err_AddRangesFirst"]);
             return;
         }
 
@@ -901,8 +929,7 @@ public partial class MainViewModel : ObservableObject
 
             if (conflicts.Count > 0)
             {
-                ShowBlockMessage($"Пересечения запрещены: {WithUnit(PageRangeUtils.MergeToString(conflicts))} " +
-                                 "пересекаются. В режиме «Без пересечений» действие недопустимо.");
+                ShowBlockMessage(L.Format("Block_ForbiddenPerRange", WithUnit(PageRangeUtils.MergeToString(conflicts))));
                 return;
             }
         }
@@ -924,7 +951,7 @@ public partial class MainViewModel : ObservableObject
         ClearOverlapState();
         UpdateRangesDisplay();
         GroupLabelText = string.Empty;
-        SetInfo($"Создано групп: {created} (по одной на диапазон).");
+        SetInfo(L.Format("Msg_GroupsCreated", created));
     }
 
     private string UniqueGroupLabel(string baseLabel)
@@ -948,20 +975,20 @@ public partial class MainViewModel : ObservableObject
     {
         if (Groups.Count == 0)
         {
-            SetError("Нет групп для обработки. Добавьте хотя бы одну группу.");
+            SetError(L["Err_NoGroups"]);
             return;
         }
 
         if (string.IsNullOrEmpty(OutputDirectory))
         {
-            SetError("Выберите папку для сохранения результатов.");
+            SetError(L["Err_ChooseOutput"]);
             return;
         }
 
         IsProcessing = true;
         HasResults = false;
         OutputFiles.Clear();
-        SetInfo("Обработка…");
+        SetInfo(L["Status_Processing"]);
 
         try
         {
@@ -975,11 +1002,11 @@ public partial class MainViewModel : ObservableObject
                 OutputFiles.Add(f);
 
             HasResults = produced.Count > 0;
-            SetInfo($"Готово! Создано файлов: {produced.Count}");
+            SetInfo(L.Format("Msg_Done", produced.Count));
         }
         catch (Exception ex)
         {
-            SetError($"Ошибка при обработке: {ex.Message}");
+            SetError(L.Format("Err_Processing", ex.Message));
         }
         finally
         {
@@ -1002,6 +1029,9 @@ public partial class MainViewModel : ObservableObject
     /// <summary>Версия приложения (из сборки) для окна «О программе».</summary>
     public string AppVersion { get; } = GetAppVersion();
 
+    /// <summary>Локализованная строка «Версия X» (обновляется при смене языка).</summary>
+    public string AppVersionText => L.Format("About_Version", AppVersion);
+
     [ObservableProperty]
     private string _updateCheckStatus = string.Empty;
 
@@ -1021,30 +1051,30 @@ public partial class MainViewModel : ObservableObject
     {
         if (!_updateService.IsSupported)
         {
-            UpdateCheckStatus = "Проверка доступна только в установленной или portable-версии (не в режиме разработки).";
+            UpdateCheckStatus = L["Upd_OnlyInstalled"];
             return;
         }
 
-        UpdateCheckStatus = "Проверка…";
+        UpdateCheckStatus = L["Upd_Checking"];
         try
         {
             var version = await _updateService.CheckAsync();
             if (version is null)
             {
-                UpdateCheckStatus = "У вас последняя версия.";
+                UpdateCheckStatus = L["Upd_Latest"];
                 return;
             }
 
-            UpdateCheckStatus = $"Найдено обновление {version}. Скачивание…";
+            UpdateCheckStatus = L.Format("Upd_Found", version);
             await _updateService.DownloadAsync();
 
-            UpdateText = $"Доступно обновление {version} — готово к установке.";
+            UpdateText = L.Format("Upd_ReadyText", version);
             IsUpdateReady = true;
-            UpdateCheckStatus = $"Обновление {version} скачано. Нажмите «Обновить и перезапустить».";
+            UpdateCheckStatus = L.Format("Upd_Downloaded", version);
         }
         catch (Exception ex)
         {
-            UpdateCheckStatus = "Не удалось проверить обновления: " + ex.Message;
+            UpdateCheckStatus = L.Format("Upd_Failed", ex.Message);
         }
     }
 
@@ -1064,7 +1094,7 @@ public partial class MainViewModel : ObservableObject
                 return;
 
             await _updateService.DownloadAsync();
-            UpdateText = $"Доступно обновление {version} — готово к установке.";
+            UpdateText = L.Format("Upd_ReadyText", version);
             IsUpdateReady = true;
         }
         catch
@@ -1101,7 +1131,7 @@ public partial class MainViewModel : ObservableObject
         OutputDirectory = string.Empty;
         RangeStart = 1;
         RangeEnd = 1;
-        SetInfo("Готов к работе");
+        SetInfo(L["Status_Ready"]);
     }
 
     // -------------------------------------------------------------------
@@ -1113,7 +1143,7 @@ public partial class MainViewModel : ObservableObject
     {
         if (!path.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
         {
-            SetError("Пожалуйста, выберите PDF-файл.");
+            SetError(L["Err_SelectPdf"]);
             return;
         }
 
@@ -1133,12 +1163,12 @@ public partial class MainViewModel : ObservableObject
             // Если групп ещё нет — подставим первую метку «A» (можно изменить).
             if (Groups.Count == 0 && string.IsNullOrEmpty(GroupLabelText))
                 GroupLabelText = "A";
-            SetInfo($"Загружен: {Path.GetFileName(SourceFilePath)} ({TotalPages} стр.)");
+            SetInfo(L.Format("Msg_Loaded", Path.GetFileName(SourceFilePath), TotalPages));
         }
         catch (Exception ex)
         {
             TotalPages = 0;
-            SetError($"Не удалось прочитать PDF: {ex.Message}");
+            SetError(L.Format("Err_ReadPdf", ex.Message));
         }
     }
 
@@ -1146,7 +1176,7 @@ public partial class MainViewModel : ObservableObject
     {
         // По одному диапазону на строке для лучшей читаемости.
         RangesDisplayText = Ranges.Count == 0
-            ? "(пусто)"
+            ? L["List_Empty"]
             : string.Join("\n", Ranges.Select(r => r.ToString()));
     }
 
