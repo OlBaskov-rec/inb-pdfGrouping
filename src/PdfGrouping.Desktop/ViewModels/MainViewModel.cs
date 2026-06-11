@@ -1081,6 +1081,18 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string _updateCheckStatus = string.Empty;
 
+    /// <summary>Разворачивает цепочку вложенных исключений в одну строку (для диагностики).</summary>
+    private static string DescribeError(Exception ex)
+    {
+        var sb = new System.Text.StringBuilder();
+        for (Exception? e = ex; e != null; e = e.InnerException)
+        {
+            if (sb.Length > 0) sb.Append(" → ");
+            sb.Append(e.Message);
+        }
+        return sb.ToString();
+    }
+
     private static string GetAppVersion()
     {
         var asm = Assembly.GetExecutingAssembly();
@@ -1120,7 +1132,7 @@ public partial class MainViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            UpdateCheckStatus = L.Format("Upd_Failed", ex.Message);
+            UpdateCheckStatus = L.Format("Upd_Failed", DescribeError(ex));
         }
     }
 
