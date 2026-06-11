@@ -45,6 +45,8 @@
   "Overlap_RangeWord": "Intervallo ",
   "Overlap_Intersects": "  si sovrappone a  ",
   "Overlap_RepeatOpen": "   (duplicate ",
+  "Overlap_IntersectsWord": "si sovrappone a",
+  "Overlap_RepeatFull": "(duplicate {0})",
   "Overlap_Duplicated": "Duplicate: ",
   "Overlap_WithoutAdds": "Senza sovrapposizione verrà aggiunto: ",
   "Btn_AddAgain": "Aggiungi comunque",

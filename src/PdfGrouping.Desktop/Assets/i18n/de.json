@@ -45,6 +45,8 @@
   "Overlap_RangeWord": "Bereich ",
   "Overlap_Intersects": "  überschneidet  ",
   "Overlap_RepeatOpen": "   (doppelt ",
+  "Overlap_IntersectsWord": "überschneidet",
+  "Overlap_RepeatFull": "(doppelt {0})",
   "Overlap_Duplicated": "Doppelt: ",
   "Overlap_WithoutAdds": "Ohne Überschneidung wird hinzugefügt: ",
   "Btn_AddAgain": "Trotzdem hinzufügen",

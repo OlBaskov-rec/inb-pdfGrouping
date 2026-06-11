@@ -45,6 +45,8 @@
   "Overlap_RangeWord": "범위 ",
   "Overlap_Intersects": " 와(과) 겹침: ",
   "Overlap_RepeatOpen": "   (중복 ",
+  "Overlap_IntersectsWord": "겹침",
+  "Overlap_RepeatFull": "(중복 {0})",
   "Overlap_Duplicated": "중복: ",
   "Overlap_WithoutAdds": "겹침 없이 추가될 페이지: ",
   "Btn_AddAgain": "그대로 추가",

@@ -45,6 +45,8 @@
   "Overlap_RangeWord": "范围 ",
   "Overlap_Intersects": " 与 ",
   "Overlap_RepeatOpen": " 重叠（重复 ",
+  "Overlap_IntersectsWord": "重叠",
+  "Overlap_RepeatFull": "（重复 {0}）",
   "Overlap_Duplicated": "重复：",
   "Overlap_WithoutAdds": "去除重叠后将添加：",
   "Btn_AddAgain": "仍然添加",

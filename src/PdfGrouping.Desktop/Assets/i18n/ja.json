@@ -45,6 +45,8 @@
   "Overlap_RangeWord": "範囲 ",
   "Overlap_Intersects": " が次と重複 ",
   "Overlap_RepeatOpen": " （重複 ",
+  "Overlap_IntersectsWord": "重複",
+  "Overlap_RepeatFull": "（重複 {0}）",
   "Overlap_Duplicated": "重複: ",
   "Overlap_WithoutAdds": "重複なしで追加されるページ: ",
   "Btn_AddAgain": "そのまま追加",

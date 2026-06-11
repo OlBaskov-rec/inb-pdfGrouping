@@ -238,7 +238,8 @@
             <!-- Метка группы -->
             <Border Grid.Column="1" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
                     Padding="10" Margin="8,0" Width="210">
-                <Grid RowDefinitions="Auto,Auto,Auto">
+                <!-- Auto,*,Auto: список тянется, кнопки прижаты к низу (вровень с серой областью слева). -->
+                <Grid RowDefinitions="Auto,*,Auto">
                     <!-- Верх: метка, поле ввода, быстрый выбор, заголовок списка -->
                     <StackPanel Grid.Row="0">
                         <TextBlock Text="{l:Tr Label_Title}" FontWeight="Bold" Margin="0,0,0,2" />
@@ -256,20 +257,19 @@
                         <TextBlock Text="{l:Tr Label_CurrentRanges}" FontWeight="SemiBold" FontSize="12" Margin="0,12,0,2" />
                     </StackPanel>
 
-                    <!-- Середина: список выбранных диапазонов (прокрутка при большом числе) -->
-                    <ScrollViewer Grid.Row="1" MaxHeight="220" MinHeight="60"
-                                  HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,4">
+                    <!-- Середина: список выбранных диапазонов тянется на свободное место (прокрутка при большом числе) -->
+                    <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,4">
                         <TextBlock Text="{Binding RangesDisplayText}" TextWrapping="Wrap" Foreground="#555" />
                     </ScrollViewer>
 
-                    <!-- Низ: кнопки создания группы (отступы в 1.5× — до, между и после) -->
-                    <StackPanel Grid.Row="2">
+                    <!-- Низ: кнопки создания группы прижаты к нижнему краю секции -->
+                    <StackPanel Grid.Row="2" VerticalAlignment="Bottom">
                         <Button Margin="0,12,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                                 Command="{Binding AddGroupCommand}" IsEnabled="{Binding !IsProcessing}">
                             <TextBlock Text="{l:Tr Btn_CreateGroup}"
                                        TextWrapping="Wrap" TextAlignment="Center" />
                         </Button>
-                        <Button Margin="0,12,0,12" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        <Button Margin="0,12,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                                 Command="{Binding AddGroupPerRangeCommand}" IsEnabled="{Binding !IsProcessing}"
                                 ToolTip.Tip="{l:Tr Tip_CreateGroupPerRange}">
                             <TextBlock Text="{l:Tr Btn_CreateGroupPerRange}"
@@ -340,21 +340,33 @@
                         <TextBlock Text="{l:Tr Overlap_Title}"
                                    FontWeight="Bold" FontSize="14" Foreground="#C42B1C"
                                    TextWrapping="Wrap" Margin="0,0,0,6" />
-                        <ItemsControl ItemsSource="{Binding Overlaps}">
+                        <!-- Таблица с общими ширинами столбцов: строки выравниваются по столбцам. -->
+                        <ItemsControl ItemsSource="{Binding Overlaps}" Grid.IsSharedSizeScope="True">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:OverlapInfo">
-                                    <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,2">
-                                        <Run Text="{l:Tr Overlap_RangeWord}" FontWeight="Bold" />
-                                        <Run Text="{Binding NewPages}" FontWeight="Bold" />
-                                        <Run Text="{l:Tr Overlap_Intersects}" Foreground="#C42B1C" FontWeight="Bold" />
-                                        <Run Text="{l:Tr Overlap_RangeWord}" FontWeight="Bold" />
-                                        <Run Text="{Binding ExistingPages}" FontWeight="Bold" />
-                                        <Run Text="  ·  " Foreground="#888" />
-                                        <Run Text="{Binding Source}" Foreground="#888" />
-                                        <Run Text="{l:Tr Overlap_RepeatOpen}" Foreground="#C42B1C" FontWeight="Bold" />
-                                        <Run Text="{Binding Dup}" Foreground="#C42B1C" FontWeight="Bold" />
-                                        <Run Text=")" Foreground="#C42B1C" FontWeight="Bold" />
-                                    </TextBlock>
+                                    <Grid Margin="0,2" ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="ovNew" />
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="ovInt" />
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="ovEx" />
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="ovSrc" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" FontSize="12" FontWeight="Bold">
+                                            <Run Text="{l:Tr Overlap_RangeWord}" />
+                                            <Run Text="{Binding NewPages}" />
+                                        </TextBlock>
+                                        <TextBlock Grid.Column="1" FontSize="12" FontWeight="Bold" Foreground="#C42B1C"
+                                                   Text="{l:Tr Overlap_IntersectsWord}" />
+                                        <TextBlock Grid.Column="2" FontSize="12" FontWeight="Bold">
+                                            <Run Text="{l:Tr Overlap_RangeWord}" />
+                                            <Run Text="{Binding ExistingPages}" />
+                                        </TextBlock>
+                                        <TextBlock Grid.Column="3" FontSize="12" Foreground="#888"
+                                                   Text="{Binding Source}" />
+                                        <TextBlock Grid.Column="4" FontSize="12" FontWeight="Bold" Foreground="#C42B1C"
+                                                   TextWrapping="Wrap" Text="{Binding Dup}" />
+                                    </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>

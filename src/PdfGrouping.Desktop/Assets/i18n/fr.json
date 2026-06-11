@@ -45,6 +45,8 @@
   "Overlap_RangeWord": "Plage ",
   "Overlap_Intersects": "  chevauche  ",
   "Overlap_RepeatOpen": "   (en double ",
+  "Overlap_IntersectsWord": "chevauche",
+  "Overlap_RepeatFull": "(en double {0})",
   "Overlap_Duplicated": "En double : ",
   "Overlap_WithoutAdds": "Sans chevauchement ajoutera : ",
   "Btn_AddAgain": "Ajouter quand même",

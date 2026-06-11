@@ -45,6 +45,8 @@
   "Overlap_RangeWord": "Range ",
   "Overlap_Intersects": "  overlaps  ",
   "Overlap_RepeatOpen": "   (duplicated ",
+  "Overlap_IntersectsWord": "overlaps",
+  "Overlap_RepeatFull": "(duplicated {0})",
   "Overlap_Duplicated": "Duplicated: ",
   "Overlap_WithoutAdds": "Without overlap will add: ",
   "Btn_AddAgain": "Add anyway",

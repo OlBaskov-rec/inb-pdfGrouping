@@ -333,7 +333,7 @@ public partial class MainViewModel : ObservableObject
     {
         int ds = Math.Max(start, existing.StartPage);
         int de = Math.Min(end, existing.EndPage);
-        string dup = WithUnit(ds == de ? $"{ds}" : $"{ds}–{de}");
+        string dup = L.Format("Overlap_RepeatFull", WithUnit(ds == de ? $"{ds}" : $"{ds}–{de}"));
         return new OverlapInfo($"{start}–{end}", $"{existing.StartPage}–{existing.EndPage}", source, dup);
     }
 

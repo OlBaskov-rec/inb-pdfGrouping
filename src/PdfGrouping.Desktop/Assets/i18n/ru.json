@@ -45,6 +45,8 @@
   "Overlap_RangeWord": "Диапазон ",
   "Overlap_Intersects": "  пересекает  ",
   "Overlap_RepeatOpen": "   (повторяются ",
+  "Overlap_IntersectsWord": "пересекает",
+  "Overlap_RepeatFull": "(повторяются {0})",
   "Overlap_Duplicated": "Дублируются: ",
   "Overlap_WithoutAdds": "Без пересечения добавится: ",
   "Btn_AddAgain": "Добавить ещё раз",
