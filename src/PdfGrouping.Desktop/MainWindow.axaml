@@ -173,7 +173,9 @@
 
                     <StackPanel Grid.Row="1" Margin="0,0,0,0">
                         <TextBlock Text="{Binding PagesOfText}" Margin="0,0,0,4" Foreground="#444" />
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Поля заблокированы, пока не принято решение по пересечению (кнопки в баннере). -->
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                                    IsEnabled="{Binding !HasPendingDecision}">
                             <NumericUpDown Value="{Binding RangeStart}" Minimum="1" Maximum="{Binding MaxPage}"
                                            Increment="1" FormatString="0" Width="140" FontSize="16"
                                            ToolTip.Tip="{l:Tr Tip_RangeStart}" />
