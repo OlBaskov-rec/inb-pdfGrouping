@@ -43,6 +43,11 @@ public partial class MainViewModel : ObservableObject
             OnPropertyChanged(nameof(AppVersionText));
             OnPropertyChanged(nameof(PagesOfText));
             UpdateRangesDisplay();
+            // Перерисовать динамические строки активных сообщений на новом языке.
+            RebuildOverlapTexts();
+            RebuildResolvedRanges();
+            if (HasMergePrompt && _mergeTarget != null)
+                MergePromptText = L.Format("Merge_Prompt", _mergeTarget.Label);
         };
     }
 
@@ -204,13 +209,7 @@ public partial class MainViewModel : ObservableObject
         if (dupIntervals.Count > 0)
         {
             // Пересечение: НЕ добавляем сразу — ждём решения пользователя (кнопки в баннере).
-            Overlaps.Clear();
-            foreach (var r in curOverlaps)
-                Overlaps.Add(MakeOverlap(start, end, r, L["Src_CurrentRanges"]));
-            foreach (var (label, r) in prevOverlaps)
-                Overlaps.Add(MakeOverlap(start, end, r, L.Format("Src_Group", label)));
-
-            DuplicatedPagesText = WithUnit(PageRangeUtils.MergeToString(dupIntervals));
+            BuildOverlapWarning(start, end, curOverlaps, prevOverlaps, dupIntervals);
             _pendingRanges.Clear();
             _pendingRanges.Add(range);
             ComputePendingTrim();
@@ -268,12 +267,7 @@ public partial class MainViewModel : ObservableObject
         if (dupIntervals.Count > 0)
         {
             // Пересечение: НЕ добавляем сразу — ждём решения.
-            Overlaps.Clear();
-            foreach (var r in curOverlaps)
-                Overlaps.Add(MakeOverlap(start, end, r, L["Src_CurrentRanges"]));
-            foreach (var (label, r) in prevOverlaps)
-                Overlaps.Add(MakeOverlap(start, end, r, L.Format("Src_Group", label)));
-            DuplicatedPagesText = WithUnit(PageRangeUtils.MergeToString(dupIntervals));
+            BuildOverlapWarning(start, end, curOverlaps, prevOverlaps, dupIntervals);
             _pendingRanges.Clear();
             _pendingRanges.AddRange(pages);
             ComputePendingTrim();
@@ -288,6 +282,51 @@ public partial class MainViewModel : ObservableObject
         UpdateRangesDisplay();
         AdvanceRangeInput(end);
         SetInfo(L.Format("Msg_AddedPaginated", end - start + 1));
+    }
+
+    // Сырые данные текущего предупреждения о пересечении (для перерисовки при смене языка).
+    private readonly List<(int NewStart, int NewEnd, int ExStart, int ExEnd, string? GroupLabel)> _overlapRaw = new();
+    private List<(int, int)> _overlapDupRaw = new();
+
+    /// <summary>Строит баннер пересечения и запоминает сырые данные для перерисовки при смене языка.</summary>
+    private void BuildOverlapWarning(int start, int end,
+        List<PageRange> curOverlaps, List<(string Label, PageRange Range)> prevOverlaps,
+        List<(int, int)> dupIntervals)
+    {
+        _overlapRaw.Clear();
+        foreach (var r in curOverlaps)
+            _overlapRaw.Add((start, end, r.StartPage, r.EndPage, null));
+        foreach (var (label, r) in prevOverlaps)
+            _overlapRaw.Add((start, end, r.StartPage, r.EndPage, label));
+        _overlapDupRaw = dupIntervals;
+        RebuildOverlapTexts();
+    }
+
+    /// <summary>Пересобирает локализованные строки баннера пересечения из сырых данных.</summary>
+    private void RebuildOverlapTexts()
+    {
+        if (!HasOverlapWarning && _overlapRaw.Count == 0) { Overlaps.Clear(); return; }
+        Overlaps.Clear();
+        foreach (var o in _overlapRaw)
+        {
+            string source = o.GroupLabel is null ? L["Src_CurrentRanges"] : L.Format("Src_Group", o.GroupLabel);
+            Overlaps.Add(MakeOverlap(o.NewStart, o.NewEnd,
+                new PageRange { StartPage = o.ExStart, EndPage = o.ExEnd }, source));
+        }
+        DuplicatedPagesText = WithUnit(PageRangeUtils.MergeToString(_overlapDupRaw));
+        if (HasPendingDecision)
+            ComputePendingTrim();
+    }
+
+    /// <summary>Пересобирает список предлагаемых непересекающихся диапазонов (для смены языка).</summary>
+    private void RebuildResolvedRanges()
+    {
+        if (!HasConflictPrompt) return;
+        var intervals = Ranges.Select(r => (r.StartPage, r.EndPage)).ToList();
+        var resolved = PageRangeUtils.ResolveOverlaps(intervals);
+        ResolvedRanges.Clear();
+        foreach (var (s, e) in resolved)
+            ResolvedRanges.Add(s == e ? L.Format("Resolved_Page", s) : L.Format("Resolved_PageRange", s, e));
     }
 
     private static OverlapInfo MakeOverlap(int start, int end, PageRange existing, string source)
@@ -333,6 +372,11 @@ public partial class MainViewModel : ObservableObject
     /// <summary>Есть ли нерешённое пересечение (нужно нажать «Добавить ещё раз» / «без пересечения» / «Убрать»).</summary>
     [ObservableProperty]
     private bool _hasPendingDecision;
+
+    /// <summary>Можно ли менять номера страниц: нельзя, пока висит вопрос (пересечение или конфликт).</summary>
+    public bool IsRangeInputEnabled => !HasPendingDecision && !HasConflictPrompt;
+
+    partial void OnHasPendingDecisionChanged(bool value) => OnPropertyChanged(nameof(IsRangeInputEnabled));
 
     /// <summary>Что будет добавлено в режиме «без пересечения», напр. «страницы 46–52».</summary>
     [ObservableProperty]
@@ -467,6 +511,7 @@ public partial class MainViewModel : ObservableObject
     partial void OnHasConflictPromptChanged(bool value)
     {
         OnPropertyChanged(nameof(IsMessageVisible));
+        OnPropertyChanged(nameof(IsRangeInputEnabled));
         ShowKeepOverlapsButton = false;
         if (value)
             _ = RevealKeepOverlapsButtonAsync();
@@ -578,6 +623,7 @@ public partial class MainViewModel : ObservableObject
         ResolvedRanges.Clear();
         HasOverlapWarning = false;
         Overlaps.Clear();
+        _overlapRaw.Clear();
         _overlapBatch.Clear();
         _pendingRanges.Clear();
         _pendingTrimmed.Clear();
