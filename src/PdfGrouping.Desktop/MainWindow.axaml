@@ -10,6 +10,7 @@
         x:Name="Root"
         x:DataType="vm:MainViewModel"
         Title="PDF Grouping — Разделение и группировка PDF"
+        Icon="/Assets/app.ico"
         Width="1000" Height="800" MinWidth="780" MinHeight="660"
         WindowStartupLocation="CenterScreen"
         DragDrop.AllowDrop="True">
@@ -208,9 +209,9 @@
             <!-- Метка группы -->
             <Border Grid.Column="1" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
                     Padding="10" Margin="8,0" Width="210">
-                <DockPanel>
+                <Grid RowDefinitions="Auto,Auto,Auto">
                     <!-- Верх: метка, поле ввода, быстрый выбор, заголовок списка -->
-                    <StackPanel DockPanel.Dock="Top">
+                    <StackPanel Grid.Row="0">
                         <TextBlock Text="Метка группы" FontWeight="Bold" Margin="0,0,0,2" />
                         <TextBlock Text="(любые 15 симв.)" FontSize="12" Foreground="#777" Margin="0,0,0,2" />
                         <TextBox Text="{Binding GroupLabelText}" MaxLength="15"
@@ -226,8 +227,14 @@
                         <TextBlock Text="Текущие диапазоны:" FontWeight="SemiBold" FontSize="12" Margin="0,12,0,2" />
                     </StackPanel>
 
+                    <!-- Середина: список выбранных диапазонов (прокрутка при большом числе) -->
+                    <ScrollViewer Grid.Row="1" MaxHeight="220" MinHeight="60"
+                                  HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,4">
+                        <TextBlock Text="{Binding RangesDisplayText}" TextWrapping="Wrap" Foreground="#555" />
+                    </ScrollViewer>
+
                     <!-- Низ: кнопки создания группы (отступы в 1.5× — до, между и после) -->
-                    <StackPanel DockPanel.Dock="Bottom">
+                    <StackPanel Grid.Row="2">
                         <Button Margin="0,12,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                                 Command="{Binding AddGroupCommand}" IsEnabled="{Binding !IsProcessing}">
                             <TextBlock Text="Создать группу для вывода ►"
@@ -240,12 +247,7 @@
                                        TextWrapping="Wrap" TextAlignment="Center" />
                         </Button>
                     </StackPanel>
-
-                    <!-- Середина: список выбранных диапазонов занимает всё свободное место -->
-                    <ScrollViewer HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,4">
-                        <TextBlock Text="{Binding RangesDisplayText}" TextWrapping="Wrap" Foreground="#555" />
-                    </ScrollViewer>
-                </DockPanel>
+                </Grid>
             </Border>
 
             <!-- Группы -->
@@ -350,7 +352,7 @@
 
                     <!-- Разрешение конфликта (режим «Без пересечений» при уже имеющихся пересечениях) -->
                     <StackPanel IsVisible="{Binding HasConflictPrompt}" Margin="0,12,0,0">
-                        <TextBlock Text="Решение конфликта по пересечению страниц диапазонов"
+                        <TextBlock Text="Решение конфликта по пересечению страниц выбранных диапазонов"
                                    FontWeight="Bold" FontSize="14" Foreground="#1B7F34"
                                    TextWrapping="Wrap" Margin="0,0,0,6" />
                         <TextBlock Text="Предлагаемые непересекающиеся диапазоны:"
@@ -362,14 +364,19 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                            <Button Content="Подтвердить" Command="{Binding ConfirmResolveCommand}"
+                        <WrapPanel Margin="0,8,0,0">
+                            <Button Content="Подтвердить" Margin="0,0,8,4" Command="{Binding ConfirmResolveCommand}"
                                     Background="#1B7F34" Foreground="White" FontWeight="Bold"
                                     ToolTip.Tip="Применить непересекающиеся диапазоны (обрезка/разбиение)" />
-                            <Button Content="Убрать пересекающиеся" Margin="8,0,0,0" Foreground="#C42B1C"
+                            <Button Content="Убрать пересекающиеся" Margin="0,0,8,4" Foreground="#C42B1C"
                                     Command="{Binding RemoveOverlappingRangesCommand}"
                                     ToolTip.Tip="Оставить только первые занявшие страницы диапазоны" />
-                        </StackPanel>
+                            <!-- Появляется с небольшой задержкой, чтобы не нажать случайно -->
+                            <Button Content="Оставить имеющиеся пересечения" Margin="0,0,0,4"
+                                    IsVisible="{Binding ShowKeepOverlapsButton}"
+                                    Command="{Binding KeepExistingOverlapsCommand}"
+                                    ToolTip.Tip="Не менять диапазоны; режим «Без пересечений» останется выключенным" />
+                        </WrapPanel>
                     </StackPanel>
                 </StackPanel>
             </DockPanel>

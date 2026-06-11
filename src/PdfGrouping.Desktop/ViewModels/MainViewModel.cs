@@ -407,6 +407,10 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasConflictPrompt;
 
+    /// <summary>Кнопка «Оставить имеющиеся пересечения» — появляется с небольшой задержкой.</summary>
+    [ObservableProperty]
+    private bool _showKeepOverlapsButton;
+
     /// <summary>Предлагаемые непересекающиеся диапазоны (для отображения), напр. «Стр. 10–110».</summary>
     public ObservableCollection<string> ResolvedRanges { get; } = new();
 
@@ -430,7 +434,33 @@ public partial class MainViewModel : ObservableObject
     }
 
     partial void OnHasOverlapWarningChanged(bool value) => OnPropertyChanged(nameof(IsMessageVisible));
-    partial void OnHasConflictPromptChanged(bool value) => OnPropertyChanged(nameof(IsMessageVisible));
+
+    partial void OnHasConflictPromptChanged(bool value)
+    {
+        OnPropertyChanged(nameof(IsMessageVisible));
+        ShowKeepOverlapsButton = false;
+        if (value)
+            _ = RevealKeepOverlapsButtonAsync();
+    }
+
+    /// <summary>Показать «Оставить имеющиеся пересечения» спустя короткую видимую паузу.</summary>
+    private async Task RevealKeepOverlapsButtonAsync()
+    {
+        await Task.Delay(1200);
+        if (HasConflictPrompt)
+            ShowKeepOverlapsButton = true;
+    }
+
+    /// <summary>«Оставить имеющиеся пересечения» — диапазоны не меняем, режим «Без пересечений» выключаем.</summary>
+    [RelayCommand]
+    private void KeepExistingOverlaps()
+    {
+        HasConflictPrompt = false;
+        ResolvedRanges.Clear();
+        ShowKeepOverlapsButton = false;
+        Dispatcher.UIThread.Post(() => BlockOverlaps = false);
+        SetInfo("Пересечения оставлены без изменений.");
+    }
 
     partial void OnBlockOverlapsChanged(bool value)
     {
