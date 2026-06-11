@@ -43,6 +43,7 @@ $packId    = "PdfGrouping"
 $mainExe   = "PdfGrouping.exe"
 $title     = "PDF Grouping"
 $rid       = "win-x64"
+$iconPath  = Join-Path $repoRoot "src\PdfGrouping.Desktop\Assets\app.ico"
 
 # Версия из csproj, если не задана явно
 if ([string]::IsNullOrWhiteSpace($Version)) {
@@ -78,6 +79,7 @@ try {
         "--runtime", $rid,
         "--outputDir", $releaseDir
     )
+    if (Test-Path $iconPath) { $packArgs += @("--icon", $iconPath) }
     if ($ReleaseNotes) { $packArgs += @("--releaseNotes", $ReleaseNotes) }
     if ($SignParams)   { $packArgs += @("--signParams", $SignParams) }
     dotnet vpk pack @packArgs
