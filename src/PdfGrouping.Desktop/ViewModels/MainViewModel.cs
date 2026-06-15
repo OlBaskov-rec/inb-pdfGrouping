@@ -1081,6 +1081,9 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string _updateCheckStatus = string.Empty;
 
+    /// <summary>Версия скачанного/найденного обновления (для сообщений).</summary>
+    private string _availableVersion = string.Empty;
+
     /// <summary>Разворачивает цепочку вложенных исключений в одну строку (для диагностики).</summary>
     private static string DescribeError(Exception ex)
     {
@@ -1113,6 +1116,14 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
+        // Уже найдено и скачано (в т.ч. фоновой проверкой при старте) — повторно не проверяем,
+        // иначе будет конфликт блокировки файла. Просто подсказываем нажать кнопку обновления.
+        if (IsUpdateReady)
+        {
+            UpdateCheckStatus = L.Format("Upd_Downloaded", _availableVersion);
+            return;
+        }
+
         UpdateCheckStatus = L["Upd_Checking"];
         try
         {
@@ -1126,13 +1137,17 @@ public partial class MainViewModel : ObservableObject
             UpdateCheckStatus = L.Format("Upd_Found", version);
             await _updateService.DownloadAsync();
 
+            _availableVersion = version;
             UpdateText = L.Format("Upd_ReadyText", version);
             IsUpdateReady = true;
             UpdateCheckStatus = L.Format("Upd_Downloaded", version);
         }
         catch (Exception ex)
         {
-            UpdateCheckStatus = L.Format("Upd_Failed", DescribeError(ex));
+            // Если параллельная фоновая проверка уже скачала обновление — показываем дружелюбно.
+            UpdateCheckStatus = IsUpdateReady
+                ? L.Format("Upd_Downloaded", _availableVersion)
+                : L.Format("Upd_Failed", DescribeError(ex));
         }
     }
 
@@ -1152,7 +1167,10 @@ public partial class MainViewModel : ObservableObject
                 return;
 
             await _updateService.DownloadAsync();
+            _availableVersion = version;
             UpdateText = L.Format("Upd_ReadyText", version);
+            // Дружелюбная строка во flyout «О программе» (на случай ручной проверки).
+            UpdateCheckStatus = L.Format("Upd_Downloaded", version);
             IsUpdateReady = true;
         }
         catch
