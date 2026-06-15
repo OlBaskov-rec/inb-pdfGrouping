@@ -39,9 +39,11 @@ $publishDir= Join-Path $repoRoot "publish"
 $releaseDir= Join-Path $repoRoot "Releases"
 $repoUrl   = "https://github.com/OlBaskov-rec/inb-pdfGrouping"
 
+# Title без пробела = имя стаба-лаунчера portable: «PdfGrouping.exe» (совпадает с приложением,
+# чтобы в папке не было двух похожих exe). Отображаемое имя в самой программе — «PDF Grouping» (из кода).
 $packId    = "PdfGrouping"
 $mainExe   = "PdfGrouping.exe"
-$title     = "PDF Grouping"
+$title     = "PdfGrouping"
 $rid       = "win-x64"
 $iconPath  = Join-Path $repoRoot "src\PdfGrouping.Desktop\Assets\app.ico"
 

@@ -72,7 +72,7 @@ dotnet publish src\PdfGrouping.Desktop\PdfGrouping.Desktop.csproj `
 dotnet vpk pack `
   --packId PdfGrouping --packVersion X.Y.Z `
   --packDir publish\win-x64 --mainExe PdfGrouping.exe `
-  --packTitle "PDF Grouping" --packAuthors "Oleg Baskov" `
+  --packTitle "PdfGrouping" --packAuthors "Oleg Baskov" `
   --icon src\PdfGrouping.Desktop\Assets\app.ico `
   --releaseNotes build\release-notes-X.Y.Z.md `
   --signParams "/fd SHA256 /sha1 C12C4A71A4B3C79C346996015D1238CC3D5DE640"
