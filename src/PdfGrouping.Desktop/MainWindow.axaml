@@ -12,7 +12,7 @@
         x:DataType="vm:MainViewModel"
         Title="PDF Grouping — Разделение и группировка PDF"
         Icon="/Assets/app.ico"
-        Width="1000" Height="800" MinWidth="780" MinHeight="660"
+        Width="1000" Height="850" MinWidth="780" MinHeight="480"
         WindowStartupLocation="CenterScreen"
         DragDrop.AllowDrop="True">
 
@@ -43,7 +43,9 @@
                             <Run Text="{Binding SelectedRange.StartPage}" />
                         </TextBlock>
                         <Border Background="#F7F7F7" BorderBrush="#E0E0E0" BorderThickness="1" Padding="4"
-                                HorizontalAlignment="Center">
+                                HorizontalAlignment="Center" Cursor="Hand"
+                                PointerPressed="StartThumb_PointerPressed"
+                                ToolTip.Tip="{l:Tr Tip_ZoomStart}">
                             <Image Source="{Binding StartThumb}" Stretch="Uniform" MaxHeight="230" />
                         </Border>
                         <Button Content="{l:Tr Btn_Zoom}" Margin="0,4,0,0" HorizontalAlignment="Center"
@@ -65,7 +67,9 @@
                             <Run Text="{Binding SelectedRange.EndPage}" />
                         </TextBlock>
                         <Border Background="#F7F7F7" BorderBrush="#E0E0E0" BorderThickness="1" Padding="4"
-                                HorizontalAlignment="Center">
+                                HorizontalAlignment="Center" Cursor="Hand"
+                                PointerPressed="EndThumb_PointerPressed"
+                                ToolTip.Tip="{l:Tr Tip_ZoomEnd}">
                             <Image Source="{Binding EndThumb}" Stretch="Uniform" MaxHeight="230" />
                         </Border>
                         <Button Content="{l:Tr Btn_Zoom}" Margin="0,4,0,0" HorizontalAlignment="Center"

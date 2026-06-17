@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Reflection;
 using Avalonia.Controls;
@@ -39,6 +40,40 @@ public partial class MainWindow : Window
         AdjustWidthForPreview();
     }
 
+    /// <summary>
+    /// После открытия окна подгоняем его под рабочую область экрана: на мониторах с низким
+    /// разрешением окно (и его минимальные размеры) не должны превышать экран — иначе нижние
+    /// кнопки уезжают за край без возможности прокрутки. Если окно не помещается, оно ужимается,
+    /// а внутренняя прокрутка (ScrollViewer) даёт доступ ко всему содержимому.
+    /// </summary>
+    protected override void OnOpened(EventArgs e)
+    {
+        base.OnOpened(e);
+        ClampToScreen();
+    }
+
+    private void ClampToScreen()
+    {
+        var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
+        if (screen is null) return;
+
+        // WorkingArea — в физических пикселях; переводим в DIP. Небольшой запас на рамку окна.
+        double scaling = screen.Scaling <= 0 ? 1.0 : screen.Scaling;
+        double maxH = screen.WorkingArea.Height / scaling - 8;
+        double maxW = screen.WorkingArea.Width / scaling - 8;
+
+        if (maxH > 0)
+        {
+            if (MinHeight > maxH) MinHeight = maxH;
+            if (Height > maxH) Height = maxH;
+        }
+        if (maxW > 0)
+        {
+            if (MinWidth > maxW) MinWidth = maxW;
+            if (Width > maxW) Width = maxW;
+        }
+    }
+
     private void UpdateTitle() =>
         Title = $"PDF Grouping v{GetAppVersion()} — {Localizer.Instance.Get("Win_Subtitle")}";
 
@@ -64,6 +99,23 @@ public partial class MainWindow : Window
             double target = _widthBeforePreview > 0 ? _widthBeforePreview : Width;
             Width = System.Math.Max(880, System.Math.Min(Width, target));
         }
+
+        // На узких экранах не даём окну вылезти за рабочую область (ширина с открытой панелью велика).
+        ClampToScreen();
+    }
+
+    private void StartThumb_PointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (_viewModel.ZoomStartCommand.CanExecute(null))
+            _viewModel.ZoomStartCommand.Execute(null);
+        e.Handled = true;
+    }
+
+    private void EndThumb_PointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (_viewModel.ZoomEndCommand.CanExecute(null))
+            _viewModel.ZoomEndCommand.Execute(null);
+        e.Handled = true;
     }
 
     /// <summary>Версия приложения из сборки (источник — &lt;Version&gt; в csproj).</summary>
