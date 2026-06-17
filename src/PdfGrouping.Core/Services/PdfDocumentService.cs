@@ -63,18 +63,13 @@ public class PdfDocumentService
             ValidateGroups(groups, totalPages);
 
             var outputFiles = new List<string>();
-            // Защита от совпадающих имён файлов у разных групп.
+            // Защита от совпадений: и между группами одного запуска, и с уже существующими на диске.
             var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var group in groups)
             {
                 string baseName = SanitizeFileName(group.Label);
-                string fileName = baseName;
-                int dup = 1;
-                while (!usedNames.Add(fileName))
-                    fileName = $"{baseName}_{++dup}";
-
-                string outputPath = Path.Combine(outputDirectory, fileName + ".pdf");
+                string outputPath = ResolveUniquePath(outputDirectory, baseName, usedNames);
 
                 using var outDoc = new PdfDocument();
                 foreach (var range in group.Ranges)
@@ -106,6 +101,21 @@ public class PdfDocumentService
                     throw new ArgumentException($"Страница вне диапазона (всего {totalPages}): {range}");
             }
         }
+    }
+
+    /// <summary>
+    /// Подбирает свободное имя файла: если «base.pdf» уже занято (в этом запуске или на диске),
+    /// добавляет индекс по порядку — «base (1).pdf», «base (2).pdf» и т.д.
+    /// </summary>
+    private static string ResolveUniquePath(string dir, string baseName, HashSet<string> usedNames)
+    {
+        string name = baseName;
+        int i = 1;
+        while (usedNames.Contains(name) || File.Exists(Path.Combine(dir, name + ".pdf")))
+            name = $"{baseName} ({i++})";
+
+        usedNames.Add(name);
+        return Path.Combine(dir, name + ".pdf");
     }
 
     /// <summary>

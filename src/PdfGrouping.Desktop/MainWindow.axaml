@@ -105,16 +105,16 @@
                 </Button>
                 <!-- «О программе»: только значок. Зелёный фон + мигание, когда доступно обновление. -->
                 <Button Content="ℹ" Padding="9,4" FontSize="15" HorizontalContentAlignment="Center"
-                        Classes.updateReady="{Binding IsUpdateReady}"
+                        Classes.updateAvailable="{Binding IsUpdateAvailable}"
                         ToolTip.Tip="{l:Tr Tip_About}">
                     <Button.Styles>
-                        <Style Selector="Button.updateReady /template/ ContentPresenter">
+                        <Style Selector="Button.updateAvailable /template/ ContentPresenter">
                             <Setter Property="Background" Value="#3A8A3F" />
                         </Style>
-                        <Style Selector="Button.updateReady:pointerover /template/ ContentPresenter">
+                        <Style Selector="Button.updateAvailable:pointerover /template/ ContentPresenter">
                             <Setter Property="Background" Value="#2E6F33" />
                         </Style>
-                        <Style Selector="Button.updateReady">
+                        <Style Selector="Button.updateAvailable">
                             <Style.Animations>
                                 <Animation Duration="0:0:0.8" IterationCount="5">
                                     <KeyFrame Cue="0%"><Setter Property="Opacity" Value="1" /></KeyFrame>
@@ -135,9 +135,17 @@
                                 <TextBlock Text="github.com/OlBaskov-rec/inb-pdfGrouping"
                                            Foreground="#777" FontSize="12" />
                                 <Border Height="1" Background="#E0E0E0" Margin="0,8" />
+                                <!-- Обычная ручная проверка (когда обновление ещё не найдено) -->
                                 <Button Content="{l:Tr About_CheckUpdate}"
+                                        IsVisible="{Binding ShowCheckButton}"
                                         HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                                         Command="{Binding CheckUpdatesManualCommand}" />
+                                <!-- Зелёная кнопка: обновление найдено автоматически -->
+                                <Button Content="{Binding UpdateFoundButtonText}"
+                                        IsVisible="{Binding ShowRevealButton}"
+                                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                        Background="#3A8A3F" Foreground="White" FontWeight="Bold"
+                                        Command="{Binding RevealUpdateCommand}" />
                                 <TextBlock Text="{Binding UpdateCheckStatus}" TextWrapping="Wrap"
                                            FontSize="12" Foreground="#555" Margin="0,6,0,0" />
                             </StackPanel>
@@ -507,15 +515,20 @@
                     </Grid>
                 </Border>
 
-                <!-- Баннер обновления (виден только когда обновление скачано) -->
+                <!-- Баннер обновления (показывается после «Обнаружено обновление») -->
                 <Border Background="#E7F3E8" BorderBrush="#3A8A3F" BorderThickness="1" CornerRadius="6"
                         Padding="10,8" Margin="0,0,0,8" IsVisible="{Binding IsUpdateReady}">
                     <DockPanel>
-                        <Button DockPanel.Dock="Right" Content="{l:Tr Btn_UpdateRestart}"
-                                Command="{Binding ApplyUpdateCommand}"
-                                Background="#3A8A3F" Foreground="White" FontWeight="Bold" />
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <Button Content="{l:Tr Btn_Postpone}" Margin="0,0,8,0"
+                                    Command="{Binding PostponeUpdateCommand}"
+                                    ToolTip.Tip="{l:Tr Tip_Postpone}" />
+                            <Button Content="{l:Tr Btn_UpdateRestart}"
+                                    Command="{Binding ApplyUpdateCommand}"
+                                    Background="#3A8A3F" Foreground="White" FontWeight="Bold" />
+                        </StackPanel>
                         <TextBlock Text="{Binding UpdateText}" VerticalAlignment="Center"
-                                   Foreground="#1E5E22" FontWeight="SemiBold" />
+                                   Foreground="#1E5E22" FontWeight="SemiBold" TextWrapping="Wrap" />
                     </DockPanel>
                 </Border>
 
@@ -529,6 +542,7 @@
                     <ToggleButton Content="{l:Tr Btn_BlockOverlaps}" Margin="10,0,0,0"
                                   VerticalAlignment="Center"
                                   IsChecked="{Binding BlockOverlaps}"
+                                  IsEnabled="{Binding IsRangeInputEnabled}"
                                   ToolTip.Tip="{l:Tr Tip_BlockOverlaps}" />
                     <ProgressBar Width="120" Margin="12,0" IsIndeterminate="{Binding IsProcessing}"
                                  IsVisible="{Binding IsProcessing}" VerticalAlignment="Center" />

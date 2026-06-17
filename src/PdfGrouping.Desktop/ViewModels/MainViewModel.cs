@@ -42,6 +42,7 @@ public partial class MainViewModel : ObservableObject
             OnPropertyChanged(nameof(LanguageShort));
             OnPropertyChanged(nameof(AppVersionText));
             OnPropertyChanged(nameof(PagesOfText));
+            OnPropertyChanged(nameof(UpdateFoundButtonText));
             UpdateRangesDisplay();
             // Перерисовать динамические строки активных сообщений на новом языке.
             RebuildOverlapTexts();
@@ -125,11 +126,41 @@ public partial class MainViewModel : ObservableObject
     private bool _hasResults;
 
     // --- Обновления (Velopack) ---
+
+    /// <summary>Обновление найдено (мигаем значком «ℹ», в меню — кнопка «Обнаружено обновление»).</summary>
+    [ObservableProperty]
+    private bool _isUpdateAvailable;
+
+    /// <summary>Обновление готово к установке (показан баннер внизу с кнопками).</summary>
     [ObservableProperty]
     private bool _isUpdateReady;
 
     [ObservableProperty]
     private string _updateText = string.Empty;
+
+    private bool _updateDownloaded;
+
+    /// <summary>Показывать кнопку ручной проверки (когда обновление ещё не найдено).</summary>
+    public bool ShowCheckButton => !IsUpdateAvailable;
+
+    /// <summary>Показывать зелёную кнопку «Обнаружено обновление» (найдено, но баннер ещё не показан).</summary>
+    public bool ShowRevealButton => IsUpdateAvailable && !IsUpdateReady;
+
+    /// <summary>Текст зелёной кнопки в меню, напр. «Обнаружено обновление 0.1.30».</summary>
+    public string UpdateFoundButtonText => L.Format("Btn_UpdateFound", _availableVersion);
+
+    partial void OnIsUpdateAvailableChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ShowCheckButton));
+        OnPropertyChanged(nameof(ShowRevealButton));
+        OnPropertyChanged(nameof(UpdateFoundButtonText));
+    }
+
+    partial void OnIsUpdateReadyChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ShowCheckButton));
+        OnPropertyChanged(nameof(ShowRevealButton));
+    }
 
     // -------------------------------------------------------------------
     // КОМАНДЫ
@@ -1106,21 +1137,13 @@ public partial class MainViewModel : ObservableObject
         return v is null ? "?" : $"{v.Major}.{v.Minor}.{v.Build}";
     }
 
-    /// <summary>Ручная проверка обновления из окна «О программе».</summary>
+    /// <summary>Ручная проверка обновления из окна «О программе» (когда автоматически не найдено).</summary>
     [RelayCommand]
     private async Task CheckUpdatesManualAsync()
     {
         if (!_updateService.IsSupported)
         {
             UpdateCheckStatus = L["Upd_OnlyInstalled"];
-            return;
-        }
-
-        // Уже найдено и скачано (в т.ч. фоновой проверкой при старте) — повторно не проверяем,
-        // иначе будет конфликт блокировки файла. Просто подсказываем нажать кнопку обновления.
-        if (IsUpdateReady)
-        {
-            UpdateCheckStatus = L.Format("Upd_Downloaded", _availableVersion);
             return;
         }
 
@@ -1134,25 +1157,58 @@ public partial class MainViewModel : ObservableObject
                 return;
             }
 
+            _availableVersion = version;
+            IsUpdateAvailable = true;
             UpdateCheckStatus = L.Format("Upd_Found", version);
             await _updateService.DownloadAsync();
+            _updateDownloaded = true;
 
-            _availableVersion = version;
+            // Ручная проверка — это явное действие пользователя, сразу показываем баннер.
             UpdateText = L.Format("Upd_ReadyText", version);
-            IsUpdateReady = true;
             UpdateCheckStatus = L.Format("Upd_Downloaded", version);
+            IsUpdateReady = true;
         }
         catch (Exception ex)
         {
-            // Если параллельная фоновая проверка уже скачала обновление — показываем дружелюбно.
             UpdateCheckStatus = IsUpdateReady
                 ? L.Format("Upd_Downloaded", _availableVersion)
                 : L.Format("Upd_Failed", DescribeError(ex));
         }
     }
 
+    /// <summary>«Обнаружено обновление» в меню: докачивает (если нужно) и показывает баннер внизу.</summary>
+    [RelayCommand]
+    private async Task RevealUpdateAsync()
+    {
+        if (!IsUpdateAvailable) return;
+        if (!_updateDownloaded)
+        {
+            UpdateCheckStatus = L.Format("Upd_Found", _availableVersion);
+            try
+            {
+                await _updateService.DownloadAsync();
+                _updateDownloaded = true;
+            }
+            catch (Exception ex)
+            {
+                UpdateCheckStatus = L.Format("Upd_Failed", DescribeError(ex));
+                return;
+            }
+        }
+
+        UpdateText = L.Format("Upd_ReadyText", _availableVersion);
+        UpdateCheckStatus = L.Format("Upd_Downloaded", _availableVersion);
+        IsUpdateReady = true;
+    }
+
+    /// <summary>«Отложить»: скрыть баннер внизу. Значок остаётся зелёным — обновиться можно позже.</summary>
+    [RelayCommand]
+    private void PostponeUpdate() => IsUpdateReady = false;
+
     /// <summary>
     /// Фоновая проверка обновлений при старте. В dev-запуске — безопасный no-op.
+    /// Находит и (для удобства) скачивает обновление в фоне, но НЕ показывает баннер сразу —
+    /// лишь подсвечивает значок «ℹ». Баннер появится после «Обнаружено обновление» в меню.
     /// Ошибки сети не мешают работе приложения.
     /// </summary>
     public async Task CheckForUpdatesAsync()
@@ -1166,12 +1222,12 @@ public partial class MainViewModel : ObservableObject
             if (version is null)
                 return;
 
-            await _updateService.DownloadAsync();
             _availableVersion = version;
-            UpdateText = L.Format("Upd_ReadyText", version);
-            // Дружелюбная строка во flyout «О программе» (на случай ручной проверки).
-            UpdateCheckStatus = L.Format("Upd_Downloaded", version);
-            IsUpdateReady = true;
+            IsUpdateAvailable = true; // мигание значка «ℹ»
+
+            // Фоновое скачивание — чтобы по «Обнаружено обновление» применилось мгновенно.
+            try { await _updateService.DownloadAsync(); _updateDownloaded = true; }
+            catch { /* докачаем по требованию */ }
         }
         catch
         {

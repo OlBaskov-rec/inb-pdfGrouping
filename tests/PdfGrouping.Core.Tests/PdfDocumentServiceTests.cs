@@ -95,6 +95,23 @@ public class PdfDocumentServiceTests : IDisposable
     }
 
     [Fact]
+    public void SplitAndGroup_ExistingFileOnDisk_GetsIndexedName()
+    {
+        string pdf = CreateSamplePdf(5);
+        // Заранее кладём файл «A.pdf» в выходную папку.
+        File.WriteAllText(Path.Combine(_workDir, "A.pdf"), "existing");
+        var groups = new List<PdfGroup> { Group("A", (1, 3)) };
+
+        var outputs = _service.SplitAndGroup(pdf, groups, _workDir);
+
+        Assert.Single(outputs);
+        Assert.EndsWith("A (1).pdf", outputs[0]);     // авто-индекс
+        Assert.Equal(3, PageCountOf(outputs[0]));
+        // Существующий файл не перезаписан.
+        Assert.Equal("existing", File.ReadAllText(Path.Combine(_workDir, "A.pdf")));
+    }
+
+    [Fact]
     public void SplitAndGroup_PageOutOfRange_Throws()
     {
         string pdf = CreateSamplePdf(5);
