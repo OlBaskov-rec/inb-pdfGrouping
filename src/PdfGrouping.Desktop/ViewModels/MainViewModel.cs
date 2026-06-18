@@ -1150,7 +1150,7 @@ public partial class MainViewModel : ObservableObject
         UpdateCheckStatus = L["Upd_Checking"];
         try
         {
-            var version = await _updateService.CheckAsync();
+            var version = await Task.Run(() => _updateService.CheckAsync());
             if (version is null)
             {
                 UpdateCheckStatus = L["Upd_Latest"];
@@ -1160,7 +1160,7 @@ public partial class MainViewModel : ObservableObject
             _availableVersion = version;
             IsUpdateAvailable = true;
             UpdateCheckStatus = L.Format("Upd_Found", version);
-            await _updateService.DownloadAsync();
+            await Task.Run(() => _updateService.DownloadAsync());
             _updateDownloaded = true;
 
             // Ручная проверка — это явное действие пользователя, сразу показываем баннер.
@@ -1186,7 +1186,7 @@ public partial class MainViewModel : ObservableObject
             UpdateCheckStatus = L.Format("Upd_Found", _availableVersion);
             try
             {
-                await _updateService.DownloadAsync();
+                await Task.Run(() => _updateService.DownloadAsync());
                 _updateDownloaded = true;
             }
             catch (Exception ex)
@@ -1215,18 +1215,21 @@ public partial class MainViewModel : ObservableObject
     {
         try
         {
-            if (!_updateService.IsSupported)
-                return;
+            // ВСЯ работа Velopack (включая синхронные участки и сеть) — на пуле потоков, НИКОГДА
+            // не на UI-потоке, плюс таймаут: запуск приложения не должен подвисать из-за проверки.
+            var checkTask = Task.Run(() => _updateService.CheckAsync());
+            if (await Task.WhenAny(checkTask, Task.Delay(TimeSpan.FromSeconds(20))) != checkTask)
+                return; // сеть не ответила вовремя — тихо выходим, приложение работает
 
-            var version = await _updateService.CheckAsync();
+            var version = await checkTask;
             if (version is null)
                 return;
 
             _availableVersion = version;
-            IsUpdateAvailable = true; // мигание значка «ℹ»
+            IsUpdateAvailable = true; // мигание значка «ℹ» (продолжение — на UI-потоке)
 
             // Фоновое скачивание — чтобы по «Обнаружено обновление» применилось мгновенно.
-            try { await _updateService.DownloadAsync(); _updateDownloaded = true; }
+            try { await Task.Run(() => _updateService.DownloadAsync()); _updateDownloaded = true; }
             catch { /* докачаем по требованию */ }
         }
         catch
