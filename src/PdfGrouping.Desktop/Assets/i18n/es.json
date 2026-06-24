@@ -7,6 +7,8 @@
   "Btn_Zoom": "🔍 Ampliar",
   "Tip_ZoomStart": "Abrir la primera página casi a pantalla completa",
   "Tip_ZoomEnd": "Abrir la última página casi a pantalla completa",
+  "Tip_RotateLeft": "Girar 90° a la izquierda",
+  "Tip_RotateRight": "Girar 90° a la derecha",
   "Tip_About": "Acerca de la aplicación y búsqueda de actualizaciones",
   "Tip_Language": "Idioma de la interfaz",
   "About_Version": "Versión {0}",

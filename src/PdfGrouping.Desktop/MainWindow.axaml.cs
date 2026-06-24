@@ -1,9 +1,11 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Platform.Storage;
+using Avalonia.VisualTree;
 using PdfGrouping.Desktop.Localization;
 using PdfGrouping.Desktop.Services;
 using PdfGrouping.Desktop.ViewModels;
@@ -27,9 +29,6 @@ public partial class MainWindow : Window
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
         AddHandler(DragDrop.DropEvent, OnDrop);
 
-        // Фоновая проверка обновлений (no-op в dev-запуске).
-        _ = _viewModel.CheckForUpdatesAsync();
-
         // В ширину окно подстраивается при включении предпросмотра.
         _viewModel.PropertyChanged += (_, e) =>
         {
@@ -50,6 +49,16 @@ public partial class MainWindow : Window
     {
         base.OnOpened(e);
         ClampToScreen();
+
+        // Проверку обновлений запускаем НЕЗАМЕТНО: после открытия окна и небольшой паузы,
+        // чтобы старт интерфейса гарантированно ни на что не влиял. Сама проверка — вне UI-потока.
+        _ = StartUpdateCheckDelayedAsync();
+    }
+
+    private async System.Threading.Tasks.Task StartUpdateCheckDelayedAsync()
+    {
+        await System.Threading.Tasks.Task.Delay(TimeSpan.FromSeconds(3));
+        await _viewModel.CheckForUpdatesAsync();
     }
 
     private void ClampToScreen()
@@ -140,6 +149,10 @@ public partial class MainWindow : Window
 
     private void ZoomOverlay_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
+        // Клик по кнопкам поворота не должен закрывать просмотр.
+        if (e.Source is Visual v && v.FindAncestorOfType<Button>(includeSelf: true) is not null)
+            return;
+
         _viewModel.CloseZoom();
         e.Handled = true;
     }

@@ -7,6 +7,8 @@
   "Btn_Zoom": "🔍 확대",
   "Tip_ZoomStart": "첫 페이지를 거의 전체 화면으로 열기",
   "Tip_ZoomEnd": "마지막 페이지를 거의 전체 화면으로 열기",
+  "Tip_RotateLeft": "왼쪽으로 90° 회전",
+  "Tip_RotateRight": "오른쪽으로 90° 회전",
   "Tip_About": "프로그램 정보 및 업데이트 확인",
   "Tip_Language": "인터페이스 언어",
   "About_Version": "버전 {0}",

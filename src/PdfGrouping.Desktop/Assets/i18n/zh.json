@@ -7,6 +7,8 @@
   "Btn_Zoom": "🔍 放大",
   "Tip_ZoomStart": "近乎全屏地打开首页",
   "Tip_ZoomEnd": "近乎全屏地打开末页",
+  "Tip_RotateLeft": "向左旋转 90°",
+  "Tip_RotateRight": "向右旋转 90°",
   "Tip_About": "关于本程序及检查更新",
   "Tip_Language": "界面语言",
   "About_Version": "版本 {0}",

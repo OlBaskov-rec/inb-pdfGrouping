@@ -7,6 +7,8 @@
   "Btn_Zoom": "🔍 拡大",
   "Tip_ZoomStart": "最初のページをほぼ全画面で開く",
   "Tip_ZoomEnd": "最後のページをほぼ全画面で開く",
+  "Tip_RotateLeft": "左に90°回転",
+  "Tip_RotateRight": "右に90°回転",
   "Tip_About": "アプリ情報と更新の確認",
   "Tip_Language": "表示言語",
   "About_Version": "バージョン {0}",

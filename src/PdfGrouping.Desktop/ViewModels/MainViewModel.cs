@@ -745,6 +745,16 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private Bitmap? _zoomImage;
 
+    /// <summary>Угол поворота страницы в увеличенном просмотре (0/90/180/270°).</summary>
+    [ObservableProperty]
+    private double _zoomRotation;
+
+    [RelayCommand]
+    private void RotateZoomLeft() => ZoomRotation = ((ZoomRotation - 90) % 360 + 360) % 360;
+
+    [RelayCommand]
+    private void RotateZoomRight() => ZoomRotation = (ZoomRotation + 90) % 360;
+
     /// <summary>Строка-разделитель между миниатюрами, напр. «↕ 233 стр.  (112 → 344)».</summary>
     [ObservableProperty]
     private string _previewRangeText = string.Empty;
@@ -828,6 +838,7 @@ public partial class MainViewModel : ObservableObject
         {
             var big = await Task.Run(() =>
                 ImageHelper.ToBitmap(_renderService.RenderPage(path, p, 1600, 2200)));
+            ZoomRotation = 0; // каждый просмотр открываем без поворота
             ZoomImage = big;
             IsZoomOpen = true;
         }

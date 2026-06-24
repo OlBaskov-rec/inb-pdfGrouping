@@ -7,6 +7,8 @@
   "Btn_Zoom": "🔍 Ingrandisci",
   "Tip_ZoomStart": "Apri la prima pagina quasi a schermo intero",
   "Tip_ZoomEnd": "Apri l’ultima pagina quasi a schermo intero",
+  "Tip_RotateLeft": "Ruota di 90° a sinistra",
+  "Tip_RotateRight": "Ruota di 90° a destra",
   "Tip_About": "Informazioni sull’app e ricerca aggiornamenti",
   "Tip_Language": "Lingua dell’interfaccia",
   "About_Version": "Versione {0}",

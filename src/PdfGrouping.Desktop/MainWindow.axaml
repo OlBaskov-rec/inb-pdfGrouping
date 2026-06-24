@@ -18,6 +18,7 @@
 
     <Window.Resources>
         <conv:BoolToBrushConverter x:Key="BoolToBrush" />
+        <conv:AngleToTransformConverter x:Key="AngleToTransform" />
     </Window.Resources>
 
     <Grid Margin="12">
@@ -552,10 +553,26 @@
         </Grid>
       </Grid>
 
-      <!-- Увеличенный просмотр поверх всего; клик в любом месте сворачивает -->
+      <!-- Увеличенный просмотр поверх всего; клик вне панели сворачивает -->
       <Border IsVisible="{Binding IsZoomOpen}" Background="#D0000000"
               PointerPressed="ZoomOverlay_PointerPressed">
-          <Image Source="{Binding ZoomImage}" Stretch="Uniform" Margin="40" />
+          <Grid>
+              <Image Source="{Binding ZoomImage}" Stretch="Uniform" Margin="40,74,40,40"
+                     RenderTransformOrigin="0.5,0.5"
+                     RenderTransform="{Binding ZoomRotation, Converter={StaticResource AngleToTransform}}" />
+              <!-- Пиктограммы поворота сверху по центру (только в увеличенном виде) -->
+              <Border VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,16,0,0"
+                      Background="#E6202020" CornerRadius="8" Padding="8,5">
+                  <StackPanel Orientation="Horizontal" Spacing="10">
+                      <Button Content="↺" FontSize="18" Width="46"
+                              Command="{Binding RotateZoomLeftCommand}"
+                              ToolTip.Tip="{l:Tr Tip_RotateLeft}" />
+                      <Button Content="↻" FontSize="18" Width="46"
+                              Command="{Binding RotateZoomRightCommand}"
+                              ToolTip.Tip="{l:Tr Tip_RotateRight}" />
+                  </StackPanel>
+              </Border>
+          </Grid>
       </Border>
     </Grid>
 </Window>

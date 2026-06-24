@@ -7,6 +7,8 @@
   "Btn_Zoom": "🔍 Vergrößern",
   "Tip_ZoomStart": "Erste Seite fast im Vollbild öffnen",
   "Tip_ZoomEnd": "Letzte Seite fast im Vollbild öffnen",
+  "Tip_RotateLeft": "Um 90° nach links drehen",
+  "Tip_RotateRight": "Um 90° nach rechts drehen",
   "Tip_About": "Über die App und Updateprüfung",
   "Tip_Language": "Sprache der Oberfläche",
   "About_Version": "Version {0}",
