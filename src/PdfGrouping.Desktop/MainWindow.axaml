@@ -288,8 +288,11 @@
                         <TextBlock Text="{l:Tr Label_CurrentRanges}" FontWeight="SemiBold" FontSize="12" Margin="0,12,0,2" />
                     </StackPanel>
 
-                    <!-- Середина: список выбранных диапазонов тянется на свободное место (прокрутка при большом числе) -->
-                    <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,4">
+                    <!-- Середина: список выбранных диапазонов. MaxHeight ограничивает высоту (~7 строк),
+                         дальше прокрутка — секция не «улетает» вниз при большом числе диапазонов. -->
+                    <ScrollViewer Grid.Row="1" MaxHeight="180"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  VerticalScrollBarVisibility="Auto" Margin="0,0,0,4">
                         <TextBlock Text="{Binding RangesDisplayText}" TextWrapping="Wrap" Foreground="#555" />
                     </ScrollViewer>
 
@@ -315,7 +318,9 @@
                 <Grid RowDefinitions="Auto,*">
                     <TextBlock Grid.Row="0" Text="{l:Tr Groups_Title}" FontWeight="Bold" Margin="0,0,0,6" />
 
-                    <ListBox Grid.Row="1" ItemsSource="{Binding Groups}">
+                    <!-- MaxHeight: ~7 групп, дальше прокрутка — секция не «улетает» вниз. -->
+                    <ListBox Grid.Row="1" ItemsSource="{Binding Groups}" MaxHeight="360"
+                             VerticalAlignment="Top">
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="models:PdfGroup">
                                 <Grid ColumnDefinitions="*,Auto">

@@ -4,6 +4,16 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.33] — 2026-06-13
+
+**EN — Changed:** "Current ranges" and "Created groups" lists are now height-limited (≈7 rows,
+then a scrollbar), like "Page ranges" — panels no longer stretch down with many ranges/groups.
+From now on notes are bilingual (English first, then Russian).
+
+**RU — Изменено:** списки «Текущие диапазоны» и «Сформированные группы» ограничены по высоте
+(≈7 строк, далее прокрутка), как «Диапазоны страниц» — секции не «улетают» вниз при большом
+числе диапазонов/групп. С этого релиза заметки двуязычные (сначала англ., затем рус.).
+
 ## [0.1.32] — 2026-06-12
 
 ### Добавлено
