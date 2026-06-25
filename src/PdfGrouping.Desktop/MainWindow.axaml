@@ -562,17 +562,23 @@
       <Border IsVisible="{Binding IsZoomOpen}" Background="#D0000000"
               PointerPressed="ZoomOverlay_PointerPressed">
           <Grid>
-              <Image Source="{Binding ZoomImage}" Stretch="Uniform" Margin="40,74,40,40"
-                     RenderTransformOrigin="0.5,0.5"
-                     RenderTransform="{Binding ZoomRotation, Converter={StaticResource AngleToTransform}}" />
+              <!-- LayoutTransformControl: поворот участвует в компоновке — изображение всегда
+                   вписывается в окно и остаётся по центру (RenderTransform этого не давал и
+                   картинка «вылетала» за пределы). -->
+              <LayoutTransformControl HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                      Margin="40,74,40,40"
+                                      LayoutTransform="{Binding ZoomRotation, Converter={StaticResource AngleToTransform}}">
+                  <Image Source="{Binding ZoomImage}" Stretch="Uniform" />
+              </LayoutTransformControl>
               <!-- Пиктограммы поворота сверху по центру (только в увеличенном виде) -->
               <Border VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,16,0,0"
-                      Background="#E6202020" CornerRadius="8" Padding="8,5">
+                      Background="#FFF3F3F3" CornerRadius="8" Padding="8,5"
+                      BorderBrush="#33000000" BorderThickness="1" BoxShadow="0 2 8 0 #66000000">
                   <StackPanel Orientation="Horizontal" Spacing="10">
-                      <Button Content="↺" FontSize="18" Width="46"
+                      <Button Content="↶" FontSize="20" FontWeight="Bold" Width="46" Foreground="#1A1A1A"
                               Command="{Binding RotateZoomLeftCommand}"
                               ToolTip.Tip="{l:Tr Tip_RotateLeft}" />
-                      <Button Content="↻" FontSize="18" Width="46"
+                      <Button Content="↷" FontSize="20" FontWeight="Bold" Width="46" Foreground="#1A1A1A"
                               Command="{Binding RotateZoomRightCommand}"
                               ToolTip.Tip="{l:Tr Tip_RotateRight}" />
                   </StackPanel>

@@ -4,6 +4,16 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.35] — 2026-06-25
+
+**EN — Fixed:** rotating the zoomed page no longer pushes it out of the window (rotation now
+participates in layout via LayoutTransformControl). **Changed:** zoom rotate buttons are now
+bright/clearly visible and use curved left/right arrows (↶ ↷).
+
+**RU — Исправлено:** поворот увеличенной страницы больше не «выкидывает» её за пределы окна
+(поворот участвует в компоновке через LayoutTransformControl). **Изменено:** кнопки поворота
+в зуме стали яркими/заметными и используют закруглённые стрелки влево/вправо (↶ ↷).
+
 ## [0.1.34] — 2026-06-25
 
 **EN — Fixed:** "Check for updates" no longer hangs on "Checking…" (timeout added; broken in
