@@ -4,6 +4,16 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.34] — 2026-06-25
+
+**EN — Fixed:** "Check for updates" no longer hangs on "Checking…" (timeout added; broken in
+0.1.31). **Changed:** window now remembers its size between launches. **Added:** regression
+checklist `docs/CHECKLIST.md`.
+
+**RU — Исправлено:** «Проверить обновление» больше не виснет на «Проверка…» (добавлен таймаут;
+ломалось в 0.1.31). **Изменено:** окно запоминает размер между запусками. **Добавлено:**
+регрессионный чек-лист `docs/CHECKLIST.md`.
+
 ## [0.1.33] — 2026-06-13
 
 **EN — Changed:** "Current ranges" and "Created groups" lists are now height-limited (≈7 rows,

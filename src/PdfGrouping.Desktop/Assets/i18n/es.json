@@ -132,6 +132,7 @@
   "Upd_ReadyText": "Actualización {0} disponible: lista para instalar.",
   "Upd_Downloaded": "Actualización {0} descargada. Haga clic en «Actualizar y reiniciar».",
   "Upd_Failed": "No se pudo buscar actualizaciones: {0}",
+  "Upd_Timeout": "No se pudieron buscar actualizaciones: se agotó el tiempo de espera (sin respuesta de red).",
   "Err_SelectPdf": "Elija un archivo PDF.",
   "Msg_Loaded": "Cargado: {0} ({1} págs.)",
   "Err_ReadPdf": "No se pudo leer el PDF: {0}"

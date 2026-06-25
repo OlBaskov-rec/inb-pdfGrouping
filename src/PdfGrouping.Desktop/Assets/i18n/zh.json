@@ -132,6 +132,7 @@
   "Upd_ReadyText": "更新 {0} 可用——已就绪可安装。",
   "Upd_Downloaded": "更新 {0} 已下载。请点击“更新并重启”。",
   "Upd_Failed": "无法检查更新：{0}",
+  "Upd_Timeout": "无法检查更新：请求超时（网络无响应）。",
   "Err_SelectPdf": "请选择一个 PDF 文件。",
   "Msg_Loaded": "已加载：{0}（{1} 页）",
   "Err_ReadPdf": "无法读取 PDF：{0}"

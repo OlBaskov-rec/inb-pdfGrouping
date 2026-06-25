@@ -48,11 +48,30 @@ public partial class MainWindow : Window
     protected override void OnOpened(EventArgs e)
     {
         base.OnOpened(e);
+
+        // Восстанавливаем размер окна с прошлого запуска (если сохранён и проходит по минимумам),
+        // затем ClampToScreen ужмёт его под рабочую область, если экран меньше.
+        var saved = WindowStateService.Load();
+        if (saved is not null && saved.Width >= MinWidth && saved.Height >= MinHeight)
+        {
+            Width = saved.Width;
+            Height = saved.Height;
+        }
+
         ClampToScreen();
 
         // Проверку обновлений запускаем НЕЗАМЕТНО: после открытия окна и небольшой паузы,
         // чтобы старт интерфейса гарантированно ни на что не влиял. Сама проверка — вне UI-потока.
         _ = StartUpdateCheckDelayedAsync();
+    }
+
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        // Сохраняем размер окна. Если открыта панель предпросмотра, она временно расширяет окно —
+        // храним ширину «до предпросмотра», чтобы при следующем запуске не открываться слишком широким.
+        double width = _viewModel.IsPreviewEnabled && _widthBeforePreview > 0 ? _widthBeforePreview : Width;
+        WindowStateService.Save(width, Height);
+        base.OnClosing(e);
     }
 
     private async System.Threading.Tasks.Task StartUpdateCheckDelayedAsync()

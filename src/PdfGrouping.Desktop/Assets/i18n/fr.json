@@ -132,6 +132,7 @@
   "Upd_ReadyText": "Mise à jour {0} disponible — prête à installer.",
   "Upd_Downloaded": "Mise à jour {0} téléchargée. Cliquez sur « Mettre à jour et redémarrer ».",
   "Upd_Failed": "Impossible de rechercher des mises à jour : {0}",
+  "Upd_Timeout": "Impossible de rechercher des mises à jour : délai dépassé (aucune réponse du réseau).",
   "Err_SelectPdf": "Veuillez choisir un fichier PDF.",
   "Msg_Loaded": "Chargé : {0} ({1} p.)",
   "Err_ReadPdf": "Impossible de lire le PDF : {0}"

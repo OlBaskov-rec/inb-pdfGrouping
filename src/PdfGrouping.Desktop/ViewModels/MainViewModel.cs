@@ -1161,7 +1161,9 @@ public partial class MainViewModel : ObservableObject
         UpdateCheckStatus = L["Upd_Checking"];
         try
         {
-            var version = await Task.Run(() => _updateService.CheckAsync());
+            // Таймаут на проверку: иначе при недоступной сети статус навсегда застрял бы
+            // на «Проверка…», а кнопка осталась бы заблокированной (RelayCommand).
+            var version = await RunWithTimeout(() => _updateService.CheckAsync(), 30);
             if (version is null)
             {
                 UpdateCheckStatus = L["Upd_Latest"];
@@ -1171,13 +1173,19 @@ public partial class MainViewModel : ObservableObject
             _availableVersion = version;
             IsUpdateAvailable = true;
             UpdateCheckStatus = L.Format("Upd_Found", version);
-            await Task.Run(() => _updateService.DownloadAsync());
+            await RunWithTimeout(() => _updateService.DownloadAsync(), 120);
             _updateDownloaded = true;
 
             // Ручная проверка — это явное действие пользователя, сразу показываем баннер.
             UpdateText = L.Format("Upd_ReadyText", version);
             UpdateCheckStatus = L.Format("Upd_Downloaded", version);
             IsUpdateReady = true;
+        }
+        catch (TimeoutException)
+        {
+            UpdateCheckStatus = IsUpdateReady
+                ? L.Format("Upd_Downloaded", _availableVersion)
+                : L["Upd_Timeout"];
         }
         catch (Exception ex)
         {
@@ -1197,8 +1205,13 @@ public partial class MainViewModel : ObservableObject
             UpdateCheckStatus = L.Format("Upd_Found", _availableVersion);
             try
             {
-                await Task.Run(() => _updateService.DownloadAsync());
+                await RunWithTimeout(() => _updateService.DownloadAsync(), 120);
                 _updateDownloaded = true;
+            }
+            catch (TimeoutException)
+            {
+                UpdateCheckStatus = L["Upd_Timeout"];
+                return;
             }
             catch (Exception ex)
             {
@@ -1247,6 +1260,24 @@ public partial class MainViewModel : ObservableObject
         {
             // Обновление не критично для основной работы — тихо игнорируем.
         }
+    }
+
+    /// <summary>Выполняет работу на пуле потоков с таймаутом; по истечении бросает TimeoutException.</summary>
+    private static async Task<T> RunWithTimeout<T>(Func<Task<T>> work, int seconds)
+    {
+        var task = Task.Run(work);
+        if (await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(seconds))) != task)
+            throw new TimeoutException();
+        return await task;
+    }
+
+    /// <summary>Перегрузка для операций без результата.</summary>
+    private static async Task RunWithTimeout(Func<Task> work, int seconds)
+    {
+        var task = Task.Run(work);
+        if (await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(seconds))) != task)
+            throw new TimeoutException();
+        await task;
     }
 
     /// <summary>Сбрасывает все рабочие данные (диапазоны, группы, предупреждения, предпросмотр).</summary>
