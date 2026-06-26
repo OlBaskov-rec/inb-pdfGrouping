@@ -12,7 +12,8 @@
         x:DataType="vm:MainViewModel"
         Title="PDF Grouping — Разделение и группировка PDF"
         Icon="/Assets/app.ico"
-        Width="1000" Height="850" MinWidth="780" MinHeight="480"
+        Width="1000" MinWidth="780" MinHeight="480"
+        SizeToContent="Height"
         WindowStartupLocation="CenterScreen"
         DragDrop.AllowDrop="True">
 

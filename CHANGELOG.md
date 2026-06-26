@@ -4,6 +4,18 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.37] — 2026-06-26
+
+**EN — Changed:** the window now auto-grows to fit content (overlap warning, longer ranges list)
+by exactly the needed height, bounded by the screen — beyond that, scrollbars as before. Ranges
+list shows up to 12 rows (was 5) before internal scroll. Window height is now content-driven
+(no longer remembered); width is still remembered.
+
+**RU — Изменено:** окно авто-увеличивается под содержимое (предупреждение о пересечении, длинный
+список диапазонов) ровно на нужную высоту, строго в пределах экрана — дальше прокрутка, как
+раньше. Список диапазонов показывает до 12 строк (было 5) до внутренней прокрутки. Высота окна
+теперь определяется содержимым (не запоминается); ширина по-прежнему запоминается.
+
 ## [0.1.36] — 2026-06-26
 
 **EN — Fixed:** rotating the zoomed page by 90°/270° now scales it to fit the viewing area

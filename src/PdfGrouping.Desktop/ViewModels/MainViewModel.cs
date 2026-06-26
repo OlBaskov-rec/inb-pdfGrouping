@@ -63,8 +63,11 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void SetLanguage(string code) => L.SetLanguage(code);
 
-    /// <summary>Высота списка диапазонов: 3 строки по умолчанию, до 5 — растёт, дальше прокрутка.</summary>
-    public double RangesListHeight => Math.Clamp(Ranges.Count, 3, 5) * 48 + 20;
+    /// <summary>
+    /// Высота списка диапазонов: 3 строки по умолчанию, растёт до 12 (вместе с окном, если на экране
+    /// есть место), дальше — внутренняя прокрутка. Рост окна обеспечивает SizeToContent="Height".
+    /// </summary>
+    public double RangesListHeight => Math.Clamp(Ranges.Count, 3, 12) * 48 + 20;
 
     // --- Исходный PDF ---
     [ObservableProperty]
