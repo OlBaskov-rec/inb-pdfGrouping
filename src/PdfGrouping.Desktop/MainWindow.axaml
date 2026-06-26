@@ -562,14 +562,16 @@
       <Border IsVisible="{Binding IsZoomOpen}" Background="#D0000000"
               PointerPressed="ZoomOverlay_PointerPressed">
           <Grid>
-              <!-- LayoutTransformControl: поворот участвует в компоновке — изображение всегда
-                   вписывается в окно и остаётся по центру (RenderTransform этого не давал и
-                   картинка «вылетала» за пределы). -->
-              <LayoutTransformControl HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                                      Margin="40,74,40,40"
-                                      LayoutTransform="{Binding ZoomRotation, Converter={StaticResource AngleToTransform}}">
-                  <Image Source="{Binding ZoomImage}" Stretch="Uniform" />
-              </LayoutTransformControl>
+              <!-- Viewbox масштабирует уже ПОВЁРНУТОЕ изображение под область просмотра, поэтому
+                   при 90°/270° страница не обрезается, а ужимается и остаётся по центру.
+                   LayoutTransformControl делает поворот частью компоновки (учитываются новые
+                   габариты); Image со Stretch=None отдаёт натуральный размер — масштаб задаёт Viewbox. -->
+              <Viewbox Stretch="Uniform" Margin="40,74,40,40"
+                       HorizontalAlignment="Center" VerticalAlignment="Center">
+                  <LayoutTransformControl LayoutTransform="{Binding ZoomRotation, Converter={StaticResource AngleToTransform}}">
+                      <Image Source="{Binding ZoomImage}" Stretch="None" />
+                  </LayoutTransformControl>
+              </Viewbox>
               <!-- Пиктограммы поворота сверху по центру (только в увеличенном виде) -->
               <Border VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,16,0,0"
                       Background="#FFF3F3F3" CornerRadius="8" Padding="8,5"

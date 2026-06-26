@@ -4,6 +4,14 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.36] — 2026-06-26
+
+**EN — Fixed:** rotating the zoomed page by 90°/270° now scales it to fit the viewing area
+(via a Viewbox) instead of clipping top/bottom — the page always fits fully and stays centred.
+
+**RU — Исправлено:** поворот увеличенной страницы на 90°/270° теперь масштабирует её под область
+просмотра (через Viewbox), а не обрезает сверху/снизу — страница всегда видна целиком и по центру.
+
 ## [0.1.35] — 2026-06-25
 
 **EN — Fixed:** rotating the zoomed page no longer pushes it out of the window (rotation now
