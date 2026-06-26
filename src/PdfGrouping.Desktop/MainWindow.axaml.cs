@@ -129,23 +129,30 @@ public partial class MainWindow : Window
     }
 
     private bool _adjustingHeight;
+    private double _lastChrome = -1;
 
     /// <summary>
-    /// Подгоняет высоту окна под фактическое содержимое: если контент не помещается в видимую
-    /// область прокрутки — окно подрастает (строго до рабочей области экрана), если помещается
-    /// с запасом — ужимается. Так окно растёт под зону сообщений и возвращается обратно, а при
-    /// упоре в экран середина прокручивается (нижний бар «Обработать» остаётся закреплённым).
+    /// Подгоняет высоту окна под содержимое ТОЛЬКО когда появляется/исчезает закреплённая зона
+    /// сообщений. На ручное изменение размера окна не реагирует — иначе при перетаскивании нижнего
+    /// края окно «прыгало» бы на разное расстояние.
+    ///
+    /// Триггер — изменение «chrome» (всё вне прокручиваемой середины: верхняя панель + зона
+    /// сообщений + нижний бар + отступы). При ручном ресайзе все эти строки фиксированы, поэтому
+    /// chrome постоянен (высоту меняет только середина-`*`) → реакции нет, ресайз предсказуем.
+    /// Когда появляется сообщение, оно занимает место → chrome растёт → окно подрастает ровно на это.
     /// </summary>
     private void AdjustHeightForContent()
     {
         if (_adjustingHeight || ContentScroll is null) return;
 
-        double extent = ContentScroll.Extent.Height;     // полная высота содержимого
-        double viewport = ContentScroll.Viewport.Height;  // видимая высота области прокрутки
+        double extent = ContentScroll.Extent.Height;     // полная высота середины (списки фиксированы)
+        double viewport = ContentScroll.Viewport.Height;  // видимая высота прокручиваемой середины
         if (extent <= 0 || viewport <= 0) return;
 
-        // chrome — всё вне области прокрутки: заголовок окна, верхняя панель, нижний бар, отступы.
         double chrome = Height - viewport;
+        if (Math.Abs(chrome - _lastChrome) < 0.5) return; // ручной ресайз — chrome не меняется, выходим
+        _lastChrome = chrome;
+
         double maxH = MaxHeight > 0 && !double.IsInfinity(MaxHeight) ? MaxHeight : double.MaxValue;
         double target = Math.Clamp(extent + chrome, MinHeight, maxH);
 

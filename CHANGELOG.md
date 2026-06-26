@@ -4,6 +4,16 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.40] — 2026-06-26
+
+**EN — Fixed:** manual window resize is predictable again — dragging the bottom edge no longer
+makes the window jump by random amounts; auto-height now reacts only to the message area
+appearing/disappearing, not to resizing, so the edge stops cleanly at the minimum.
+
+**RU — Исправлено:** ручной ресайз окна снова предсказуем — при перетаскивании нижнего края окно
+не «прыгает» на разное расстояние; авто-высота реагирует только на появление/исчезновение зоны
+сообщений, а не на ресайз, поэтому край чётко останавливается на минимуме.
+
 ## [0.1.39] — 2026-06-26
 
 **EN — Changed:** ranges list shows strictly ≤5 rows (adjacent panels kept compact too); the red
