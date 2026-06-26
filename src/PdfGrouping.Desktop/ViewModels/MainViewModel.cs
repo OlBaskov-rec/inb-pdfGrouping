@@ -64,10 +64,11 @@ public partial class MainViewModel : ObservableObject
     private void SetLanguage(string code) => L.SetLanguage(code);
 
     /// <summary>
-    /// Высота списка диапазонов: 3 строки по умолчанию, растёт до 12 (вместе с окном, если на экране
-    /// есть место), дальше — внутренняя прокрутка. Рост окна обеспечивает SizeToContent="Height".
+    /// Высота списка диапазонов ФИКСИРОВАНА: 3 строки по умолчанию, максимум 7 — дальше внутренняя
+    /// прокрутка. Список НЕ растит окно (как в 0.1.36); окно авто-увеличивается только под зону
+    /// сообщений (SizeToContent="Height").
     /// </summary>
-    public double RangesListHeight => Math.Clamp(Ranges.Count, 3, 12) * 48 + 20;
+    public double RangesListHeight => Math.Clamp(Ranges.Count, 3, 7) * 48 + 20;
 
     // --- Исходный PDF ---
     [ObservableProperty]

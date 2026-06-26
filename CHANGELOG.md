@@ -4,6 +4,16 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.38] — 2026-06-26
+
+**EN — Changed:** ranges list (and adjacent panels) are fixed-height again (~7 rows, then internal
+scroll, like 0.1.36) and no longer stretch the window; the window now auto-grows only when a
+message appears in the red message area, so it's visible without scrolling (still bounded by screen).
+
+**RU — Изменено:** список диапазонов (и смежные панели) снова фиксированной высоты (~7 строк, далее
+внутренняя прокрутка, как в 0.1.36) и не растягивают окно; окно авто-увеличивается только при
+появлении сообщения в красной зоне — чтобы было видно без прокрутки (по-прежнему в пределах экрана).
+
 ## [0.1.37] — 2026-06-26
 
 **EN — Changed:** the window now auto-grows to fit content (overlap warning, longer ranges list)
