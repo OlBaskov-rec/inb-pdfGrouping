@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using PdfGrouping.Desktop.Localization;
 using PdfGrouping.Desktop.Services;
@@ -49,16 +50,22 @@ public partial class MainWindow : Window
     {
         base.OnOpened(e);
 
-        // Восстанавливаем ШИРИНУ окна с прошлого запуска (высоту не храним: она авто — окно растёт
-        // под содержимое через SizeToContent="Height").
+        // Восстанавливаем ШИРИНУ окна с прошлого запуска (высоту не храним: она авто — окно
+        // подгоняется по содержимому).
         var saved = WindowStateService.Load();
         if (saved is not null && saved.Width >= MinWidth)
             Width = saved.Width;
 
         ClampToScreen();
 
-        // При авто-росте окна (появился алерт, добавили диапазоны) удерживаем его в пределах экрана.
+        // При авто-росте окна удерживаем его в пределах экрана (не заползать под панель задач).
         SizeChanged += (_, _) => KeepOnScreen();
+
+        // Авто-высота: окно подгоняется под содержимое. Списки фиксированы, поэтому высота меняется
+        // в основном при появлении/исчезновении сообщений в красной зоне. Когда содержимое выше
+        // экрана — окно упирается в рабочую область, середина прокручивается, нижний бар закреплён.
+        ContentScroll.LayoutUpdated += (_, _) => AdjustHeightForContent();
+        Dispatcher.UIThread.Post(AdjustHeightForContent);
 
         // Проверку обновлений запускаем НЕЗАМЕТНО: после открытия окна и небольшой паузы,
         // чтобы старт интерфейса гарантированно ни на что не влиял. Сама проверка — вне UI-потока.
@@ -85,13 +92,17 @@ public partial class MainWindow : Window
         var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
         if (screen is null) return;
 
-        // WorkingArea — в физических пикселях; переводим в DIP. Небольшой запас на рамку окна.
+        // WorkingArea — в физических пикселях; переводим в DIP.
         double scaling = screen.Scaling <= 0 ? 1.0 : screen.Scaling;
-        double maxH = screen.WorkingArea.Height / scaling - 8;
-        double maxW = screen.WorkingArea.Width / scaling - 8;
 
-        // MaxHeight — это и есть «понимание места на экране»: окно растёт под содержимое
-        // (SizeToContent="Height") строго до рабочей области; дальше включается прокрутка.
+        // MaxHeight/MaxWidth в Avalonia ограничивают КЛИЕНТСКУЮ область; ОС добавляет сверху
+        // заголовок и рамки. Чтобы полное окно не вылезало под панель задач, вычитаем их высоту.
+        double osChromeH = OsChromeHeight();
+        double maxH = screen.WorkingArea.Height / scaling - osChromeH - 2;
+        double maxW = screen.WorkingArea.Width / scaling - 2;
+
+        // MaxHeight — «понимание места на экране»: окно растёт под содержимое строго до рабочей
+        // области (от верха экрана до панели задач, не заползая под неё); дальше — прокрутка.
         if (maxH > 0)
         {
             MaxHeight = maxH;
@@ -105,8 +116,49 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>Высота «обрамления» ОС (заголовок + рамки) = полный размер окна минус клиентская область.</summary>
+    private double OsChromeHeight()
+    {
+        var fs = FrameSize;
+        if (fs.HasValue && ClientSize.Height > 0)
+        {
+            double diff = fs.Value.Height - ClientSize.Height;
+            if (diff > 0 && diff < 200) return diff;
+        }
+        return 40; // запасная оценка, если FrameSize ещё недоступен
+    }
+
+    private bool _adjustingHeight;
+
     /// <summary>
-    /// При авто-росте окна (SizeToContent) не даём ему уйти за нижний/правый край рабочей области:
+    /// Подгоняет высоту окна под фактическое содержимое: если контент не помещается в видимую
+    /// область прокрутки — окно подрастает (строго до рабочей области экрана), если помещается
+    /// с запасом — ужимается. Так окно растёт под зону сообщений и возвращается обратно, а при
+    /// упоре в экран середина прокручивается (нижний бар «Обработать» остаётся закреплённым).
+    /// </summary>
+    private void AdjustHeightForContent()
+    {
+        if (_adjustingHeight || ContentScroll is null) return;
+
+        double extent = ContentScroll.Extent.Height;     // полная высота содержимого
+        double viewport = ContentScroll.Viewport.Height;  // видимая высота области прокрутки
+        if (extent <= 0 || viewport <= 0) return;
+
+        // chrome — всё вне области прокрутки: заголовок окна, верхняя панель, нижний бар, отступы.
+        double chrome = Height - viewport;
+        double maxH = MaxHeight > 0 && !double.IsInfinity(MaxHeight) ? MaxHeight : double.MaxValue;
+        double target = Math.Clamp(extent + chrome, MinHeight, maxH);
+
+        if (Math.Abs(target - Height) > 1.0)
+        {
+            _adjustingHeight = true;
+            Height = target;
+            _adjustingHeight = false;
+        }
+    }
+
+    /// <summary>
+    /// При авто-росте окна не даём ему уйти за нижний/правый край рабочей области (под панель задач):
     /// если выросшее окно вылезает — сдвигаем его вверх/влево, сохраняя видимость целиком.
     /// </summary>
     private void KeepOnScreen()
@@ -116,8 +168,11 @@ public partial class MainWindow : Window
 
         double scaling = screen.Scaling <= 0 ? 1.0 : screen.Scaling;
         var wa = screen.WorkingArea; // пиксели
-        int winH = (int)System.Math.Ceiling(Height * scaling);
-        int winW = (int)System.Math.Ceiling(Width * scaling);
+        // Полный размер окна (с заголовком ОС), иначе нижний край уедет под панель задач.
+        double frameH = FrameSize?.Height ?? (Height + OsChromeHeight());
+        double frameW = FrameSize?.Width ?? Width;
+        int winH = (int)System.Math.Ceiling(frameH * scaling);
+        int winW = (int)System.Math.Ceiling(frameW * scaling);
 
         int x = Position.X, y = Position.Y;
         if (y + winH > wa.Y + wa.Height) y = wa.Y + wa.Height - winH;

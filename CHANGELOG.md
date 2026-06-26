@@ -4,6 +4,18 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.39] — 2026-06-26
+
+**EN — Changed:** ranges list shows strictly ≤5 rows (adjacent panels kept compact too); the red
+message zone is now a pinned section above the bottom bar (always visible, long text scrolls inside);
+the window auto-grows for a message by exactly the needed height within the screen work area (no
+longer slips under the taskbar) — when there's no room the middle scrolls and the "Process" bar stays.
+
+**RU — Изменено:** список диапазонов строго ≤5 строк (смежные панели тоже компактны); красная зона
+сообщений стала закреплённой секцией над нижним баром (всегда видна, длинный текст прокручивается
+внутри); окно авто-увеличивается под сообщение ровно на нужную высоту в пределах рабочей области
+экрана (не заползает под панель задач) — при нехватке места прокручивается середина, а «Обработать» виден.
+
 ## [0.1.38] — 2026-06-26
 
 **EN — Changed:** ranges list (and adjacent panels) are fixed-height again (~7 rows, then internal
