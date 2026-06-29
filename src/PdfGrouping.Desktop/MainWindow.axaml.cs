@@ -5,7 +5,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Platform.Storage;
-using Avalonia.Threading;
 using Avalonia.VisualTree;
 using PdfGrouping.Desktop.Localization;
 using PdfGrouping.Desktop.Services;
@@ -58,14 +57,10 @@ public partial class MainWindow : Window
 
         ClampToScreen();
 
-        // При авто-росте окна удерживаем его в пределах экрана (не заползать под панель задач).
+        // Окно подгоняется по содержимому через SizeToContent="Height": всегда компактно, всё видно,
+        // ручной ресайз высоты не нужен. При авто-росте (появилось сообщение) удерживаем окно в
+        // пределах рабочей области (не заползать под панель задач).
         SizeChanged += (_, _) => KeepOnScreen();
-
-        // Авто-высота: окно подгоняется под содержимое. Списки фиксированы, поэтому высота меняется
-        // в основном при появлении/исчезновении сообщений в красной зоне. Когда содержимое выше
-        // экрана — окно упирается в рабочую область, середина прокручивается, нижний бар закреплён.
-        ContentScroll.LayoutUpdated += (_, _) => AdjustHeightForContent();
-        Dispatcher.UIThread.Post(AdjustHeightForContent);
 
         // Проверку обновлений запускаем НЕЗАМЕТНО: после открытия окна и небольшой паузы,
         // чтобы старт интерфейса гарантированно ни на что не влиял. Сама проверка — вне UI-потока.
@@ -126,42 +121,6 @@ public partial class MainWindow : Window
             if (diff > 0 && diff < 200) return diff;
         }
         return 40; // запасная оценка, если FrameSize ещё недоступен
-    }
-
-    private bool _adjustingHeight;
-    private double _lastChrome = -1;
-
-    /// <summary>
-    /// Подгоняет высоту окна под содержимое ТОЛЬКО когда появляется/исчезает закреплённая зона
-    /// сообщений. На ручное изменение размера окна не реагирует — иначе при перетаскивании нижнего
-    /// края окно «прыгало» бы на разное расстояние.
-    ///
-    /// Триггер — изменение «chrome» (всё вне прокручиваемой середины: верхняя панель + зона
-    /// сообщений + нижний бар + отступы). При ручном ресайзе все эти строки фиксированы, поэтому
-    /// chrome постоянен (высоту меняет только середина-`*`) → реакции нет, ресайз предсказуем.
-    /// Когда появляется сообщение, оно занимает место → chrome растёт → окно подрастает ровно на это.
-    /// </summary>
-    private void AdjustHeightForContent()
-    {
-        if (_adjustingHeight || ContentScroll is null) return;
-
-        double extent = ContentScroll.Extent.Height;     // полная высота середины (списки фиксированы)
-        double viewport = ContentScroll.Viewport.Height;  // видимая высота прокручиваемой середины
-        if (extent <= 0 || viewport <= 0) return;
-
-        double chrome = Height - viewport;
-        if (Math.Abs(chrome - _lastChrome) < 0.5) return; // ручной ресайз — chrome не меняется, выходим
-        _lastChrome = chrome;
-
-        double maxH = MaxHeight > 0 && !double.IsInfinity(MaxHeight) ? MaxHeight : double.MaxValue;
-        double target = Math.Clamp(extent + chrome, MinHeight, maxH);
-
-        if (Math.Abs(target - Height) > 1.0)
-        {
-            _adjustingHeight = true;
-            Height = target;
-            _adjustingHeight = false;
-        }
     }
 
     /// <summary>

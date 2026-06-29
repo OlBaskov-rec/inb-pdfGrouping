@@ -41,7 +41,7 @@
   "Label_Placeholder": "e.g. A, B, 1, Part1",
   "Label_CurrentRanges": "Current ranges:",
   "Btn_CreateGroup": "Create output group ►",
-  "Btn_CreateGroupPerRange": "Create an output group for each range ►",
+  "Btn_CreateGroupPerRange": "Create output groups for each range ►",
   "Tip_CreateGroupPerRange": "Each current range becomes a separate group (a separate file)",
   "Groups_Title": "Created groups",
   "Group_RangesPrefix": "(ranges: ",

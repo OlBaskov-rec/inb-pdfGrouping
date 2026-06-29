@@ -4,6 +4,20 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.41] — 2026-06-27
+
+**EN — Changed:** button renamed "Create output groups for each range"; the window auto-sizes its
+height to content (compact, shows everything, no need to drag, can't hide content, no jumping).
+**Fixed:** with a message shown, the ranges list still shows 5 rows, all section borders are
+visible, no upper scrollbar (the message scrolls internally), the "Process" bar stays visible;
+group-creation buttons in the label column no longer jump.
+
+**RU — Изменено:** кнопка переименована «Создать группы для вывода каждого диапазона»; окно
+авто-подгоняет высоту под содержимое (компактно, всё видно, тянуть не нужно, ничего не спрятать,
+без прыжков). **Исправлено:** при сообщении список диапазонов всё ещё 5 строк, границы всех
+секций видны, нет верхней прокрутки (сообщение прокручивается внутри), бар «Обработать» виден;
+кнопки создания групп в колонке метки больше не прыгают.
+
 ## [0.1.40] — 2026-06-26
 
 **EN — Fixed:** manual window resize is predictable again — dragging the bottom edge no longer

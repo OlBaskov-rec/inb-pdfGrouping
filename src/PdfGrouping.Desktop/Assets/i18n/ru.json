@@ -41,7 +41,7 @@
   "Label_Placeholder": "напр. А, Б, 1, Часть1",
   "Label_CurrentRanges": "Текущие диапазоны:",
   "Btn_CreateGroup": "Создать группу для вывода ►",
-  "Btn_CreateGroupPerRange": "Создать группу для вывода по каждому диапазону ►",
+  "Btn_CreateGroupPerRange": "Создать группы для вывода каждого диапазона ►",
   "Tip_CreateGroupPerRange": "Каждый текущий диапазон станет отдельной группой (отдельным файлом)",
   "Groups_Title": "Сформированные группы",
   "Group_RangesPrefix": "(диапазоны: ",

@@ -12,7 +12,8 @@
         x:DataType="vm:MainViewModel"
         Title="PDF Grouping — Разделение и группировка PDF"
         Icon="/Assets/app.ico"
-        Width="1000" Height="720" MinWidth="780" MinHeight="480"
+        Width="1000" MinWidth="780" MinHeight="480"
+        SizeToContent="Height"
         WindowStartupLocation="CenterScreen"
         DragDrop.AllowDrop="True">
 
@@ -271,7 +272,8 @@
             <!-- Метка группы -->
             <Border Grid.Column="1" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
                     Padding="10" Margin="8,0" Width="210">
-                <!-- Auto,Auto,Auto (без *-строки: внутри внешней прокрутки * мерится некорректно). -->
+                <!-- Auto,Auto,Auto: без *-строки (она внутри внешней прокрутки даёт цикл замера
+                     с авто-высотой). Высота списка ниже фиксирована, поэтому кнопки не «прыгают». -->
                 <Grid RowDefinitions="Auto,Auto,Auto">
                     <!-- Верх: метка, поле ввода, быстрый выбор, заголовок списка -->
                     <StackPanel Grid.Row="0">
@@ -290,15 +292,15 @@
                         <TextBlock Text="{l:Tr Label_CurrentRanges}" FontWeight="SemiBold" FontSize="12" Margin="0,12,0,2" />
                     </StackPanel>
 
-                    <!-- Середина: список выбранных диапазонов. MaxHeight ограничивает высоту (~5 строк),
-                         дальше прокрутка — секция не «улетает» вниз при большом числе диапазонов. -->
-                    <ScrollViewer Grid.Row="1" MaxHeight="130"
+                    <!-- Середина: список выбранных диапазонов. Высота ФИКСИРОВАНА (~5 строк), дальше
+                         прокрутка — кнопки ниже всегда на одном месте (не «прыгают»). -->
+                    <ScrollViewer Grid.Row="1" Height="130"
                                   HorizontalScrollBarVisibility="Disabled"
                                   VerticalScrollBarVisibility="Auto" Margin="0,0,0,4">
                         <TextBlock Text="{Binding RangesDisplayText}" TextWrapping="Wrap" Foreground="#555" />
                     </ScrollViewer>
 
-                    <!-- Низ: кнопки создания группы -->
+                    <!-- Низ: кнопки создания группы (стабильная позиция, без *-строки) -->
                     <StackPanel Grid.Row="2">
                         <Button Margin="0,12,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                                 Command="{Binding AddGroupCommand}" IsEnabled="{Binding !IsProcessing}">
@@ -373,7 +375,9 @@
 
         <!-- Закреплённая зона сообщений (Row 2): всегда видна; при длинном тексте — прокрутка.
              Вынесена из прокручиваемой середины, чтобы нижний бар «Обработать» оставался виден. -->
-        <ScrollViewer Grid.Row="2" x:Name="MessageArea" MaxHeight="340" Margin="0,8,24,0"
+        <!-- Лимит высоты: при длинном сообщении оно прокручивается ВНУТРИ себя, чтобы окно не
+             вырастало выше экрана и середина (диапазоны/границы) оставалась видна без прокрутки. -->
+        <ScrollViewer Grid.Row="2" MaxHeight="260" Margin="0,8,24,0"
                       HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
         <StackPanel>
         <Border x:Name="WarningBlock"

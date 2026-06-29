@@ -41,7 +41,7 @@
   "Label_Placeholder": "p. ej. A, B, 1, Parte1",
   "Label_CurrentRanges": "Intervalos actuales:",
   "Btn_CreateGroup": "Crear grupo de salida ►",
-  "Btn_CreateGroupPerRange": "Crear un grupo de salida por cada intervalo ►",
+  "Btn_CreateGroupPerRange": "Crear grupos de salida por cada intervalo ►",
   "Tip_CreateGroupPerRange": "Cada intervalo actual se convierte en un grupo aparte (un archivo aparte)",
   "Groups_Title": "Grupos creados",
   "Group_RangesPrefix": "(intervalos: ",

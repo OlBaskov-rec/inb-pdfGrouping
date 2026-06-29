@@ -41,7 +41,7 @@
   "Label_Placeholder": "z. B. A, B, 1, Teil1",
   "Label_CurrentRanges": "Aktuelle Bereiche:",
   "Btn_CreateGroup": "Ausgabegruppe erstellen ►",
-  "Btn_CreateGroupPerRange": "Ausgabegruppe je Bereich erstellen ►",
+  "Btn_CreateGroupPerRange": "Ausgabegruppen je Bereich erstellen ►",
   "Tip_CreateGroupPerRange": "Jeder aktuelle Bereich wird eine eigene Gruppe (eine eigene Datei)",
   "Groups_Title": "Erstellte Gruppen",
   "Group_RangesPrefix": "(Bereiche: ",

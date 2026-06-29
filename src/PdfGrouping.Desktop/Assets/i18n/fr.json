@@ -41,7 +41,7 @@
   "Label_Placeholder": "ex. A, B, 1, Partie1",
   "Label_CurrentRanges": "Plages actuelles :",
   "Btn_CreateGroup": "Créer un groupe de sortie ►",
-  "Btn_CreateGroupPerRange": "Créer un groupe de sortie pour chaque plage ►",
+  "Btn_CreateGroupPerRange": "Créer des groupes de sortie pour chaque plage ►",
   "Tip_CreateGroupPerRange": "Chaque plage actuelle devient un groupe distinct (un fichier distinct)",
   "Groups_Title": "Groupes créés",
   "Group_RangesPrefix": "(plages : ",
