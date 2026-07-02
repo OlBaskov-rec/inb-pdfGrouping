@@ -4,6 +4,18 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.42] — 2026-07-02
+
+**EN — Fixed:** group-creation buttons in "Group label" are always pinned to the panel bottom (no
+longer rise with many ranges); the grey ranges-list background reaches the panel bottom when no
+file is selected. **Changed:** unified list styling — "Current ranges" uses the same "P. X – Y
+(N p.)" rows on grey as "Page ranges"; "Created groups" got the same grey backdrop.
+
+**RU — Исправлено:** кнопки создания групп в «Метке группы» всегда прижаты к низу панели (не
+приподнимаются при множестве диапазонов); серый фон списка диапазонов доходит до низа панели без
+выбранного файла. **Изменено:** единый стиль списков — «Текущие диапазоны» в формате «Стр. X – Y
+(N стр.)» на сером фоне, как «Диапазоны страниц»; у «Сформированных групп» такая же подложка.
+
 ## [0.1.41] — 2026-06-27
 
 **EN — Changed:** button renamed "Create output groups for each range"; the window auto-sizes its

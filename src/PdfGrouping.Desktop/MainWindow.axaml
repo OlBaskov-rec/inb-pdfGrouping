@@ -202,7 +202,8 @@
 
             <!-- Диапазоны -->
             <Border Grid.Column="0" MinWidth="240" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
-                <Grid RowDefinitions="Auto,Auto,Auto,Auto">
+                <!-- Последняя строка `*`: серая подложка списка тянется до низа панели. -->
+                <Grid RowDefinitions="Auto,Auto,Auto,*">
                     <TextBlock Grid.Row="0" Text="{l:Tr Ranges_Title}" FontWeight="Bold" Margin="0,0,0,6" />
 
                     <StackPanel Grid.Row="1" Margin="0,0,0,0">
@@ -239,8 +240,13 @@
                         </DockPanel>
                     </StackPanel>
 
-                    <ListBox Grid.Row="3" ItemsSource="{Binding Ranges}"
+                    <!-- Серая подложка тянется до низа панели; сам список фиксирован (до 5 строк,
+                         дальше прокрутка), поэтому окно от числа диапазонов не растёт. -->
+                    <Border Grid.Row="3" Background="#F0F0F0" CornerRadius="4">
+                    <ListBox ItemsSource="{Binding Ranges}"
+                             Background="Transparent"
                              Height="{Binding RangesListHeight}"
+                             VerticalAlignment="Top"
                              Padding="2,2,18,2"
                              SelectionMode="Single"
                              SelectedItem="{Binding SelectedRange}">
@@ -266,15 +272,15 @@
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
+                    </Border>
                 </Grid>
             </Border>
 
             <!-- Метка группы -->
             <Border Grid.Column="1" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
                     Padding="10" Margin="8,0" Width="210">
-                <!-- Auto,Auto,Auto: без *-строки (она внутри внешней прокрутки даёт цикл замера
-                     с авто-высотой). Высота списка ниже фиксирована, поэтому кнопки не «прыгают». -->
-                <Grid RowDefinitions="Auto,Auto,Auto">
+                <!-- Auto,*,Auto: середина тянется, поэтому кнопки ВСЕГДА прижаты к низу панели. -->
+                <Grid RowDefinitions="Auto,*,Auto">
                     <!-- Верх: метка, поле ввода, быстрый выбор, заголовок списка -->
                     <StackPanel Grid.Row="0">
                         <TextBlock Text="{l:Tr Label_Title}" FontWeight="Bold" Margin="0,0,0,2" />
@@ -292,13 +298,36 @@
                         <TextBlock Text="{l:Tr Label_CurrentRanges}" FontWeight="SemiBold" FontSize="12" Margin="0,12,0,2" />
                     </StackPanel>
 
-                    <!-- Середина: список выбранных диапазонов. Высота ФИКСИРОВАНА (~5 строк), дальше
-                         прокрутка — кнопки ниже всегда на одном месте (не «прыгают»). -->
-                    <ScrollViewer Grid.Row="1" Height="130"
-                                  HorizontalScrollBarVisibility="Disabled"
-                                  VerticalScrollBarVisibility="Auto" Margin="0,0,0,4">
-                        <TextBlock Text="{Binding RangesDisplayText}" TextWrapping="Wrap" Foreground="#555" />
-                    </ScrollViewer>
+                    <!-- Середина: список текущих диапазонов в стиле панели «Диапазоны страниц».
+                         Серая подложка тянется до кнопок; видимая часть списка ограничена (~5 строк),
+                         дальше прокрутка — окно от числа диапазонов не растёт. -->
+                    <Border Grid.Row="1" Background="#F0F0F0" CornerRadius="4" Margin="0,0,0,4">
+                        <ScrollViewer MaxHeight="165" VerticalAlignment="Top"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      VerticalScrollBarVisibility="Auto" Padding="2,2,14,2">
+                            <StackPanel>
+                                <TextBlock Text="{l:Tr List_Empty}" Foreground="#777" Margin="6,4"
+                                           IsVisible="{Binding !Ranges.Count}" />
+                                <ItemsControl ItemsSource="{Binding Ranges}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="models:PageRange">
+                                            <StackPanel Orientation="Horizontal" Margin="6,3">
+                                                <TextBlock Text="{l:Tr Range_PagesShort}" FontSize="11" Foreground="Gray" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding StartPage}" FontWeight="Bold" Margin="3,0,0,0" />
+                                                <TextBlock Text="–" Margin="3,0" />
+                                                <TextBlock Text="{Binding EndPage}" FontWeight="Bold" />
+                                                <TextBlock Text=" (" FontSize="11" Foreground="Gray" />
+                                                <TextBlock Text="{Binding PageCount}" FontSize="11" Foreground="Gray" />
+                                                <TextBlock Text=" " FontSize="11" Foreground="Gray" />
+                                                <TextBlock Text="{l:Tr Unit_PagesShort}" FontSize="11" Foreground="Gray" />
+                                                <TextBlock Text=")" FontSize="11" Foreground="Gray" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
 
                     <!-- Низ: кнопки создания группы (стабильная позиция, без *-строки) -->
                     <StackPanel Grid.Row="2">
@@ -319,11 +348,14 @@
 
             <!-- Группы -->
             <Border Grid.Column="2" MinWidth="240" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
-                <Grid RowDefinitions="Auto,Auto">
+                <!-- Строка `*`: серая подложка списка тянется до низа панели (единый стиль). -->
+                <Grid RowDefinitions="Auto,*">
                     <TextBlock Grid.Row="0" Text="{l:Tr Groups_Title}" FontWeight="Bold" Margin="0,0,0,6" />
 
                     <!-- MaxHeight: ~5 групп, дальше прокрутка — секция не «улетает» вниз. -->
-                    <ListBox Grid.Row="1" ItemsSource="{Binding Groups}" MaxHeight="260"
+                    <Border Grid.Row="1" Background="#F0F0F0" CornerRadius="4">
+                    <ListBox ItemsSource="{Binding Groups}" MaxHeight="260"
+                             Background="Transparent"
                              VerticalAlignment="Top">
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="models:PdfGroup">
@@ -348,6 +380,7 @@
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
+                    </Border>
                 </Grid>
             </Border>
         </Grid>
