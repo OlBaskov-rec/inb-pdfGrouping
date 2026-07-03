@@ -133,6 +133,7 @@
   "Upd_Downloaded": "Update {0} downloaded. Click “Update and restart”.",
   "Upd_Failed": "Could not check for updates: {0}",
   "Upd_Timeout": "Couldn't check for updates: the request timed out (no network response).",
+  "Overlap_MoreRows": "… and {0} more overlaps (first 50 shown)",
   "Err_SelectPdf": "Please choose a PDF file.",
   "Msg_Loaded": "Loaded: {0} ({1} pp.)",
   "Err_ReadPdf": "Could not read the PDF: {0}"

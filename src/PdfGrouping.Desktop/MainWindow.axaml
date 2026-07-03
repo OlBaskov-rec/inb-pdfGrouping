@@ -469,6 +469,9 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+                        <!-- Свёрнутый остаток при очень длинном списке пересечений (>50 строк) -->
+                        <TextBlock Text="{Binding OverlapsMoreText}" FontSize="12" Foreground="#888"
+                                   Margin="0,2,0,0" IsVisible="{Binding OverlapsMoreText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                         <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" FontSize="12">
                             <Run Text="{l:Tr Overlap_Duplicated}" FontWeight="Bold" />
                             <Run Text="{Binding DuplicatedPagesText}" FontWeight="Bold" Foreground="#C42B1C" />

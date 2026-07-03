@@ -337,17 +337,31 @@ public partial class MainViewModel : ObservableObject
         RebuildOverlapTexts();
     }
 
+    /// <summary>
+    /// Максимум подробных строк в баннере пересечения. Больше рисовать бессмысленно и дорого:
+    /// список не виртуализируется, сотни строк (постраничные диапазоны) заметно тормозят UI.
+    /// Остаток сворачивается в строку «… и ещё N», сводка страниц всё равно полная.
+    /// </summary>
+    private const int MaxOverlapRows = 50;
+
+    /// <summary>Строка «… и ещё N» под списком пересечений (пустая, если всё уместилось).</summary>
+    [ObservableProperty]
+    private string _overlapsMoreText = string.Empty;
+
     /// <summary>Пересобирает локализованные строки баннера пересечения из сырых данных.</summary>
     private void RebuildOverlapTexts()
     {
-        if (!HasOverlapWarning && _overlapRaw.Count == 0) { Overlaps.Clear(); return; }
+        if (!HasOverlapWarning && _overlapRaw.Count == 0) { Overlaps.Clear(); OverlapsMoreText = string.Empty; return; }
         Overlaps.Clear();
-        foreach (var o in _overlapRaw)
+        foreach (var o in _overlapRaw.Take(MaxOverlapRows))
         {
             string source = o.GroupLabel is null ? L["Src_CurrentRanges"] : L.Format("Src_Group", o.GroupLabel);
             Overlaps.Add(MakeOverlap(o.NewStart, o.NewEnd,
                 new PageRange { StartPage = o.ExStart, EndPage = o.ExEnd }, source));
         }
+        OverlapsMoreText = _overlapRaw.Count > MaxOverlapRows
+            ? L.Format("Overlap_MoreRows", _overlapRaw.Count - MaxOverlapRows)
+            : string.Empty;
         DuplicatedPagesText = WithUnit(PageRangeUtils.MergeToString(_overlapDupRaw));
         if (HasPendingDecision)
             ComputePendingTrim();
@@ -658,6 +672,7 @@ public partial class MainViewModel : ObservableObject
         ResolvedRanges.Clear();
         HasOverlapWarning = false;
         Overlaps.Clear();
+        OverlapsMoreText = string.Empty;
         _overlapRaw.Clear();
         _overlapBatch.Clear();
         _pendingRanges.Clear();
@@ -711,6 +726,7 @@ public partial class MainViewModel : ObservableObject
         _overlapBatch.Clear();
         HasOverlapWarning = false;
         Overlaps.Clear();
+        OverlapsMoreText = string.Empty;
     }
 
     [RelayCommand]
@@ -721,6 +737,7 @@ public partial class MainViewModel : ObservableObject
         {
             HasOverlapWarning = false;
             Overlaps.Clear();
+            OverlapsMoreText = string.Empty;
         }
         Ranges.Remove(range);
         UpdateRangesDisplay();
@@ -767,16 +784,40 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasPreview;
 
+    // Номер поколения предпросмотра: результат фонового рендера применяется, только если за время
+    // работы не запросили другой диапазон (иначе показали бы миниатюры «чужого» диапазона).
+    private int _previewGeneration;
+
     partial void OnIsPreviewEnabledChanged(bool value)
     {
         if (value)
             _ = RefreshPreviewAsync();
         else
         {
-            StartThumb = null;
-            EndThumb = null;
-            HasPreview = false;
+            _previewGeneration++; // невыполненные рендеры устарели
+            SetThumbs(null, null);
         }
+    }
+
+    /// <summary>
+    /// Заменяет миниатюры, освобождая прежние битмапы (иначе неуправляемые буферы копятся до GC).
+    /// Освобождение отложено до конца цикла отрисовки — старый битмап может ещё рисоваться.
+    /// </summary>
+    private void SetThumbs(Bitmap? start, Bitmap? end)
+    {
+        var oldStart = StartThumb;
+        var oldEnd = EndThumb;
+        StartThumb = start;
+        EndThumb = end;
+        HasPreview = start is not null || end is not null;
+        if (!ReferenceEquals(oldStart, start)) DisposeAfterRender(oldStart);
+        if (!ReferenceEquals(oldEnd, end)) DisposeAfterRender(oldEnd);
+    }
+
+    private static void DisposeAfterRender(IDisposable? resource)
+    {
+        if (resource is null) return;
+        Dispatcher.UIThread.Post(resource.Dispose, DispatcherPriority.Background);
     }
 
     partial void OnSelectedRangeChanged(PageRange? value)
@@ -791,14 +832,13 @@ public partial class MainViewModel : ObservableObject
 
     private async Task RefreshPreviewAsync()
     {
+        int generation = ++_previewGeneration;
         var range = SelectedRange;
         var path = SourceFilePath;
 
         if (range is null || string.IsNullOrEmpty(path) || TotalPages <= 0)
         {
-            StartThumb = null;
-            EndThumb = null;
-            HasPreview = false;
+            SetThumbs(null, null);
             return;
         }
 
@@ -814,15 +854,21 @@ public partial class MainViewModel : ObservableObject
                 return (sp, ep);
             });
 
-            StartThumb = s;
-            EndThumb = e;
-            HasPreview = true;
+            if (generation != _previewGeneration)
+            {
+                // Пока рендерили, выбрали другой диапазон — результат устарел, освобождаем.
+                s.Dispose();
+                e.Dispose();
+                return;
+            }
+
+            SetThumbs(s, e);
         }
-        catch
+        catch (Exception ex)
         {
-            StartThumb = null;
-            EndThumb = null;
-            HasPreview = false;
+            if (generation == _previewGeneration)
+                SetThumbs(null, null);
+            AppLog.Error($"Не удалось построить предпросмотр стр. {startPage}/{endPage}", ex);
         }
     }
 
@@ -843,12 +889,14 @@ public partial class MainViewModel : ObservableObject
             var big = await Task.Run(() =>
                 ImageHelper.ToBitmap(_renderService.RenderPage(path, p, 1600, 2200)));
             ZoomRotation = 0; // каждый просмотр открываем без поворота
+            var old = ZoomImage;
             ZoomImage = big;
+            DisposeAfterRender(old); // крупный битмап (~14 МБ) освобождаем сразу, не ждём GC
             IsZoomOpen = true;
         }
-        catch
+        catch (Exception ex)
         {
-            // не критично
+            AppLog.Error($"Не удалось открыть увеличенный просмотр стр. {p}", ex);
         }
     }
 
@@ -856,7 +904,9 @@ public partial class MainViewModel : ObservableObject
     public void CloseZoom()
     {
         IsZoomOpen = false;
+        var old = ZoomImage;
         ZoomImage = null;
+        DisposeAfterRender(old);
     }
 
     [RelayCommand]
@@ -1098,6 +1148,7 @@ public partial class MainViewModel : ObservableObject
         }
         catch (Exception ex)
         {
+            AppLog.Error("Ошибка обработки PDF", ex);
             SetError(L.Format("Err_Processing", ex.Message));
         }
         finally
@@ -1258,11 +1309,12 @@ public partial class MainViewModel : ObservableObject
 
             // Фоновое скачивание — чтобы по «Обнаружено обновление» применилось мгновенно.
             try { await Task.Run(() => _updateService.DownloadAsync()); _updateDownloaded = true; }
-            catch { /* докачаем по требованию */ }
+            catch (Exception ex) { AppLog.Error("Фоновое скачивание обновления не удалось (докачаем по требованию)", ex); }
         }
-        catch
+        catch (Exception ex)
         {
-            // Обновление не критично для основной работы — тихо игнорируем.
+            // Обновление не критично для основной работы — только фиксируем в логе.
+            AppLog.Error("Фоновая проверка обновлений не удалась", ex);
         }
     }
 
@@ -1295,9 +1347,8 @@ public partial class MainViewModel : ObservableObject
         _mergeTarget = null;
         HasMergePrompt = false;
         SelectedRange = null;
-        StartThumb = null;
-        EndThumb = null;
-        HasPreview = false;
+        _previewGeneration++;
+        SetThumbs(null, null);
         CloseZoom();
         GroupLabelText = string.Empty;
         UpdateRangesDisplay();
@@ -1348,6 +1399,7 @@ public partial class MainViewModel : ObservableObject
         }
         catch (Exception ex)
         {
+            AppLog.Error($"Не удалось прочитать PDF «{SourceFilePath}»", ex);
             TotalPages = 0;
             SetError(L.Format("Err_ReadPdf", ex.Message));
         }

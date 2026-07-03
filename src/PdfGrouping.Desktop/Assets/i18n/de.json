@@ -133,6 +133,7 @@
   "Upd_Downloaded": "Update {0} heruntergeladen. Klicken Sie auf „Aktualisieren und neu starten“.",
   "Upd_Failed": "Updates konnten nicht geprüft werden: {0}",
   "Upd_Timeout": "Updates konnten nicht geprüft werden: Zeitüberschreitung (keine Netzwerkantwort).",
+  "Overlap_MoreRows": "… und {0} weitere Überschneidungen (erste 50 angezeigt)",
   "Err_SelectPdf": "Bitte wählen Sie eine PDF-Datei.",
   "Msg_Loaded": "Geladen: {0} ({1} S.)",
   "Err_ReadPdf": "PDF konnte nicht gelesen werden: {0}"

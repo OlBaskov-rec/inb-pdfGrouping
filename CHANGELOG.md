@@ -4,6 +4,20 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.43] — 2026-07-03
+
+**EN — Fixed:** overlap banner caps at 50 detail rows + "… and N more" (no more UI lag with
+hundreds of overlaps); preview no longer shows thumbnails of a previously selected range on fast
+switching; preview/zoom bitmaps are disposed on replace/close (no memory spikes). **Added:**
+diagnostic log `%AppData%/PdfGrouping/log.txt` (start, errors, unhandled exceptions; ~1 MB
+rotation); malformed translation templates no longer crash commands.
+
+**RU — Исправлено:** баннер пересечений ограничен 50 строками + «… и ещё N» (нет лагов при сотнях
+пересечений); предпросмотр не показывает миниатюры прежнего диапазона при быстром переключении;
+битмапы предпросмотра/зума освобождаются при замене/закрытии (память не скачет). **Добавлено:**
+диагностический лог `%AppData%/PdfGrouping/log.txt` (запуск, ошибки, необработанные исключения;
+ротация ~1 МБ); кривой шаблон перевода больше не роняет команду.
+
 ## [0.1.42] — 2026-07-02
 
 **EN — Fixed:** group-creation buttons in "Group label" are always pinned to the panel bottom (no

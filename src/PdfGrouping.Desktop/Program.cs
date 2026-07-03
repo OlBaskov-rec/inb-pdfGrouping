@@ -2,6 +2,8 @@
 using System;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
+using PdfGrouping.Desktop.Services;
 using Velopack;
 
 namespace PdfGrouping.Desktop;
@@ -14,6 +16,15 @@ class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        // Диагностика: любые необработанные исключения — в %AppData%/PdfGrouping/log.txt.
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+            AppLog.Error("Необработанное исключение", e.ExceptionObject as Exception);
+        TaskScheduler.UnobservedTaskException += (_, e) =>
+        {
+            AppLog.Error("Непронаблюдённое исключение задачи", e.Exception);
+            e.SetObserved();
+        };
+
         // На ряде корпоративных сетей системный прокси перехватывает TLS (подменяет сертификат),
         // из-за чего проверка обновлений падает с SSL-ошибкой. Приложение ходит в сеть только за
         // обновлениями GitHub, где прямое соединение работает и проверяется НАСТОЯЩИЙ сертификат,
@@ -24,7 +35,16 @@ class Program
         // (--veloapp-install и т.п.) и при необходимости завершает процесс до старта UI.
         VelopackApp.Build().Run();
 
-        BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+        AppLog.Info($"Запуск v{typeof(Program).Assembly.GetName().Version}");
+        try
+        {
+            BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Фатальная ошибка приложения", ex);
+            throw;
+        }
     }
 
     // Avalonia configuration, don't remove; also used by visual designer.

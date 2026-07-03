@@ -82,8 +82,24 @@ public sealed class Localizer : INotifyPropertyChanged
         return key;
     }
 
-    /// <summary>Локализованный шаблон с подстановкой аргументов ({0}, {1}…).</summary>
-    public string Format(string key, params object?[] args) => string.Format(Get(key), args);
+    /// <summary>
+    /// Локализованный шаблон с подстановкой аргументов ({0}, {1}…).
+    /// Кривой шаблон (несбалансированные скобки в переводе) не роняет приложение —
+    /// возвращается сырой шаблон, ошибка уходит в лог.
+    /// </summary>
+    public string Format(string key, params object?[] args)
+    {
+        string template = Get(key);
+        try
+        {
+            return string.Format(template, args);
+        }
+        catch (FormatException)
+        {
+            Services.AppLog.Error($"Некорректный шаблон локализации «{key}» ({_lang}): {template}");
+            return template;
+        }
+    }
 
     public void SetLanguage(string code)
     {
@@ -109,8 +125,9 @@ public sealed class Localizer : INotifyPropertyChanged
             var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(stream);
             return dict ?? new Dictionary<string, string>();
         }
-        catch
+        catch (Exception ex)
         {
+            Services.AppLog.Error($"Не удалось загрузить локализацию «{code}»", ex);
             return new Dictionary<string, string>();
         }
     }
