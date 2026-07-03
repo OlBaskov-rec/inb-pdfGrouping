@@ -47,10 +47,11 @@ public class PdfRenderService
                 }
                 else if (a < 255)
                 {
-                    // премультипликация к белому фону
-                    bgra[i]     = (byte)(bgra[i]     + (255 - a));
-                    bgra[i + 1] = (byte)(bgra[i + 1] + (255 - a));
-                    bgra[i + 2] = (byte)(bgra[i + 2] + (255 - a));
+                    // Премультипликация к белому фону. Min — страховка от заворота байта,
+                    // если PDFium вернёт straight-alpha (сумма могла бы превысить 255).
+                    bgra[i]     = (byte)Math.Min(255, bgra[i]     + (255 - a));
+                    bgra[i + 1] = (byte)Math.Min(255, bgra[i + 1] + (255 - a));
+                    bgra[i + 2] = (byte)Math.Min(255, bgra[i + 2] + (255 - a));
                     bgra[i + 3] = 255;
                 }
             }

@@ -24,6 +24,10 @@ public partial class MainViewModel
 
     private bool _updateDownloaded;
 
+    // Защёлка от параллельных проверок (авто при старте + ручная из меню): UpdateService
+    // хранит найденное обновление в одном поле и не рассчитан на конкурентный доступ.
+    private int _updateBusy;
+
     /// <summary>Версия скачанного/найденного обновления (для сообщений).</summary>
     private string _availableVersion = string.Empty;
 
@@ -72,6 +76,12 @@ public partial class MainViewModel
             return;
         }
 
+        if (System.Threading.Interlocked.Exchange(ref _updateBusy, 1) == 1)
+        {
+            UpdateCheckStatus = L["Upd_Checking"]; // проверка уже идёт (фоновая при старте)
+            return;
+        }
+
         UpdateCheckStatus = L["Upd_Checking"];
         try
         {
@@ -107,6 +117,10 @@ public partial class MainViewModel
             UpdateCheckStatus = IsUpdateReady
                 ? L.Format("Upd_Downloaded", _availableVersion)
                 : L.Format("Upd_Failed", DescribeError(ex));
+        }
+        finally
+        {
+            System.Threading.Interlocked.Exchange(ref _updateBusy, 0);
         }
     }
 
@@ -149,6 +163,8 @@ public partial class MainViewModel
     /// </summary>
     public async Task CheckForUpdatesAsync()
     {
+        if (System.Threading.Interlocked.Exchange(ref _updateBusy, 1) == 1)
+            return; // проверка уже идёт
         try
         {
             // ВСЯ работа Velopack (включая синхронные участки и сеть) — на пуле потоков, НИКОГДА
@@ -172,6 +188,10 @@ public partial class MainViewModel
         {
             // Обновление не критично для основной работы — только фиксируем в логе.
             AppLog.Error("Фоновая проверка обновлений не удалась", ex);
+        }
+        finally
+        {
+            System.Threading.Interlocked.Exchange(ref _updateBusy, 0);
         }
     }
 

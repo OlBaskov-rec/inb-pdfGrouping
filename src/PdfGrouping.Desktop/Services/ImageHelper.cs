@@ -28,8 +28,10 @@ public static class ImageHelper
         else
         {
             // Учитываем возможное выравнивание строк в кадровом буфере.
+            // Min — страховка от записи за границу строки, если dstStride вдруг меньше srcStride.
+            int rowBytes = Math.Min(srcStride, dstStride);
             for (int y = 0; y < page.Height; y++)
-                Marshal.Copy(page.Bgra, y * srcStride, IntPtr.Add(fb.Address, y * dstStride), srcStride);
+                Marshal.Copy(page.Bgra, y * srcStride, IntPtr.Add(fb.Address, y * dstStride), rowBytes);
         }
 
         return bmp;

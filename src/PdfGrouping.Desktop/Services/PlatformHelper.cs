@@ -14,12 +14,22 @@ public static class PlatformHelper
         try
         {
             if (OperatingSystem.IsWindows())
+            {
+                // В Windows кавычки в пути невозможны — экранирование кавычками безопасно.
                 Process.Start(new ProcessStartInfo("explorer.exe", $"\"{path}\"") { UseShellExecute = true });
-            else if (OperatingSystem.IsMacOS())
-                Process.Start("open", $"\"{path}\"");
+            }
             else
-                Process.Start("xdg-open", $"\"{path}\"");
+            {
+                // ArgumentList передаёт путь одним аргументом без ручного экранирования:
+                // кавычки/пробелы в имени папки (в Unix допустимы) не ломают команду.
+                var psi = new ProcessStartInfo(OperatingSystem.IsMacOS() ? "open" : "xdg-open");
+                psi.ArgumentList.Add(path);
+                Process.Start(psi);
+            }
         }
-        catch { /* открытие папки — не критично */ }
+        catch (Exception ex)
+        {
+            AppLog.Error($"Не удалось открыть папку «{path}»", ex);
+        }
     }
 }

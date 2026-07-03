@@ -4,6 +4,19 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.45] — 2026-07-03
+
+**EN — Fixed (robustness):** atomic output-file creation (no silent overwrite on name races —
+next indexed name is used); render safety nets (no byte wrap in white-blending, stride-guarded
+row copy); folder opening on macOS/Linux passes the path as a single argument and logs failures;
+auto and manual update checks can no longer run concurrently.
+
+**RU — Исправлено (надёжность):** атомарное создание выходных файлов (без молчаливой перезаписи
+при гонке имён — берётся следующее имя с индексом); страховки в отрисовке (без заворота байта при
+подмешивании белого, копирование строк защищено по stride); открытие папки на macOS/Linux
+передаёт путь одним аргументом и логирует ошибки; авто- и ручная проверки обновлений больше не
+идут одновременно.
+
 ## [0.1.44] — 2026-07-03
 
 **EN — Changed (internal):** main view model split into focused partial files (ranges / overlaps /

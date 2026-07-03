@@ -20,6 +20,8 @@ public class PdfDocumentService
 
         try
         {
+            // Import — самый лёгкий из РЕАЛИЗОВАННЫХ режимов: InformationOnly в PdfSharp 6.x
+            // не реализован (помечен устаревшим с указанием использовать Import).
             using var doc = PdfReader.Open(pdfPath, PdfDocumentOpenMode.Import);
             return doc.PageCount;
         }
@@ -69,15 +71,29 @@ public class PdfDocumentService
             foreach (var group in groups)
             {
                 string baseName = SanitizeFileName(group.Label);
-                string outputPath = ResolveUniquePath(outputDirectory, baseName, usedNames);
 
                 using var outDoc = new PdfDocument();
                 foreach (var range in group.Ranges)
                     for (int p = range.StartPage; p <= range.EndPage; p++)
                         outDoc.AddPage(source.Pages[p - 1]); // AddPage импортирует страницу
 
-                outDoc.Save(outputPath);
-                outputFiles.Add(outputPath);
+                // CreateNew резервирует имя атомарно: файл, появившийся между проверкой
+                // ResolveUniquePath и записью, не будет молча перезаписан — возьмём следующее имя.
+                while (true)
+                {
+                    string outputPath = ResolveUniquePath(outputDirectory, baseName, usedNames);
+                    try
+                    {
+                        using var stream = new FileStream(outputPath, FileMode.CreateNew, FileAccess.Write);
+                        outDoc.Save(stream);
+                        outputFiles.Add(outputPath);
+                        break;
+                    }
+                    catch (IOException) when (File.Exists(outputPath))
+                    {
+                        // имя заняли параллельно — ResolveUniquePath выдаст следующий индекс
+                    }
+                }
             }
 
             return outputFiles;
