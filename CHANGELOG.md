@@ -4,6 +4,18 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.44] — 2026-07-03
+
+**EN — Changed (internal):** main view model split into focused partial files (ranges / overlaps /
+groups / preview / updates); duplicated validation and overlap detection extracted into shared
+helpers; dead code and duplicated version helper removed. No behaviour changes; installed app
+layout unchanged. Verified by an end-to-end smoke test and the full test suite.
+
+**RU — Изменено (внутреннее):** главная модель представления разнесена на компактные partial-файлы
+(диапазоны / пересечения / группы / предпросмотр / обновления); дублированная валидация и поиск
+пересечений вынесены в общие методы; удалён мёртвый код и дубль функции версии. Поведение и состав
+установленной программы не менялись. Проверено сквозным smoke-тестом и полным набором тестов.
+
 ## [0.1.43] — 2026-07-03
 
 **EN — Fixed:** overlap banner caps at 50 detail rows + "… and N more" (no more UI lag with

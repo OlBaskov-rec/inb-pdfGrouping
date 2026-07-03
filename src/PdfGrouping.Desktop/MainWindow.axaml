@@ -159,7 +159,7 @@
             <TextBlock />
         </DockPanel>
 
-        <ScrollViewer Grid.Row="1" x:Name="ContentScroll"
+        <ScrollViewer Grid.Row="1"
                       HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto">
         <!-- Правый отступ — зазор под вертикальную полосу прокрутки, чтобы она не наезжала -->
@@ -551,7 +551,7 @@
         </ScrollViewer>
 
         <!-- Закреплённый низ: «Сохранить в» + кнопки «Обработать»/«Без пересечений» всегда видны (вне прокрутки) -->
-        <Border Grid.Row="3" x:Name="BottomBar" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0"
+        <Border Grid.Row="3" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0"
                 Padding="0,8,0,0" Margin="0,4,24,0">
             <StackPanel>
                 <!-- Куда сохранять (на всю ширину) -->

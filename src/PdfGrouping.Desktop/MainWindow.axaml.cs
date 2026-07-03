@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Reflection;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -151,7 +150,7 @@ public partial class MainWindow : Window
     }
 
     private void UpdateTitle() =>
-        Title = $"PDF Grouping v{GetAppVersion()} — {Localizer.Instance.Get("Win_Subtitle")}";
+        Title = $"PDF Grouping v{AppInfo.Version} — {Localizer.Instance.Get("Win_Subtitle")}";
 
     private double _widthBeforePreview;
 
@@ -192,19 +191,6 @@ public partial class MainWindow : Window
         if (_viewModel.ZoomEndCommand.CanExecute(null))
             _viewModel.ZoomEndCommand.Execute(null);
         e.Handled = true;
-    }
-
-    /// <summary>Версия приложения из сборки (источник — &lt;Version&gt; в csproj).</summary>
-    private static string GetAppVersion()
-    {
-        var asm = Assembly.GetExecutingAssembly();
-        // InformationalVersion может содержать суффикс сборки (+hash) — отбрасываем его.
-        var info = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-        if (!string.IsNullOrEmpty(info))
-            return info.Split('+')[0];
-
-        var v = asm.GetName().Version;
-        return v is null ? "?" : $"{v.Major}.{v.Minor}.{v.Build}";
     }
 
     private static void OnDragOver(object? sender, DragEventArgs e)
