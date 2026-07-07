@@ -107,29 +107,15 @@ public partial class MainViewModel
         SetError(L["Err_ChooseOtherName"]);
     }
 
-    /// <summary>Пересечения текущих диапазонов со страницами уже созданных групп.</summary>
-    private List<(int, int)> FindConflictsWithGroups()
-    {
-        var conflicts = new List<(int, int)>();
-        foreach (var gr in Groups.SelectMany(g => g.Ranges))
-            foreach (var cur in Ranges)
-                if (cur.StartPage <= gr.EndPage && cur.EndPage >= gr.StartPage)
-                    conflicts.Add((Math.Max(cur.StartPage, gr.StartPage), Math.Min(cur.EndPage, gr.EndPage)));
-        return conflicts;
-    }
+    /// <summary>Пересечения текущих диапазонов со страницами уже созданных групп (логика — в Core).</summary>
+    private List<(int Start, int End)> FindConflictsWithGroups() =>
+        OverlapAnalysis.Intersections(
+            Groups.SelectMany(g => g.Ranges).Select(r => (r.StartPage, r.EndPage)),
+            Ranges.Select(r => (r.StartPage, r.EndPage)));
 
-    /// <summary>Пересечения текущих диапазонов между собой.</summary>
-    private List<(int, int)> FindInternalConflicts()
-    {
-        var conflicts = new List<(int, int)>();
-        var list = Ranges.ToList();
-        for (int i = 0; i < list.Count; i++)
-            for (int j = i + 1; j < list.Count; j++)
-                if (list[i].StartPage <= list[j].EndPage && list[i].EndPage >= list[j].StartPage)
-                    conflicts.Add((Math.Max(list[i].StartPage, list[j].StartPage),
-                                   Math.Min(list[i].EndPage, list[j].EndPage)));
-        return conflicts;
-    }
+    /// <summary>Пересечения текущих диапазонов между собой (логика — в Core).</summary>
+    private List<(int Start, int End)> FindInternalConflicts() =>
+        OverlapAnalysis.InternalIntersections(Ranges.Select(r => (r.StartPage, r.EndPage)).ToList());
 
     private void CreateOrMergeGroup(string label, PdfGroup? target)
     {

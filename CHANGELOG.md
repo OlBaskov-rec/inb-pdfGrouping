@@ -4,6 +4,18 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.46] — 2026-07-07
+
+**EN — Changed (internal):** overlap decision logic extracted from the UI layer into the core
+library as pure functions (`OverlapAnalysis`) with 17 dedicated unit tests (60 total); the UI
+only renders localized texts from the analysis result. Behaviour unchanged (verified against the
+previous version's smoke-test baseline).
+
+**RU — Изменено (внутреннее):** логика решений о пересечениях вынесена из слоя интерфейса в ядро
+в виде чистых функций (`OverlapAnalysis`) с 17 отдельными юнит-тестами (всего 60); интерфейс лишь
+отображает локализованные тексты по результату анализа. Поведение не изменилось (сверено с
+эталоном smoke-теста предыдущей версии).
+
 ## [0.1.45] — 2026-07-03
 
 **EN — Fixed (robustness):** atomic output-file creation (no silent overwrite on name races —

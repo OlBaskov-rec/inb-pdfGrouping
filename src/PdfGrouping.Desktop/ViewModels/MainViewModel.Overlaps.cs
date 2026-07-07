@@ -43,9 +43,10 @@ public partial class MainViewModel
     [ObservableProperty]
     private string _overlapsMoreText = string.Empty;
 
-    // Сырые данные текущего предупреждения о пересечении (для перерисовки при смене языка).
-    private readonly List<(int NewStart, int NewEnd, int ExStart, int ExEnd, string? GroupLabel)> _overlapRaw = new();
-    private List<(int, int)> _overlapDupRaw = new();
+    // Результат анализа пересечений (Core) для активного предупреждения: хранится «как данные»,
+    // чтобы при смене языка пересобрать локализованные строки без повторного анализа.
+    private OverlapAnalysis.Report _overlapReport = OverlapAnalysis.Report.Empty;
+    private int _overlapNewStart, _overlapNewEnd;
 
     // Последняя добавленная «партия» диапазонов (для кнопки «Убрать»).
     private readonly List<PageRange> _overlapBatch = new();
@@ -71,10 +72,12 @@ public partial class MainViewModel
 
     /// <summary>Показывает баннер пересечения и переводит добавление в режим ожидания решения.</summary>
     private void StartPendingDecision(int start, int end,
-        List<PageRange> curOverlaps, List<(string Label, PageRange Range)> prevOverlaps,
-        List<(int, int)> dupIntervals, IEnumerable<PageRange> pending)
+        OverlapAnalysis.Report report, IEnumerable<PageRange> pending)
     {
-        BuildOverlapWarning(start, end, curOverlaps, prevOverlaps, dupIntervals);
+        _overlapNewStart = start;
+        _overlapNewEnd = end;
+        _overlapReport = report;
+        RebuildOverlapTexts();
         _pendingRanges.Clear();
         _pendingRanges.AddRange(pending);
         ComputePendingTrim();
@@ -83,45 +86,31 @@ public partial class MainViewModel
         SetInfo(string.Empty);
     }
 
-    /// <summary>Строит баннер пересечения и запоминает сырые данные для перерисовки при смене языка.</summary>
-    private void BuildOverlapWarning(int start, int end,
-        List<PageRange> curOverlaps, List<(string Label, PageRange Range)> prevOverlaps,
-        List<(int, int)> dupIntervals)
-    {
-        _overlapRaw.Clear();
-        foreach (var r in curOverlaps)
-            _overlapRaw.Add((start, end, r.StartPage, r.EndPage, null));
-        foreach (var (label, r) in prevOverlaps)
-            _overlapRaw.Add((start, end, r.StartPage, r.EndPage, label));
-        _overlapDupRaw = dupIntervals;
-        RebuildOverlapTexts();
-    }
-
-    /// <summary>Пересобирает локализованные строки баннера пересечения из сырых данных.</summary>
+    /// <summary>Пересобирает локализованные строки баннера пересечения из данных анализа.</summary>
     private void RebuildOverlapTexts()
     {
-        if (!HasOverlapWarning && _overlapRaw.Count == 0) { Overlaps.Clear(); OverlapsMoreText = string.Empty; return; }
+        if (!HasOverlapWarning && !_overlapReport.HasOverlaps) { Overlaps.Clear(); OverlapsMoreText = string.Empty; return; }
         Overlaps.Clear();
-        foreach (var o in _overlapRaw.Take(MaxOverlapRows))
+        foreach (var hit in _overlapReport.Hits.Take(MaxOverlapRows))
         {
-            string source = o.GroupLabel is null ? L["Src_CurrentRanges"] : L.Format("Src_Group", o.GroupLabel);
-            Overlaps.Add(MakeOverlap(o.NewStart, o.NewEnd,
-                new PageRange { StartPage = o.ExStart, EndPage = o.ExEnd }, source));
+            string source = hit.GroupLabel is null ? L["Src_CurrentRanges"] : L.Format("Src_Group", hit.GroupLabel);
+            Overlaps.Add(MakeOverlap(hit, source));
         }
-        OverlapsMoreText = _overlapRaw.Count > MaxOverlapRows
-            ? L.Format("Overlap_MoreRows", _overlapRaw.Count - MaxOverlapRows)
+        OverlapsMoreText = _overlapReport.Hits.Count > MaxOverlapRows
+            ? L.Format("Overlap_MoreRows", _overlapReport.Hits.Count - MaxOverlapRows)
             : string.Empty;
-        DuplicatedPagesText = WithUnit(PageRangeUtils.MergeToString(_overlapDupRaw));
+        DuplicatedPagesText = WithUnit(PageRangeUtils.MergeToString(_overlapReport.DupIntervals));
         if (HasPendingDecision)
             ComputePendingTrim();
     }
 
-    private static OverlapInfo MakeOverlap(int start, int end, PageRange existing, string source)
+    /// <summary>Превращает результат анализа (Core) в локализованную строку баннера.</summary>
+    private OverlapInfo MakeOverlap(OverlapAnalysis.Hit hit, string source)
     {
-        int ds = Math.Max(start, existing.StartPage);
-        int de = Math.Min(end, existing.EndPage);
-        string dup = L.Format("Overlap_RepeatFull", WithUnit(ds == de ? $"{ds}" : $"{ds}–{de}"));
-        return new OverlapInfo($"{start}–{end}", $"{existing.StartPage}–{existing.EndPage}", source, dup);
+        string dup = L.Format("Overlap_RepeatFull",
+            WithUnit(hit.DupStart == hit.DupEnd ? $"{hit.DupStart}" : $"{hit.DupStart}–{hit.DupEnd}"));
+        return new OverlapInfo($"{_overlapNewStart}–{_overlapNewEnd}",
+            $"{hit.ExistingStart}–{hit.ExistingEnd}", source, dup);
     }
 
     /// <summary>Добавляет единицу измерения: «страница 10» / «страницы 70–90».</summary>
@@ -348,7 +337,7 @@ public partial class MainViewModel
             }
 
             var intervals = Ranges.Select(r => (r.StartPage, r.EndPage)).ToList();
-            if (HasInternalOverlaps(intervals))
+            if (OverlapAnalysis.HasInternalOverlaps(intervals))
             {
                 var resolved = PageRangeUtils.ResolveOverlaps(intervals);
                 ResolvedRanges.Clear();
@@ -375,15 +364,6 @@ public partial class MainViewModel
             ResolvedRanges.Add(s == e ? L.Format("Resolved_Page", s) : L.Format("Resolved_PageRange", s, e));
     }
 
-    private static bool HasInternalOverlaps(List<(int Start, int End)> ranges)
-    {
-        for (int i = 0; i < ranges.Count; i++)
-            for (int j = i + 1; j < ranges.Count; j++)
-                if (ranges[i].Start <= ranges[j].End && ranges[i].End >= ranges[j].Start)
-                    return true;
-        return false;
-    }
-
     /// <summary>«Подтвердить» — применить непересекающиеся диапазоны (обрезка/разбиение).</summary>
     [RelayCommand]
     private void ConfirmResolve()
@@ -403,17 +383,11 @@ public partial class MainViewModel
     [RelayCommand]
     private void RemoveOverlappingRanges()
     {
-        var kept = new List<PageRange>();
-        foreach (var r in Ranges)
-        {
-            bool overlapsKept = kept.Any(k => r.StartPage <= k.EndPage && r.EndPage >= k.StartPage);
-            if (!overlapsKept)
-                kept.Add(r);
-        }
+        var kept = OverlapAnalysis.KeepFirstOccupiers(Ranges.Select(r => (r.StartPage, r.EndPage)));
 
         Ranges.Clear();
-        foreach (var r in kept)
-            Ranges.Add(r);
+        foreach (var (s, e) in kept)
+            Ranges.Add(new PageRange { StartPage = s, EndPage = e });
 
         ClearOverlapState();
         SetInfo(L["Msg_OverlappingRemoved"]);
@@ -426,7 +400,7 @@ public partial class MainViewModel
         HasOverlapWarning = false;
         Overlaps.Clear();
         OverlapsMoreText = string.Empty;
-        _overlapRaw.Clear();
+        _overlapReport = OverlapAnalysis.Report.Empty;
         _overlapBatch.Clear();
         _pendingRanges.Clear();
         _pendingTrimmed.Clear();

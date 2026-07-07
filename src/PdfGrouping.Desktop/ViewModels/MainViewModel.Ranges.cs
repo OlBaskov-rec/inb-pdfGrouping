@@ -62,46 +62,35 @@ public partial class MainViewModel
     }
 
     /// <summary>
-    /// Пересечения нового диапазона с текущими диапазонами и со страницами созданных групп,
-    /// плюс объединённый список дублируемых интервалов.
+    /// Анализ пересечений нового диапазона со всем уже выбранным. Сама логика — в Core
+    /// (<see cref="OverlapAnalysis"/>, покрыта юнит-тестами); здесь только подготовка данных.
     /// </summary>
-    private (List<PageRange> Cur, List<(string Label, PageRange Range)> Prev, List<(int, int)> Dup)
-        FindOverlaps(int start, int end)
-    {
-        var cur = Ranges
-            .Where(r => start <= r.EndPage && end >= r.StartPage)
-            .ToList();
-        var prev = Groups
-            .SelectMany(g => g.Ranges.Select(r => (g.Label, Range: r)))
-            .Where(x => start <= x.Range.EndPage && end >= x.Range.StartPage)
-            .ToList();
-        var dup = cur.Select(r => (Math.Max(start, r.StartPage), Math.Min(end, r.EndPage)))
-            .Concat(prev.Select(x => (Math.Max(start, x.Range.StartPage), Math.Min(end, x.Range.EndPage))))
-            .ToList();
-        return (cur, prev, dup);
-    }
+    private OverlapAnalysis.Report AnalyzeOverlaps(int start, int end) =>
+        OverlapAnalysis.Analyze(start, end,
+            Ranges.Select(r => (r.StartPage, r.EndPage)),
+            Groups.SelectMany(g => g.Ranges.Select(r => (g.Label, r.StartPage, r.EndPage))));
 
     [RelayCommand]
     private void AddRange()
     {
         if (!TryGetRangeInput(out int start, out int end)) return;
 
-        var (cur, prev, dup) = FindOverlaps(start, end);
+        var report = AnalyzeOverlaps(start, end);
         HasBlockMessage = false;
 
         // Режим «Без пересечений»: диапазон с пересекающимися страницами не добавляется.
-        if (BlockOverlaps && dup.Count > 0)
+        if (BlockOverlaps && report.HasOverlaps)
         {
-            ShowBlockMessage(L.Format("Block_ForbiddenAddOne", WithUnit(PageRangeUtils.MergeToString(dup))));
+            ShowBlockMessage(L.Format("Block_ForbiddenAddOne", WithUnit(PageRangeUtils.MergeToString(report.DupIntervals))));
             return;
         }
 
         var range = new PageRange { StartPage = start, EndPage = end };
 
-        if (dup.Count > 0)
+        if (report.HasOverlaps)
         {
             // Пересечение: НЕ добавляем сразу — ждём решения пользователя (кнопки в баннере).
-            StartPendingDecision(start, end, cur, prev, dup, new[] { range });
+            StartPendingDecision(start, end, report, new[] { range });
             return;
         }
 
@@ -116,12 +105,12 @@ public partial class MainViewModel
     {
         if (!TryGetRangeInput(out int start, out int end)) return;
 
-        var (cur, prev, dup) = FindOverlaps(start, end);
+        var report = AnalyzeOverlaps(start, end);
         HasBlockMessage = false;
 
-        if (BlockOverlaps && dup.Count > 0)
+        if (BlockOverlaps && report.HasOverlaps)
         {
-            ShowBlockMessage(L.Format("Block_ForbiddenAddMany", WithUnit(PageRangeUtils.MergeToString(dup))));
+            ShowBlockMessage(L.Format("Block_ForbiddenAddMany", WithUnit(PageRangeUtils.MergeToString(report.DupIntervals))));
             return;
         }
 
@@ -130,9 +119,9 @@ public partial class MainViewModel
         for (int p = start; p <= end; p++)
             pages.Add(new PageRange { StartPage = p, EndPage = p });
 
-        if (dup.Count > 0)
+        if (report.HasOverlaps)
         {
-            StartPendingDecision(start, end, cur, prev, dup, pages);
+            StartPendingDecision(start, end, report, pages);
             return;
         }
 
