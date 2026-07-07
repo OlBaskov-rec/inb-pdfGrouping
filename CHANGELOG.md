@@ -4,6 +4,16 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.47] — 2026-07-07
+
+**EN — Changed (performance):** the "Current ranges" list is virtualized — only visible rows are
+created (300 ranges → 7 realized rows), so the panel stays instant with hundreds of per-page
+ranges; the look is unchanged.
+
+**RU — Изменено (быстродействие):** список «Текущие диапазоны» виртуализирован — создаются только
+видимые строки (300 диапазонов → 7 созданных строк), панель мгновенна при сотнях постраничных
+диапазонов; внешний вид не изменился.
+
 ## [0.1.46] — 2026-07-07
 
 **EN — Changed (internal):** overlap decision logic extracted from the UI layer into the core

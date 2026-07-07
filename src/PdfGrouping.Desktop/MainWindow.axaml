@@ -300,33 +300,40 @@
 
                     <!-- Середина: список текущих диапазонов в стиле панели «Диапазоны страниц».
                          Серая подложка тянется до кнопок; видимая часть списка ограничена (~5 строк),
-                         дальше прокрутка — окно от числа диапазонов не растёт. -->
+                         дальше прокрутка — окно от числа диапазонов не растёт.
+                         ListBox (а не ItemsControl) — ради ВИРТУАЛИЗАЦИИ: при сотнях постраничных
+                         диапазонов создаются только видимые строки, а не весь список. -->
                     <Border Grid.Row="1" Background="#F0F0F0" CornerRadius="4" Margin="0,0,0,4">
-                        <ScrollViewer MaxHeight="165" VerticalAlignment="Top"
-                                      HorizontalScrollBarVisibility="Disabled"
-                                      VerticalScrollBarVisibility="Auto" Padding="2,2,14,2">
-                            <StackPanel>
-                                <TextBlock Text="{l:Tr List_Empty}" Foreground="#777" Margin="6,4"
-                                           IsVisible="{Binding !Ranges.Count}" />
-                                <ItemsControl ItemsSource="{Binding Ranges}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate x:DataType="models:PageRange">
-                                            <StackPanel Orientation="Horizontal" Margin="6,3">
-                                                <TextBlock Text="{l:Tr Range_PagesShort}" FontSize="11" Foreground="Gray" VerticalAlignment="Center" />
-                                                <TextBlock Text="{Binding StartPage}" FontWeight="Bold" Margin="3,0,0,0" />
-                                                <TextBlock Text="–" Margin="3,0" />
-                                                <TextBlock Text="{Binding EndPage}" FontWeight="Bold" />
-                                                <TextBlock Text=" (" FontSize="11" Foreground="Gray" />
-                                                <TextBlock Text="{Binding PageCount}" FontSize="11" Foreground="Gray" />
-                                                <TextBlock Text=" " FontSize="11" Foreground="Gray" />
-                                                <TextBlock Text="{l:Tr Unit_PagesShort}" FontSize="11" Foreground="Gray" />
-                                                <TextBlock Text=")" FontSize="11" Foreground="Gray" />
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </StackPanel>
-                        </ScrollViewer>
+                        <Panel>
+                            <TextBlock Text="{l:Tr List_Empty}" Foreground="#777" Margin="8,6"
+                                       IsVisible="{Binding !Ranges.Count}" />
+                            <ListBox x:Name="CurrentRangesList" ItemsSource="{Binding Ranges}"
+                                     Background="Transparent" MaxHeight="165" VerticalAlignment="Top"
+                                     Padding="2,2,14,2">
+                                <ListBox.Styles>
+                                    <!-- Компактные строки: убираем крупные отступы контейнера по умолчанию -->
+                                    <Style Selector="ListBoxItem">
+                                        <Setter Property="MinHeight" Value="0" />
+                                        <Setter Property="Padding" Value="6,3" />
+                                    </Style>
+                                </ListBox.Styles>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate x:DataType="models:PageRange">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{l:Tr Range_PagesShort}" FontSize="11" Foreground="Gray" VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding StartPage}" FontWeight="Bold" Margin="3,0,0,0" />
+                                            <TextBlock Text="–" Margin="3,0" />
+                                            <TextBlock Text="{Binding EndPage}" FontWeight="Bold" />
+                                            <TextBlock Text=" (" FontSize="11" Foreground="Gray" />
+                                            <TextBlock Text="{Binding PageCount}" FontSize="11" Foreground="Gray" />
+                                            <TextBlock Text=" " FontSize="11" Foreground="Gray" />
+                                            <TextBlock Text="{l:Tr Unit_PagesShort}" FontSize="11" Foreground="Gray" />
+                                            <TextBlock Text=")" FontSize="11" Foreground="Gray" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Panel>
                     </Border>
 
                     <!-- Низ: кнопки создания группы (стабильная позиция, без *-строки) -->
