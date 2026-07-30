@@ -17,6 +17,13 @@ public class PageRange
     /// <summary>Короткое имя исходного файла — для отображения в UI (напр. «отчёт.pdf»).</summary>
     public string FileName => System.IO.Path.GetFileName(SourceFile);
 
+    /// <summary>
+    /// Порядковый номер файла в списке источников (UI, 1-based) на момент добавления диапазона —
+    /// компактная альтернатива полному имени файла в тесных списках, напр. «[2] Стр. 45–290».
+    /// Не используется в логике пересечений/обработки (там всегда авторитетен <see cref="SourceFile"/>).
+    /// </summary>
+    public int FileNumber { get; set; }
+
     public int PageCount => EndPage >= StartPage ? EndPage - StartPage + 1 : 0;
 
     public override string ToString() => $"{StartPage}–{EndPage}";

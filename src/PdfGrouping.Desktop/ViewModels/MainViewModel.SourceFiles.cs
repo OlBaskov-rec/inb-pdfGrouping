@@ -7,11 +7,19 @@ using PdfGrouping.Desktop.Services;
 
 namespace PdfGrouping.Desktop.ViewModels;
 
-/// <summary>Один загруженный исходный файл в списке слева.</summary>
-public sealed class SourceFileEntry
+/// <summary>
+/// Один загруженный исходный файл в списке слева. Наблюдаемый объект — чтобы колонка «№»
+/// (порядковый номер) в UI обновлялась «на лету», если файл удалили из середины списка и
+/// последующие сдвинулись.
+/// </summary>
+public sealed partial class SourceFileEntry : ObservableObject
 {
     public required string FilePath { get; init; }
     public required int PageCount { get; init; }
+
+    /// <summary>Порядковый номер в списке (1-based, не редактируется пользователем).</summary>
+    [ObservableProperty]
+    private int _number;
 
     /// <summary>Короткое имя для отображения в списке.</summary>
     public string FileName => System.IO.Path.GetFileName(FilePath);
@@ -121,4 +129,19 @@ public partial class MainViewModel
         // Диапазоны/группы, уже созданные по этому файлу, НЕ удаляются: SourceFile хранится
         // в самом диапазоне и не зависит от того, остался ли файл в списке слева.
     }
+
+    /// <summary>Пересчитывает «№» всех файлов по текущему порядку в списке (после Add/Remove).</summary>
+    private void RenumberSourceFiles()
+    {
+        for (int i = 0; i < SourceFiles.Count; i++)
+            SourceFiles[i].Number = i + 1;
+    }
+
+    /// <summary>
+    /// Номер файла-источника (для метки «[N]» у диапазона) на МОМЕНТ вызова. Если файл потом
+    /// уберут из списка/список перенумеруется — уже добавленные диапазоны сохраняют старый номер
+    /// как снимок на момент добавления (как и сам SourceFile — не «живая» ссылка).
+    /// </summary>
+    private int FileNumberFor(string sourceFile) =>
+        SourceFiles.FirstOrDefault(f => f.FilePath == sourceFile)?.Number ?? 0;
 }

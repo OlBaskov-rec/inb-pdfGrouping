@@ -4,6 +4,20 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.50] — 2026-07-30
+
+**EN — Fixed:** long file names no longer overlap the ✕ button in the "Page ranges" list —
+ranges are now tagged with a short file number ("[1] p. 45–290") instead of the full name.
+**Changed:** the file list shows that same number in a "No." column; added a thin separator
+between file rows; "Group label" create buttons now sit right below A–E with standard spacing
+instead of a large empty gap.
+
+**RU — Исправлено:** длинные имена файлов больше не наезжают на кнопку ✕ в списке «Диапазоны
+страниц» — диапазоны помечаются коротким номером файла («[1] Стр. 45–290») вместо полного имени.
+**Изменено:** список файлов показывает тот же номер в колонке «№»; добавлена тонкая линия-разделитель
+между строками файлов; кнопки создания в «Метке группы» теперь сразу под A–E со стандартным
+интервалом вместо большого пустого разрыва.
+
 ## [0.1.49] — 2026-07-30
 
 **EN — Added:** new "Files to process" panel (left) to add multiple PDFs (button/drag&drop,

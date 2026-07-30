@@ -133,13 +133,14 @@ public partial class MainViewModel
         // Все _pendingRanges — из ОДНОГО (активного на момент добавления) файла; «занятые»
         // страницы других файлов не имеют значения — фильтруем covered по этому же файлу.
         string file = _pendingRanges[0].SourceFile;
+        int fileNumber = _pendingRanges[0].FileNumber;
         var covered = Ranges.Where(r => r.SourceFile == file).Select(r => (r.StartPage, r.EndPage))
             .Concat(Groups.SelectMany(g => g.Ranges).Where(r => r.SourceFile == file).Select(r => (r.StartPage, r.EndPage)));
         var trimmed = PageRangeUtils.Subtract(_pendingRanges.Select(r => (r.StartPage, r.EndPage)), covered);
 
         _pendingTrimmed.Clear();
         foreach (var (s, e) in trimmed)
-            _pendingTrimmed.Add(new PageRange { StartPage = s, EndPage = e, SourceFile = file });
+            _pendingTrimmed.Add(new PageRange { StartPage = s, EndPage = e, SourceFile = file, FileNumber = fileNumber });
 
         PendingResolveText = trimmed.Count == 0
             ? L["Resolve_NoFree"]
@@ -370,7 +371,7 @@ public partial class MainViewModel
     /// <summary>
     /// Считает предлагаемое разрешение конфликта (обрезка по занятым страницам, отдельно для
     /// каждого файла) и заполняет <see cref="ResolvedRanges"/>. Если задействовано больше одного
-    /// файла — каждая строка помечается именем файла, чтобы не запутаться, откуда какой кусок.
+    /// файла — каждая строка помечается номером файла («№» в списке слева), чтобы не запутаться.
     /// </summary>
     private void FillResolvedRanges()
     {
@@ -382,7 +383,7 @@ public partial class MainViewModel
         foreach (var r in resolved)
         {
             string text = r.Start == r.End ? L.Format("Resolved_Page", r.Start) : L.Format("Resolved_PageRange", r.Start, r.End);
-            if (multiFile) text = $"[{Path.GetFileName(r.File)}] {text}";
+            if (multiFile) text = $"[{FileNumberFor(r.File)}] {text}";
             ResolvedRanges.Add(text);
         }
     }
@@ -396,7 +397,7 @@ public partial class MainViewModel
 
         Ranges.Clear();
         foreach (var r in resolved)
-            Ranges.Add(new PageRange { StartPage = r.Start, EndPage = r.End, SourceFile = r.File });
+            Ranges.Add(new PageRange { StartPage = r.Start, EndPage = r.End, SourceFile = r.File, FileNumber = FileNumberFor(r.File) });
 
         ClearOverlapState();
         SetInfo(L["Msg_OverlapsTrimmed"]);
@@ -411,7 +412,7 @@ public partial class MainViewModel
 
         Ranges.Clear();
         foreach (var r in kept)
-            Ranges.Add(new PageRange { StartPage = r.Start, EndPage = r.End, SourceFile = r.File });
+            Ranges.Add(new PageRange { StartPage = r.Start, EndPage = r.End, SourceFile = r.File, FileNumber = FileNumberFor(r.File) });
 
         ClearOverlapState();
         SetInfo(L["Msg_OverlappingRemoved"]);

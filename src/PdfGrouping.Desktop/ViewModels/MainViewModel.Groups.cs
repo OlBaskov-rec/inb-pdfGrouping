@@ -139,9 +139,9 @@ public partial class MainViewModel
             int idx = Groups.IndexOf(target);
             var merged = new PdfGroup { Label = target.Label };
             foreach (var r in target.Ranges)
-                merged.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage, SourceFile = r.SourceFile });
+                merged.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage, SourceFile = r.SourceFile, FileNumber = r.FileNumber });
             foreach (var r in Ranges)
-                merged.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage, SourceFile = r.SourceFile });
+                merged.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage, SourceFile = r.SourceFile, FileNumber = r.FileNumber });
             Groups[idx] = merged;
             SetInfo(L.Format("Msg_RangesAddedToGroup", merged.Label, merged.TotalPages));
         }
@@ -149,7 +149,7 @@ public partial class MainViewModel
         {
             var group = new PdfGroup { Label = label };
             foreach (var r in Ranges)
-                group.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage, SourceFile = r.SourceFile });
+                group.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage, SourceFile = r.SourceFile, FileNumber = r.FileNumber });
             Groups.Add(group);
             SetInfo(L.Format("Msg_GroupAdded", label, group.TotalPages));
         }
@@ -200,7 +200,7 @@ public partial class MainViewModel
             label = UniqueGroupLabel(label);
 
             var g = new PdfGroup { Label = label };
-            g.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage, SourceFile = r.SourceFile });
+            g.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage, SourceFile = r.SourceFile, FileNumber = r.FileNumber });
             Groups.Add(g);
             created++;
         }

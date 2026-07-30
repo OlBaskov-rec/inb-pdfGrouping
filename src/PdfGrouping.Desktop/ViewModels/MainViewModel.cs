@@ -35,7 +35,12 @@ public partial class MainViewModel : ObservableObject
 
         // Файловую метку у диапазонов показываем, только когда загружено больше одного файла —
         // иначе она лишний визуальный шум для типичного (единственный файл) сценария.
-        SourceFiles.CollectionChanged += (_, _) => OnPropertyChanged(nameof(ShowFileTags));
+        // Номера («№») пересчитываются заново при любом добавлении/удалении файла.
+        SourceFiles.CollectionChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(ShowFileTags));
+            RenumberSourceFiles();
+        };
 
         // Обновление зависящих от языка строк при переключении языка «на лету».
         L.LanguageChanged += (_, _) =>

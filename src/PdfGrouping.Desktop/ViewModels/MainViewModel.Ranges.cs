@@ -91,7 +91,12 @@ public partial class MainViewModel
             return;
         }
 
-        var range = new PageRange { StartPage = start, EndPage = end, SourceFile = SelectedSourceFile?.FilePath ?? string.Empty };
+        var range = new PageRange
+        {
+            StartPage = start, EndPage = end,
+            SourceFile = SelectedSourceFile?.FilePath ?? string.Empty,
+            FileNumber = SelectedSourceFile?.Number ?? 0,
+        };
 
         if (report.HasOverlaps)
         {
@@ -121,10 +126,11 @@ public partial class MainViewModel
         }
 
         string file = SelectedSourceFile?.FilePath ?? string.Empty;
+        int fileNumber = SelectedSourceFile?.Number ?? 0;
         // Готовим 1-страничные диапазоны.
         var pages = new List<PageRange>();
         for (int p = start; p <= end; p++)
-            pages.Add(new PageRange { StartPage = p, EndPage = p, SourceFile = file });
+            pages.Add(new PageRange { StartPage = p, EndPage = p, SourceFile = file, FileNumber = fileNumber });
 
         if (report.HasOverlaps)
         {
