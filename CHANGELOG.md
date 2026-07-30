@@ -4,6 +4,20 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.52] — 2026-07-30
+
+**EN — Changed:** source-number badges are now brown instead of blue; "Files to process" →
+"Sources to process"; the range source tag in "Page ranges" is now brown too and reads
+"[Source N]" instead of "[N]", with that same wording used consistently in the ranges list, the
+"Output files" range summaries, and the conflict-resolution proposal list; the language-switch
+and "i" buttons in the top bar are shifted left so the window's right margin matches the left.
+
+**RU — Изменено:** метки-номера источника теперь коричневые вместо синих; «Файлы для
+обработки» → «Источники для обработки»; метка источника у диапазона в «Диапазонах страниц»
+тоже стала коричневой и пишется «[N источник]» вместо «[N]» — та же формулировка теперь
+везде: в списке диапазонов, в сводках «Файлы для вывода» и в списке разрешения конфликтов;
+кнопки смены языка и «i» в верхней панели сдвинуты левее — правое поле окна теперь равно левому.
+
 ## [0.1.51] — 2026-07-30
 
 **EN — Changed:** "Group label" → "File name", "Created groups" → "Output files"; the gap before

@@ -383,7 +383,7 @@ public partial class MainViewModel
         foreach (var r in resolved)
         {
             string text = r.Start == r.End ? L.Format("Resolved_Page", r.Start) : L.Format("Resolved_PageRange", r.Start, r.End);
-            if (multiFile) text = $"[{FileNumberFor(r.File)}] {text}";
+            if (multiFile) text = L.Format("Range_SourceTag", FileNumberFor(r.File)) + text;
             ResolvedRanges.Add(text);
         }
     }

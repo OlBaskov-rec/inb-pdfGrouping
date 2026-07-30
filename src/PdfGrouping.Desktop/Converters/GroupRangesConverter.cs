@@ -6,10 +6,9 @@ using PdfGrouping.Desktop.Localization;
 namespace PdfGrouping.Desktop.Converters;
 
 /// <summary>
-/// Форматирует диапазоны сформированной группы в ТОМ ЖЕ стиле, что список «Диапазоны страниц»
-/// («Стр. X–Y (N стр.)»), вместо прежнего компактного «X–Y, X2–Y2». Если диапазоны группы взяты
-/// из НЕСКОЛЬКИХ разных файлов — перед каждым добавляется тег «[N]» (номер файла), как и в самом
-/// списке диапазонов.
+/// Форматирует диапазоны сформированной группы в ТОМ ЖЕ стиле и с той же меткой источника, что
+/// список «Диапазоны страниц» («[N источник] Стр. X–Y (N стр.)»), вместо прежнего компактного
+/// «X–Y, X2–Y2». Метка источника — только когда диапазоны группы взяты из НЕСКОЛЬКИХ разных файлов.
 /// </summary>
 public class GroupRangesConverter : IValueConverter
 {
@@ -26,7 +25,7 @@ public class GroupRangesConverter : IValueConverter
 
         return string.Join(", ", list.Select(r =>
         {
-            string tag = multiFile ? $"[{r.FileNumber}] " : string.Empty;
+            string tag = multiFile ? loc.Format("Range_SourceTag", r.FileNumber) : string.Empty;
             return $"{tag}{pagesWord} {r.StartPage}–{r.EndPage} ({r.PageCount} {unitWord})";
         }));
     }

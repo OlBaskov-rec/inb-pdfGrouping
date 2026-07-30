@@ -21,6 +21,7 @@
         <conv:BoolToBrushConverter x:Key="BoolToBrush" />
         <conv:AngleToTransformConverter x:Key="AngleToTransform" />
         <conv:GroupRangesConverter x:Key="GroupRanges" />
+        <conv:FileSourceTagConverter x:Key="FileSourceTag" />
     </Window.Resources>
 
     <Grid Margin="12">
@@ -55,7 +56,7 @@
                                     <Border BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="0,0,0,4">
                                         <Grid ColumnDefinitions="Auto,*,Auto">
                                             <TextBlock Grid.Column="0" Text="{Binding Number}" FontWeight="Bold"
-                                                       Foreground="#0078D4" VerticalAlignment="Center"
+                                                       Foreground="#8B5A2B" VerticalAlignment="Center"
                                                        Margin="0,0,6,0" />
                                             <TextBlock Grid.Column="1" Text="{Binding FileName}"
                                                        TextWrapping="Wrap" VerticalAlignment="Center"
@@ -134,8 +135,11 @@
         <!-- Auto,*,Auto,Auto: верх / прокручиваемая середина / закреплённая зона сообщений / низ -->
         <Grid Grid.Column="2" RowDefinitions="Auto,*,Auto,Auto">
 
-        <!-- Верхняя панель: справа выбор языка + значок «О программе» -->
-        <DockPanel Grid.Row="0" Margin="0,0,0,8">
+        <!-- Верхняя панель: справа выбор языка + значок «О программе».
+             Правый отступ 24 — тот же зазор под прокрутку, что и у контента ниже (Margin="0,0,24,0"
+             на ScrollViewer'е): без него кнопки RU/i сидели ближе к правому краю окна, чем панели
+             ниже, и правое поле казалось у́же левого. -->
+        <DockPanel Grid.Row="0" Margin="0,0,24,8">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                 <!-- Выбор языка: квадратная кнопка с кодом текущего языка -->
                 <Button Content="{Binding LanguageShort}" Width="40" Padding="6,4" Margin="0,0,6,0"
@@ -303,11 +307,11 @@
                                          ограничивает ширину при измерении, но не обрезает при отрисовке). -->
                                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center"
                                                 ClipToBounds="True">
-                                        <!-- Файловая метка «[N]» — только когда загружено больше одного файла;
-                                             N — тот же порядковый номер, что виден в списке файлов слева.
+                                        <!-- Файловая метка «[N источник]» — только когда загружено больше одного
+                                             файла; N — тот же порядковый номер, что виден в списке источников слева.
                                              Размер БЕЗ явного FontSize — совпадает с номерами страниц (Start/EndPage). -->
-                                        <TextBlock Text="{Binding FileNumber, StringFormat='[{0}] '}"
-                                                   FontWeight="Bold" Foreground="#0078D4"
+                                        <TextBlock Text="{Binding FileNumber, Converter={StaticResource FileSourceTag}}"
+                                                   FontWeight="Bold" Foreground="#8B5A2B"
                                                    IsVisible="{ReflectionBinding $parent[ListBox].DataContext.ShowFileTags}" />
                                         <TextBlock Text="{l:Tr Range_PagesShort}" FontSize="11" Foreground="Gray" VerticalAlignment="Center" />
                                         <TextBlock Text="{Binding StartPage}" FontWeight="Bold" Margin="3,0,0,0" />
