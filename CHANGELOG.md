@@ -4,6 +4,16 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.48] — 2026-07-08
+
+**EN — Changed:** removed the duplicate "Current ranges" list from the "Group label" panel
+(same data already shown in "Page ranges" on the left); create buttons renamed to reference the
+output file rather than "group": "Create output file ►" / "Create output files for each range ►".
+
+**RU — Изменено:** убран дублирующий список «Текущие диапазоны» из панели «Метка группы» (те же
+данные уже показаны в «Диапазоны страниц» слева); кнопки создания переименованы с акцентом на
+файл: «Создать файл для вывода ►» / «Создать файлы для вывода каждого диапазона ►».
+
 ## [0.1.47] — 2026-07-07
 
 **EN — Changed (performance):** the "Current ranges" list is virtualized — only visible rows are
