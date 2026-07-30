@@ -20,6 +20,7 @@
     <Window.Resources>
         <conv:BoolToBrushConverter x:Key="BoolToBrush" />
         <conv:AngleToTransformConverter x:Key="AngleToTransform" />
+        <conv:GroupRangesConverter x:Key="GroupRanges" />
     </Window.Resources>
 
     <Grid Margin="12">
@@ -275,7 +276,7 @@
                                 ToolTip.Tip="{l:Tr Tip_AddRangePaginated}">
                             <TextBlock Text="{l:Tr Btn_AddRangePaginated}" TextWrapping="Wrap" TextAlignment="Center" />
                         </Button>
-                        <DockPanel LastChildFill="False" Margin="0,18,0,0">
+                        <DockPanel LastChildFill="False" Margin="0,22,0,0">
                             <Button DockPanel.Dock="Left" Content="{l:Tr Btn_Clear}"
                                     Command="{Binding ClearRangesCommand}" />
                             <ToggleButton DockPanel.Dock="Right" Content="{l:Tr Btn_Preview}"
@@ -303,8 +304,9 @@
                                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center"
                                                 ClipToBounds="True">
                                         <!-- Файловая метка «[N]» — только когда загружено больше одного файла;
-                                             N — тот же порядковый номер, что виден в списке файлов слева. -->
-                                        <TextBlock Text="{Binding FileNumber, StringFormat='[{0}] '}" FontSize="11"
+                                             N — тот же порядковый номер, что виден в списке файлов слева.
+                                             Размер БЕЗ явного FontSize — совпадает с номерами страниц (Start/EndPage). -->
+                                        <TextBlock Text="{Binding FileNumber, StringFormat='[{0}] '}"
                                                    FontWeight="Bold" Foreground="#0078D4"
                                                    IsVisible="{ReflectionBinding $parent[ListBox].DataContext.ShowFileTags}" />
                                         <TextBlock Text="{l:Tr Range_PagesShort}" FontSize="11" Foreground="Gray" VerticalAlignment="Center" />
@@ -351,7 +353,9 @@
                         <Button Content="E" Width="30" Command="{Binding PickLabelCommand}" CommandParameter="E" />
                     </WrapPanel>
 
-                    <Button Margin="0,12,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    <!-- Margin="0,22,0,0": тот же увеличенный отступ перед сменой смыслового блока,
+                         что и перед «Очистить»/«Предпросмотр» в «Диапазонах страниц» — равные интервалы. -->
+                    <Button Margin="0,22,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                             Command="{Binding AddGroupCommand}" IsEnabled="{Binding !IsProcessing}">
                         <TextBlock Text="{l:Tr Btn_CreateGroup}"
                                    TextWrapping="Wrap" TextAlignment="Center" />
@@ -379,18 +383,27 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="models:PdfGroup">
                                 <Grid ColumnDefinitions="*,Auto">
-                                    <WrapPanel Grid.Column="0">
-                                        <TextBlock Text="{Binding Label, StringFormat='[{0}]'}"
-                                                   FontWeight="Bold" Foreground="#0078D4" />
-                                        <TextBlock Text=" — " FontWeight="SemiBold" />
-                                        <TextBlock Text="{Binding TotalPages}" FontWeight="SemiBold" />
-                                        <TextBlock Text=" " FontWeight="SemiBold" />
-                                        <TextBlock Text="{l:Tr Unit_PagesShort}" FontWeight="SemiBold" />
-                                        <TextBlock Text="  " FontSize="11" Foreground="#777" />
-                                        <TextBlock Text="{l:Tr Group_RangesPrefix}" FontSize="11" Foreground="#777" />
-                                        <TextBlock Text="{Binding RangesText}" FontSize="11" Foreground="#777" />
-                                        <TextBlock Text=")" FontSize="11" Foreground="#777" />
-                                    </WrapPanel>
+                                    <!-- StackPanel (не WrapPanel!): длинная строка диапазонов должна переноситься
+                                         ВНУТРИ себя по ширине колонки — WrapPanel меряет каждый TextBlock без
+                                         ограничения ширины (перенос работает только МЕЖДУ элементами, не внутри
+                                         одного), из-за чего длинный список диапазонов вылезал за пределы панели. -->
+                                    <StackPanel Grid.Column="0">
+                                        <WrapPanel>
+                                            <TextBlock Text="{Binding Label, StringFormat='[{0}]'}"
+                                                       FontWeight="Bold" Foreground="#0078D4" />
+                                            <TextBlock Text=" — " FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding TotalPages}" FontWeight="SemiBold" />
+                                            <TextBlock Text=" " FontWeight="SemiBold" />
+                                            <TextBlock Text="{l:Tr Unit_PagesShort}" FontWeight="SemiBold" />
+                                        </WrapPanel>
+                                        <!-- Тот же стиль строк, что в «Диапазоны страниц»: «Стр. X–Y (N стр.)»;
+                                             своя строка + TextWrapping — здесь перенос работает корректно. -->
+                                        <TextBlock FontSize="11" Foreground="#777" TextWrapping="Wrap" Margin="0,2,0,0">
+                                            <Run Text="{l:Tr Group_RangesPrefix}" />
+                                            <Run Text="{Binding Ranges, Converter={StaticResource GroupRanges}}" />
+                                            <Run Text=")" />
+                                        </TextBlock>
+                                    </StackPanel>
                                     <Button Grid.Column="1" Content="✕" Padding="6,2" Foreground="#C42B1C"
                                             Background="Transparent" BorderThickness="0"
                                             Command="{ReflectionBinding $parent[ListBox].DataContext.RemoveGroupCommand}"

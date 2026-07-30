@@ -4,6 +4,20 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.51] — 2026-07-30
+
+**EN — Changed:** "Group label" → "File name", "Created groups" → "Output files"; the gap before
+create buttons in "File name" and before "Clear"/"Preview" in "Page ranges" is now larger and
+equal in both places; the "[N]" file tag on a range now matches the page-number font size; the
+range list inside "Output files" uses the same "p. X–Y (N p.)" wording as "Page ranges" (first
+version for review, may change/be removed based on feedback).
+
+**RU — Изменено:** «Метка группы» → «Имя файла», «Сформированные группы» → «Файлы для вывода»;
+отступ перед кнопками создания в «Имени файла» и перед «Очистить»/«Предпросмотр» в «Диапазонах
+страниц» теперь больше и одинаковый; метка «[N]» у диапазона того же размера, что номера страниц;
+список диапазонов в «Файлы для вывода» оформлен как «Стр. X–Y (N стр.)», как в «Диапазонах
+страниц» (первый вариант на просмотр, может измениться/быть убран по итогам обратной связи).
+
 ## [0.1.50] — 2026-07-30
 
 **EN — Fixed:** long file names no longer overlap the ✕ button in the "Page ranges" list —
