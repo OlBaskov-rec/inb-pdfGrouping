@@ -12,15 +12,15 @@ public class StorageProviderFilePicker : IFilePickerService
 
     public StorageProviderFilePicker(Func<TopLevel?> topLevel) => _topLevel = topLevel;
 
-    public async Task<string?> PickPdfAsync()
+    public async Task<IReadOnlyList<string>> PickPdfsAsync()
     {
         var top = _topLevel();
-        if (top is null) return null;
+        if (top is null) return Array.Empty<string>();
 
         var files = await top.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "Выберите PDF файл",
-            AllowMultiple = false,
+            Title = "Выберите PDF-файлы",
+            AllowMultiple = true,
             FileTypeFilter = new[]
             {
                 new FilePickerFileType("PDF документы") { Patterns = new[] { "*.pdf" } },
@@ -28,7 +28,11 @@ public class StorageProviderFilePicker : IFilePickerService
             },
         });
 
-        return files.Count > 0 ? files[0].TryGetLocalPath() : null;
+        return files
+            .Select(f => f.TryGetLocalPath())
+            .Where(p => !string.IsNullOrEmpty(p))
+            .Select(p => p!)
+            .ToList();
     }
 
     public async Task<string?> PickFolderAsync()

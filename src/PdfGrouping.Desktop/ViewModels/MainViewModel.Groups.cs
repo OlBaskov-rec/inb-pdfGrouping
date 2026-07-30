@@ -108,14 +108,15 @@ public partial class MainViewModel
     }
 
     /// <summary>Пересечения текущих диапазонов со страницами уже созданных групп (логика — в Core).</summary>
-    private List<(int Start, int End)> FindConflictsWithGroups() =>
+    private List<OverlapAnalysis.FileRange> FindConflictsWithGroups() =>
         OverlapAnalysis.Intersections(
-            Groups.SelectMany(g => g.Ranges).Select(r => (r.StartPage, r.EndPage)),
-            Ranges.Select(r => (r.StartPage, r.EndPage)));
+            Groups.SelectMany(g => g.Ranges).Select(r => new OverlapAnalysis.FileRange(r.SourceFile, r.StartPage, r.EndPage)),
+            Ranges.Select(r => new OverlapAnalysis.FileRange(r.SourceFile, r.StartPage, r.EndPage)));
 
     /// <summary>Пересечения текущих диапазонов между собой (логика — в Core).</summary>
-    private List<(int Start, int End)> FindInternalConflicts() =>
-        OverlapAnalysis.InternalIntersections(Ranges.Select(r => (r.StartPage, r.EndPage)).ToList());
+    private List<OverlapAnalysis.FileRange> FindInternalConflicts() =>
+        OverlapAnalysis.InternalIntersections(
+            Ranges.Select(r => new OverlapAnalysis.FileRange(r.SourceFile, r.StartPage, r.EndPage)).ToList());
 
     private void CreateOrMergeGroup(string label, PdfGroup? target)
     {
@@ -126,7 +127,8 @@ public partial class MainViewModel
             var conflicts = FindConflictsWithGroups();
             if (conflicts.Count > 0)
             {
-                ShowBlockMessage(L.Format("Block_ForbiddenGroup", WithUnit(PageRangeUtils.MergeToString(conflicts))));
+                ShowBlockMessage(L.Format("Block_ForbiddenGroup",
+                    WithUnit(PageRangeUtils.MergeToString(conflicts.Select(c => (c.Start, c.End))))));
                 return;
             }
         }
@@ -137,9 +139,9 @@ public partial class MainViewModel
             int idx = Groups.IndexOf(target);
             var merged = new PdfGroup { Label = target.Label };
             foreach (var r in target.Ranges)
-                merged.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage });
+                merged.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage, SourceFile = r.SourceFile });
             foreach (var r in Ranges)
-                merged.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage });
+                merged.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage, SourceFile = r.SourceFile });
             Groups[idx] = merged;
             SetInfo(L.Format("Msg_RangesAddedToGroup", merged.Label, merged.TotalPages));
         }
@@ -147,7 +149,7 @@ public partial class MainViewModel
         {
             var group = new PdfGroup { Label = label };
             foreach (var r in Ranges)
-                group.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage });
+                group.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage, SourceFile = r.SourceFile });
             Groups.Add(group);
             SetInfo(L.Format("Msg_GroupAdded", label, group.TotalPages));
         }
@@ -184,7 +186,8 @@ public partial class MainViewModel
             conflicts.AddRange(FindConflictsWithGroups());
             if (conflicts.Count > 0)
             {
-                ShowBlockMessage(L.Format("Block_ForbiddenPerRange", WithUnit(PageRangeUtils.MergeToString(conflicts))));
+                ShowBlockMessage(L.Format("Block_ForbiddenPerRange",
+                    WithUnit(PageRangeUtils.MergeToString(conflicts.Select(c => (c.Start, c.End))))));
                 return;
             }
         }
@@ -197,7 +200,7 @@ public partial class MainViewModel
             label = UniqueGroupLabel(label);
 
             var g = new PdfGroup { Label = label };
-            g.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage });
+            g.Ranges.Add(new PageRange { StartPage = r.StartPage, EndPage = r.EndPage, SourceFile = r.SourceFile });
             Groups.Add(g);
             created++;
         }
@@ -247,10 +250,11 @@ public partial class MainViewModel
         try
         {
             var groupsList = Groups.ToList();
-            var source = SourceFilePath;
             var outDir = OutputDirectory;
 
-            var produced = await Task.Run(() => _pdfService.SplitAndGroup(source, groupsList, outDir));
+            // Каждый диапазон несёт свой SourceFile — движок сам откроет нужные исходники
+            // (один или несколько) и соберёт из них выходные файлы.
+            var produced = await Task.Run(() => _pdfService.SplitAndGroup(groupsList, outDir));
 
             foreach (var f in produced)
                 OutputFiles.Add(f);

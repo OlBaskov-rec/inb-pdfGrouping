@@ -97,9 +97,11 @@ public partial class MainViewModel
     {
         int generation = ++_previewGeneration;
         var range = SelectedRange;
-        var path = SourceFilePath;
+        // Каждый диапазон несёт СВОЙ исходный файл: выбранный диапазон в списке может быть из
+        // файла, отличного от текущего активного — предпросмотр обязан брать пример именно оттуда.
+        var path = range?.SourceFile;
 
-        if (range is null || string.IsNullOrEmpty(path) || TotalPages <= 0)
+        if (range is null || string.IsNullOrEmpty(path))
         {
             SetThumbs(null, null);
             return;
@@ -143,7 +145,8 @@ public partial class MainViewModel
 
     private async Task OpenZoomAsync(int? page)
     {
-        var path = SourceFilePath;
+        // Зум — из файла ВЫБРАННОГО диапазона (не обязательно текущего активного файла).
+        var path = SelectedRange?.SourceFile;
         if (page is null || string.IsNullOrEmpty(path)) return;
 
         int p = page.Value;

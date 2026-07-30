@@ -62,13 +62,19 @@ public partial class MainViewModel
     }
 
     /// <summary>
-    /// Анализ пересечений нового диапазона со всем уже выбранным. Сама логика — в Core
-    /// (<see cref="OverlapAnalysis"/>, покрыта юнит-тестами); здесь только подготовка данных.
+    /// Анализ пересечений нового диапазона со всем уже выбранным. Сравнение — только с
+    /// диапазонами ТОГО ЖЕ (активного) файла — см. <see cref="OverlapAnalysis"/> (покрыта
+    /// юнит-тестами); здесь только подготовка данных.
     /// </summary>
-    private OverlapAnalysis.Report AnalyzeOverlaps(int start, int end) =>
-        OverlapAnalysis.Analyze(start, end,
-            Ranges.Select(r => (r.StartPage, r.EndPage)),
-            Groups.SelectMany(g => g.Ranges.Select(r => (g.Label, r.StartPage, r.EndPage))));
+    private OverlapAnalysis.Report AnalyzeOverlaps(int start, int end)
+    {
+        string file = SelectedSourceFile?.FilePath ?? string.Empty;
+        var newRange = new OverlapAnalysis.FileRange(file, start, end);
+        return OverlapAnalysis.Analyze(newRange,
+            Ranges.Select(r => new OverlapAnalysis.FileRange(r.SourceFile, r.StartPage, r.EndPage)),
+            Groups.SelectMany(g => g.Ranges.Select(r =>
+                (g.Label, new OverlapAnalysis.FileRange(r.SourceFile, r.StartPage, r.EndPage)))));
+    }
 
     [RelayCommand]
     private void AddRange()
@@ -85,7 +91,7 @@ public partial class MainViewModel
             return;
         }
 
-        var range = new PageRange { StartPage = start, EndPage = end };
+        var range = new PageRange { StartPage = start, EndPage = end, SourceFile = SelectedSourceFile?.FilePath ?? string.Empty };
 
         if (report.HasOverlaps)
         {
@@ -114,10 +120,11 @@ public partial class MainViewModel
             return;
         }
 
+        string file = SelectedSourceFile?.FilePath ?? string.Empty;
         // Готовим 1-страничные диапазоны.
         var pages = new List<PageRange>();
         for (int p = start; p <= end; p++)
-            pages.Add(new PageRange { StartPage = p, EndPage = p });
+            pages.Add(new PageRange { StartPage = p, EndPage = p, SourceFile = file });
 
         if (report.HasOverlaps)
         {

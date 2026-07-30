@@ -10,9 +10,10 @@ namespace PdfGrouping.Desktop.ViewModels;
 
 /// <summary>
 /// Главная модель представления. Разнесена на partial-файлы по областям:
-/// MainViewModel.Ranges.cs — диапазоны, MainViewModel.Overlaps.cs — пересечения и сообщения,
-/// MainViewModel.Groups.cs — группы и обработка, MainViewModel.Preview.cs — предпросмотр/зум,
-/// MainViewModel.Updates.cs — обновления. Здесь — конструктор, язык, исходный файл и статус.
+/// MainViewModel.SourceFiles.cs — список исходных PDF (панель слева), MainViewModel.Ranges.cs —
+/// диапазоны, MainViewModel.Overlaps.cs — пересечения и сообщения, MainViewModel.Groups.cs —
+/// группы и обработка, MainViewModel.Preview.cs — предпросмотр/зум, MainViewModel.Updates.cs —
+/// обновления. Здесь — конструктор, язык, активный файл (производные свойства) и статус.
 /// </summary>
 public partial class MainViewModel : ObservableObject
 {
@@ -31,6 +32,10 @@ public partial class MainViewModel : ObservableObject
 
         // Высота списка диапазонов зависит от числа строк (3..5), дальше — прокрутка.
         Ranges.CollectionChanged += (_, _) => OnPropertyChanged(nameof(RangesListHeight));
+
+        // Файловую метку у диапазонов показываем, только когда загружено больше одного файла —
+        // иначе она лишний визуальный шум для типичного (единственный файл) сценария.
+        SourceFiles.CollectionChanged += (_, _) => OnPropertyChanged(nameof(ShowFileTags));
 
         // Обновление зависящих от языка строк при переключении языка «на лету».
         L.LanguageChanged += (_, _) =>
@@ -58,11 +63,13 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void SetLanguage(string code) => L.SetLanguage(code);
 
-    // --- Исходный PDF ---
+    // --- Активный исходный файл (производные от SelectedSourceFile — см. MainViewModel.SourceFiles.cs) ---
 
+    /// <summary>Путь активного файла (для поля «Путь к файлу» и как ключ рендера предпросмотра/зума).</summary>
     [ObservableProperty]
     private string _sourceFilePath = string.Empty;
 
+    /// <summary>Число страниц активного файла — определяет пределы ввода диапазона.</summary>
     [ObservableProperty]
     private int _totalPages;
 
@@ -76,49 +83,6 @@ public partial class MainViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(MaxPage));
         OnPropertyChanged(nameof(PagesOfText));
-    }
-
-    [RelayCommand]
-    private async Task BrowseSourceFileAsync()
-    {
-        var path = await _filePicker.PickPdfAsync();
-        if (!string.IsNullOrEmpty(path))
-            LoadFromPath(path);
-    }
-
-    /// <summary>Загрузка PDF по пути (кнопка/drag&amp;drop). Новый файл = новая сессия: всё обнуляется.</summary>
-    public void LoadFromPath(string path)
-    {
-        if (!path.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
-        {
-            SetError(L["Err_SelectPdf"]);
-            return;
-        }
-
-        ResetWorkspace();
-        SourceFilePath = path;
-        OutputDirectory = Path.GetDirectoryName(path) ?? string.Empty;
-        LoadPdfInfo();
-    }
-
-    private void LoadPdfInfo()
-    {
-        try
-        {
-            TotalPages = _pdfService.GetPageCount(SourceFilePath);
-            RangeStart = 1;
-            RangeEnd = TotalPages;
-            // Если групп ещё нет — подставим первую метку «A» (можно изменить).
-            if (Groups.Count == 0 && string.IsNullOrEmpty(GroupLabelText))
-                GroupLabelText = "A";
-            SetInfo(L.Format("Msg_Loaded", Path.GetFileName(SourceFilePath), TotalPages));
-        }
-        catch (Exception ex)
-        {
-            AppLog.Error($"Не удалось прочитать PDF «{SourceFilePath}»", ex);
-            TotalPages = 0;
-            SetError(L.Format("Err_ReadPdf", ex.Message));
-        }
     }
 
     // --- Статус ---
@@ -168,11 +132,9 @@ public partial class MainViewModel : ObservableObject
     private void ClearAll()
     {
         ResetWorkspace();
-        SourceFilePath = string.Empty;
-        TotalPages = 0;
+        SourceFiles.Clear();
+        SelectedSourceFile = null; // сбрасывает SourceFilePath/TotalPages/RangeStart/RangeEnd
         OutputDirectory = string.Empty;
-        RangeStart = 1;
-        RangeEnd = 1;
         SetInfo(L["Status_Ready"]);
     }
 }

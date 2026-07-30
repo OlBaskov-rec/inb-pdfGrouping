@@ -5,6 +5,8 @@ namespace PdfGrouping.Desktop.Services;
 /// </summary>
 public interface IFilePickerService
 {
-    Task<string?> PickPdfAsync();
+    /// <summary>Выбор одного или нескольких PDF-файлов (для добавления в список источников).</summary>
+    Task<IReadOnlyList<string>> PickPdfsAsync();
+
     Task<string?> PickFolderAsync();
 }

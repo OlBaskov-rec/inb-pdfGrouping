@@ -110,7 +110,7 @@ public partial class MainViewModel
         string dup = L.Format("Overlap_RepeatFull",
             WithUnit(hit.DupStart == hit.DupEnd ? $"{hit.DupStart}" : $"{hit.DupStart}–{hit.DupEnd}"));
         return new OverlapInfo($"{_overlapNewStart}–{_overlapNewEnd}",
-            $"{hit.ExistingStart}–{hit.ExistingEnd}", source, dup);
+            $"{hit.Existing.Start}–{hit.Existing.End}", source, dup);
     }
 
     /// <summary>Добавляет единицу измерения: «страница 10» / «страницы 70–90».</summary>
@@ -123,13 +123,23 @@ public partial class MainViewModel
 
     private void ComputePendingTrim()
     {
-        var covered = Ranges.Select(r => (r.StartPage, r.EndPage))
-            .Concat(Groups.SelectMany(g => g.Ranges).Select(r => (r.StartPage, r.EndPage)));
+        if (_pendingRanges.Count == 0)
+        {
+            _pendingTrimmed.Clear();
+            PendingResolveText = string.Empty;
+            return;
+        }
+
+        // Все _pendingRanges — из ОДНОГО (активного на момент добавления) файла; «занятые»
+        // страницы других файлов не имеют значения — фильтруем covered по этому же файлу.
+        string file = _pendingRanges[0].SourceFile;
+        var covered = Ranges.Where(r => r.SourceFile == file).Select(r => (r.StartPage, r.EndPage))
+            .Concat(Groups.SelectMany(g => g.Ranges).Where(r => r.SourceFile == file).Select(r => (r.StartPage, r.EndPage)));
         var trimmed = PageRangeUtils.Subtract(_pendingRanges.Select(r => (r.StartPage, r.EndPage)), covered);
 
         _pendingTrimmed.Clear();
         foreach (var (s, e) in trimmed)
-            _pendingTrimmed.Add(new PageRange { StartPage = s, EndPage = e });
+            _pendingTrimmed.Add(new PageRange { StartPage = s, EndPage = e, SourceFile = file });
 
         PendingResolveText = trimmed.Count == 0
             ? L["Resolve_NoFree"]
@@ -336,13 +346,10 @@ public partial class MainViewModel
                 return;
             }
 
-            var intervals = Ranges.Select(r => (r.StartPage, r.EndPage)).ToList();
+            var intervals = Ranges.Select(r => new OverlapAnalysis.FileRange(r.SourceFile, r.StartPage, r.EndPage)).ToList();
             if (OverlapAnalysis.HasInternalOverlaps(intervals))
             {
-                var resolved = PageRangeUtils.ResolveOverlaps(intervals);
-                ResolvedRanges.Clear();
-                foreach (var (s, e) in resolved)
-                    ResolvedRanges.Add(s == e ? L.Format("Resolved_Page", s) : L.Format("Resolved_PageRange", s, e));
+                FillResolvedRanges();
                 HasConflictPrompt = true;
             }
         }
@@ -357,37 +364,54 @@ public partial class MainViewModel
     private void RebuildResolvedRanges()
     {
         if (!HasConflictPrompt) return;
-        var intervals = Ranges.Select(r => (r.StartPage, r.EndPage)).ToList();
-        var resolved = PageRangeUtils.ResolveOverlaps(intervals);
+        FillResolvedRanges();
+    }
+
+    /// <summary>
+    /// Считает предлагаемое разрешение конфликта (обрезка по занятым страницам, отдельно для
+    /// каждого файла) и заполняет <see cref="ResolvedRanges"/>. Если задействовано больше одного
+    /// файла — каждая строка помечается именем файла, чтобы не запутаться, откуда какой кусок.
+    /// </summary>
+    private void FillResolvedRanges()
+    {
+        var intervals = Ranges.Select(r => new OverlapAnalysis.FileRange(r.SourceFile, r.StartPage, r.EndPage));
+        var resolved = OverlapAnalysis.ResolveOverlapsPerFile(intervals);
+        bool multiFile = SourceFiles.Count > 1;
+
         ResolvedRanges.Clear();
-        foreach (var (s, e) in resolved)
-            ResolvedRanges.Add(s == e ? L.Format("Resolved_Page", s) : L.Format("Resolved_PageRange", s, e));
+        foreach (var r in resolved)
+        {
+            string text = r.Start == r.End ? L.Format("Resolved_Page", r.Start) : L.Format("Resolved_PageRange", r.Start, r.End);
+            if (multiFile) text = $"[{Path.GetFileName(r.File)}] {text}";
+            ResolvedRanges.Add(text);
+        }
     }
 
     /// <summary>«Подтвердить» — применить непересекающиеся диапазоны (обрезка/разбиение).</summary>
     [RelayCommand]
     private void ConfirmResolve()
     {
-        var intervals = Ranges.Select(r => (r.StartPage, r.EndPage)).ToList();
-        var resolved = PageRangeUtils.ResolveOverlaps(intervals);
+        var intervals = Ranges.Select(r => new OverlapAnalysis.FileRange(r.SourceFile, r.StartPage, r.EndPage));
+        var resolved = OverlapAnalysis.ResolveOverlapsPerFile(intervals);
 
         Ranges.Clear();
-        foreach (var (s, e) in resolved)
-            Ranges.Add(new PageRange { StartPage = s, EndPage = e });
+        foreach (var r in resolved)
+            Ranges.Add(new PageRange { StartPage = r.Start, EndPage = r.End, SourceFile = r.File });
 
         ClearOverlapState();
         SetInfo(L["Msg_OverlapsTrimmed"]);
     }
 
-    /// <summary>«Убрать пересекающиеся» — оставить только первые занявшие страницы диапазоны.</summary>
+    /// <summary>«Убрать пересекающиеся» — оставить только первые занявшие страницы диапазоны (в пределах своего файла).</summary>
     [RelayCommand]
     private void RemoveOverlappingRanges()
     {
-        var kept = OverlapAnalysis.KeepFirstOccupiers(Ranges.Select(r => (r.StartPage, r.EndPage)));
+        var kept = OverlapAnalysis.KeepFirstOccupiers(
+            Ranges.Select(r => new OverlapAnalysis.FileRange(r.SourceFile, r.StartPage, r.EndPage)));
 
         Ranges.Clear();
-        foreach (var (s, e) in kept)
-            Ranges.Add(new PageRange { StartPage = s, EndPage = e });
+        foreach (var r in kept)
+            Ranges.Add(new PageRange { StartPage = r.Start, EndPage = r.End, SourceFile = r.File });
 
         ClearOverlapState();
         SetInfo(L["Msg_OverlappingRemoved"]);

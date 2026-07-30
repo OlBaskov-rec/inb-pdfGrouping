@@ -4,6 +4,24 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.49] — 2026-07-30
+
+**EN — Added:** new "Files to process" panel (left) to add multiple PDFs (button/drag&drop,
+click to make active, ✕ to remove); ranges from **different** source files can be combined into
+one output group/file; "Source PDF file" renamed to "File path" (display-only, shows the active
+file); ranges and group summaries show the source file name when more than one file is loaded.
+**Changed:** overlap detection compares pages only within the same source file (no more false
+conflicts between same-numbered pages of different files); same-file detection/trim/resolution
+unchanged.
+
+**RU — Добавлено:** новая панель «Файлы для обработки» (слева) для добавления нескольких PDF
+(кнопкой/перетаскиванием, клик — сделать активным, ✕ — убрать); диапазоны из **разных** исходных
+файлов теперь можно объединять в одну группу/файл; «Исходный PDF-файл» переименован в «Путь к
+файлу» (только отображение активного файла); диапазоны и сводки групп показывают имя файла, если
+загружено больше одного. **Изменено:** проверка пересечений сравнивает страницы только в пределах
+одного файла (больше нет ложных конфликтов между одинаковыми номерами страниц разных файлов);
+обнаружение/обрезка/разрешение внутри одного файла не изменились.
+
 ## [0.1.48] — 2026-07-08
 
 **EN — Changed:** removed the duplicate "Current ranges" list from the "Group label" panel

@@ -5,8 +5,10 @@ using PdfSharp.Pdf.IO;
 namespace PdfGrouping.Core.Services;
 
 /// <summary>
-/// Разбивает исходный PDF на группы страниц и склеивает каждую группу в отдельный файл.
-/// Полностью на PdfSharp (MIT) — без внешних утилит и без временных файлов.
+/// Разбивает и объединяет страницы из одного или НЕСКОЛЬКИХ исходных PDF в отдельные выходные
+/// файлы (по одному на группу). Каждый диапазон сам указывает свой исходный файл
+/// (<see cref="PageRange.SourceFile"/>), поэтому один выходной файл может собираться из страниц
+/// разных исходников. Полностью на PdfSharp (MIT) — без внешних утилит и без временных файлов.
 /// </summary>
 public class PdfDocumentService
 {
@@ -33,13 +35,12 @@ public class PdfDocumentService
     }
 
     /// <summary>
-    /// Для каждой группы создаёт отдельный PDF, склеивая указанные диапазоны страниц.
+    /// Для каждой группы создаёт отдельный PDF, склеивая страницы указанных диапазонов —
+    /// возможно, из НЕСКОЛЬКИХ разных исходных файлов (каждый диапазон несёт свой SourceFile).
     /// Возвращает список путей к созданным файлам (по одному на группу).
     /// </summary>
-    public List<string> SplitAndGroup(string inputPdfPath, List<PdfGroup> groups, string outputDirectory)
+    public List<string> SplitAndGroup(List<PdfGroup> groups, string outputDirectory)
     {
-        if (!File.Exists(inputPdfPath))
-            throw new FileNotFoundException("PDF-файл не найден.", inputPdfPath);
         if (groups is null || groups.Count == 0)
             throw new ArgumentException("Список групп пуст.");
         if (string.IsNullOrWhiteSpace(outputDirectory))
@@ -47,22 +48,16 @@ public class PdfDocumentService
 
         Directory.CreateDirectory(outputDirectory);
 
-        PdfDocument source;
+        // Открываем каждый уникальный исходный файл ОДИН раз (страницы могут переиспользоваться
+        // в нескольких группах) — Import-режим обязателен, чтобы переносить страницы в новые документы.
+        var sources = new Dictionary<string, PdfDocument>(StringComparer.OrdinalIgnoreCase);
         try
         {
-            // Import-режим обязателен, чтобы переносить страницы в новые документы.
-            source = PdfReader.Open(inputPdfPath, PdfDocumentOpenMode.Import);
-        }
-        catch (PdfReaderException ex)
-        {
-            throw new InvalidOperationException(
-                $"Не удалось открыть PDF «{Path.GetFileName(inputPdfPath)}»: {ex.Message}", ex);
-        }
+            foreach (var group in groups)
+                foreach (var range in group.Ranges)
+                    OpenSourceIfNeeded(sources, range.SourceFile);
 
-        using (source)
-        {
-            int totalPages = source.PageCount;
-            ValidateGroups(groups, totalPages);
+            ValidateGroups(groups, sources);
 
             var outputFiles = new List<string>();
             // Защита от совпадений: и между группами одного запуска, и с уже существующими на диске.
@@ -74,8 +69,11 @@ public class PdfDocumentService
 
                 using var outDoc = new PdfDocument();
                 foreach (var range in group.Ranges)
+                {
+                    var source = sources[range.SourceFile];
                     for (int p = range.StartPage; p <= range.EndPage; p++)
                         outDoc.AddPage(source.Pages[p - 1]); // AddPage импортирует страницу
+                }
 
                 // CreateNew резервирует имя атомарно: файл, появившийся между проверкой
                 // ResolveUniquePath и записью, не будет молча перезаписан — возьмём следующее имя.
@@ -98,9 +96,31 @@ public class PdfDocumentService
 
             return outputFiles;
         }
+        finally
+        {
+            foreach (var doc in sources.Values)
+                doc.Dispose();
+        }
     }
 
-    private static void ValidateGroups(List<PdfGroup> groups, int totalPages)
+    private static void OpenSourceIfNeeded(Dictionary<string, PdfDocument> sources, string path)
+    {
+        if (sources.ContainsKey(path))
+            return;
+        if (!File.Exists(path))
+            throw new FileNotFoundException("PDF-файл не найден.", path);
+        try
+        {
+            sources[path] = PdfReader.Open(path, PdfDocumentOpenMode.Import);
+        }
+        catch (PdfReaderException ex)
+        {
+            throw new InvalidOperationException(
+                $"Не удалось открыть PDF «{Path.GetFileName(path)}»: {ex.Message}", ex);
+        }
+    }
+
+    private static void ValidateGroups(List<PdfGroup> groups, Dictionary<string, PdfDocument> sources)
     {
         foreach (var group in groups)
         {
@@ -109,12 +129,16 @@ public class PdfDocumentService
 
             foreach (var range in group.Ranges)
             {
+                // Пустой/несуществующий SourceFile уже отсеян в OpenSourceIfNeeded (FileNotFoundException)
+                // до попадания сюда — sources гарантированно содержит запись для любого диапазона.
+                int totalPages = sources[range.SourceFile].PageCount;
                 if (range.StartPage < 1 || range.EndPage < 1)
                     throw new ArgumentException($"Номера страниц должны быть >= 1: {range}");
                 if (range.StartPage > range.EndPage)
                     throw new ArgumentException($"Начальная страница больше конечной: {range}");
                 if (range.StartPage > totalPages || range.EndPage > totalPages)
-                    throw new ArgumentException($"Страница вне диапазона (всего {totalPages}): {range}");
+                    throw new ArgumentException(
+                        $"Страница вне диапазона (в файле «{Path.GetFileName(range.SourceFile)}» всего {totalPages}): {range}");
             }
         }
     }

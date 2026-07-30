@@ -160,19 +160,23 @@ public partial class MainWindow : Window
     /// При отключении предпросмотра возвращаем прежнюю ширину (окно не должно остаться шире).
     /// Высоту не трогаем: панель предпросмотра прокручивается, окно не должно расти вниз.
     /// </summary>
+    // Постоянная колонка «Файлы для обработки» (слева) добавляет ~232px (220 ширина + 12 отступ)
+    // ко всем базовым ширинам ниже — иначе средние секции сжимаются внахлёст.
+    private const double FilesColumnWidth = 232;
+
     private void AdjustWidthForPreview()
     {
         if (_viewModel.IsPreviewEnabled)
         {
             _widthBeforePreview = Width;     // запоминаем ширину до открытия панели
-            MinWidth = 1190;
-            if (Width < 1190) Width = 1190;
+            MinWidth = 1190 + FilesColumnWidth;
+            if (Width < MinWidth) Width = MinWidth;
         }
         else
         {
-            MinWidth = 880;
+            MinWidth = 880 + FilesColumnWidth;
             double target = _widthBeforePreview > 0 ? _widthBeforePreview : Width;
-            Width = System.Math.Max(880, System.Math.Min(Width, target));
+            Width = System.Math.Max(MinWidth, System.Math.Min(Width, target));
         }
 
         // На узких экранах не даём окну вылезти за рабочую область (ширина с открытой панелью велика).
@@ -215,9 +219,14 @@ public partial class MainWindow : Window
         if (!e.DataTransfer.Contains(DataFormat.File))
             return;
 
-        var file = e.DataTransfer.TryGetFiles()?.OfType<IStorageFile>().FirstOrDefault();
-        var path = file?.TryGetLocalPath();
-        if (!string.IsNullOrEmpty(path))
-            _viewModel.LoadFromPath(path);
+        // Можно перетащить сразу НЕСКОЛЬКО PDF — все добавятся в список файлов слева.
+        var paths = e.DataTransfer.TryGetFiles()?.OfType<IStorageFile>()
+            .Select(f => f.TryGetLocalPath())
+            .Where(p => !string.IsNullOrEmpty(p))
+            .Select(p => p!)
+            .ToList();
+
+        if (paths is { Count: > 0 })
+            _viewModel.AddSourceFiles(paths);
     }
 }
