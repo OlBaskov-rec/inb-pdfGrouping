@@ -133,118 +133,117 @@
         </Border>
 
         <!-- Auto,*,Auto,Auto: верх / прокручиваемая середина / закреплённая зона сообщений / низ -->
-        <Grid Grid.Column="2" RowDefinitions="Auto,*,Auto,Auto">
+        <Grid Grid.Column="2" RowDefinitions="*,Auto,Auto">
 
-        <!-- Верхняя панель: справа выбор языка + значок «О программе».
-             Правый отступ 24 — тот же зазор под прокрутку, что и у контента ниже (Margin="0,0,24,0"
-             на ScrollViewer'е): без него кнопки RU/i сидели ближе к правому краю окна, чем панели
-             ниже, и правое поле казалось у́же левого. -->
-        <DockPanel Grid.Row="0" Margin="0,0,24,8">
-            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                <!-- Выбор языка: квадратная кнопка с кодом текущего языка -->
-                <Button Content="{Binding LanguageShort}" Width="40" Padding="6,4" Margin="0,0,6,0"
-                        FontWeight="Bold" HorizontalContentAlignment="Center"
-                        ToolTip.Tip="{l:Tr Tip_Language}">
-                    <Button.Flyout>
-                        <MenuFlyout>
-                            <MenuItem Header="Русский"   Command="{Binding SetLanguageCommand}" CommandParameter="ru" />
-                            <MenuItem Header="English"   Command="{Binding SetLanguageCommand}" CommandParameter="en" />
-                            <MenuItem Header="Français"  Command="{Binding SetLanguageCommand}" CommandParameter="fr" />
-                            <MenuItem Header="Español"   Command="{Binding SetLanguageCommand}" CommandParameter="es" />
-                            <MenuItem Header="Deutsch"   Command="{Binding SetLanguageCommand}" CommandParameter="de" />
-                            <MenuItem Header="Italiano"  Command="{Binding SetLanguageCommand}" CommandParameter="it" />
-                            <MenuItem Header="中文"       Command="{Binding SetLanguageCommand}" CommandParameter="zh" />
-                            <MenuItem Header="日本語"     Command="{Binding SetLanguageCommand}" CommandParameter="ja" />
-                            <MenuItem Header="한국어"     Command="{Binding SetLanguageCommand}" CommandParameter="ko" />
-                        </MenuFlyout>
-                    </Button.Flyout>
-                </Button>
-                <!-- «О программе»: только значок. Зелёный фон + мигание, когда доступно обновление. -->
-                <Button Content="ℹ" Padding="9,4" FontSize="15" HorizontalContentAlignment="Center"
-                        Classes.updateAvailable="{Binding IsUpdateAvailable}"
-                        ToolTip.Tip="{l:Tr Tip_About}">
-                    <Button.Styles>
-                        <Style Selector="Button.updateAvailable /template/ ContentPresenter">
-                            <Setter Property="Background" Value="#3A8A3F" />
-                        </Style>
-                        <Style Selector="Button.updateAvailable:pointerover /template/ ContentPresenter">
-                            <Setter Property="Background" Value="#2E6F33" />
-                        </Style>
-                        <Style Selector="Button.updateAvailable">
-                            <Style.Animations>
-                                <Animation Duration="0:0:0.8" IterationCount="5">
-                                    <KeyFrame Cue="0%"><Setter Property="Opacity" Value="1" /></KeyFrame>
-                                    <KeyFrame Cue="50%"><Setter Property="Opacity" Value="0.4" /></KeyFrame>
-                                    <KeyFrame Cue="100%"><Setter Property="Opacity" Value="1" /></KeyFrame>
-                                </Animation>
-                            </Style.Animations>
-                        </Style>
-                    </Button.Styles>
-                    <Button.Flyout>
-                        <Flyout Placement="BottomEdgeAlignedRight">
-                            <StackPanel Width="300">
-                                <TextBlock Text="PDF Grouping" FontWeight="Bold" FontSize="16" />
-                                <TextBlock Text="slice &amp; group PDF" FontStyle="Italic" Foreground="#555" Margin="0,0,0,4" />
-                                <TextBlock Text="{Binding AppVersionText}"
-                                           Foreground="#555" Margin="0,0,0,4" />
-                                <TextBlock Text="{l:Tr About_Author}" Margin="0,0,0,2" />
-                                <TextBlock Text="github.com/OlBaskov-rec/inb-pdfGrouping"
-                                           Foreground="#777" FontSize="12" />
-                                <Border Height="1" Background="#E0E0E0" Margin="0,8" />
-                                <!-- Обычная ручная проверка (когда обновление ещё не найдено) -->
-                                <Button Content="{l:Tr About_CheckUpdate}"
-                                        IsVisible="{Binding ShowCheckButton}"
-                                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                                        Command="{Binding CheckUpdatesManualCommand}" />
-                                <!-- Зелёная кнопка: обновление найдено автоматически -->
-                                <Button Content="{Binding UpdateFoundButtonText}"
-                                        IsVisible="{Binding ShowRevealButton}"
-                                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                                        Background="#3A8A3F" Foreground="White" FontWeight="Bold"
-                                        Command="{Binding RevealUpdateCommand}" />
-                                <TextBlock Text="{Binding UpdateCheckStatus}" TextWrapping="Wrap"
-                                           FontSize="12" Foreground="#555" Margin="0,6,0,0" />
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-            </StackPanel>
-            <TextBlock />
-        </DockPanel>
-
-        <ScrollViewer Grid.Row="1"
+        <ScrollViewer Grid.Row="0"
                       HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto">
-        <!-- Правый отступ — зазор под вертикальную полосу прокрутки, чтобы она не наезжала -->
-        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="0,0,24,0">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
 
-        <!-- Row 0: путь к активному файлу (только отображение — сам выбор файлов слева) -->
-        <Border Grid.Row="0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
+        <!-- Row 0: путь к активному файлу + всего страниц + кнопки языка/«О программе» — единая
+             область с бледной подложкой, визуально объединяющая три поля источника. Кнопки языка и
+             «i» раньше были отдельной панелью в правом верхнем углу окна; теперь они под путём к
+             файлу и количеством страниц, в одной подложке с ними. -->
+        <Border Grid.Row="0" Background="#FBF8F2" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
                 Padding="10" Margin="0,0,0,8">
-            <DockPanel>
-                <TextBlock DockPanel.Dock="Top" Text="{l:Tr Path_Title}"
-                           FontWeight="Bold" Margin="0,0,0,6" />
-                <Button DockPanel.Dock="Right" Content="✕" Margin="8,0,0,0" Foreground="#C42B1C"
-                        Command="{Binding ClearAllCommand}" ToolTip.Tip="{l:Tr Tip_ClearAll}" />
-                <TextBox Text="{Binding SourceFilePath}" IsReadOnly="True"
-                         PlaceholderText="{l:Tr Path_Placeholder}"
-                         VerticalAlignment="Center" />
-            </DockPanel>
+            <StackPanel>
+                <DockPanel Margin="0,0,0,8">
+                    <TextBlock DockPanel.Dock="Top" Text="{l:Tr Path_Title}"
+                               FontWeight="Bold" Margin="0,0,0,6" />
+                    <Button DockPanel.Dock="Right" Content="✕" Margin="8,0,0,0" Foreground="#C42B1C"
+                            Command="{Binding ClearAllCommand}" ToolTip.Tip="{l:Tr Tip_ClearAll}" />
+                    <TextBox Text="{Binding SourceFilePath}" IsReadOnly="True"
+                             PlaceholderText="{l:Tr Path_Placeholder}"
+                             VerticalAlignment="Center" />
+                </DockPanel>
+
+                <TextBlock Margin="0,0,0,8">
+                    <Run Text="{l:Tr Total_Pages}" Foreground="Gray" />
+                    <Run Text="{Binding TotalPages}" FontWeight="Bold" />
+                </TextBlock>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <!-- Выбор языка: квадратная кнопка с кодом текущего языка -->
+                    <Button Content="{Binding LanguageShort}" Width="40" Padding="6,4" Margin="0,0,6,0"
+                            FontWeight="Bold" HorizontalContentAlignment="Center"
+                            ToolTip.Tip="{l:Tr Tip_Language}">
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuItem Header="Русский"   Command="{Binding SetLanguageCommand}" CommandParameter="ru" />
+                                <MenuItem Header="English"   Command="{Binding SetLanguageCommand}" CommandParameter="en" />
+                                <MenuItem Header="Français"  Command="{Binding SetLanguageCommand}" CommandParameter="fr" />
+                                <MenuItem Header="Español"   Command="{Binding SetLanguageCommand}" CommandParameter="es" />
+                                <MenuItem Header="Deutsch"   Command="{Binding SetLanguageCommand}" CommandParameter="de" />
+                                <MenuItem Header="Italiano"  Command="{Binding SetLanguageCommand}" CommandParameter="it" />
+                                <MenuItem Header="中文"       Command="{Binding SetLanguageCommand}" CommandParameter="zh" />
+                                <MenuItem Header="日本語"     Command="{Binding SetLanguageCommand}" CommandParameter="ja" />
+                                <MenuItem Header="한국어"     Command="{Binding SetLanguageCommand}" CommandParameter="ko" />
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+                    <!-- «О программе»: только значок. Зелёный фон + мигание, когда доступно обновление. -->
+                    <Button Content="ℹ" Padding="9,4" FontSize="15" HorizontalContentAlignment="Center"
+                            Classes.updateAvailable="{Binding IsUpdateAvailable}"
+                            ToolTip.Tip="{l:Tr Tip_About}">
+                        <Button.Styles>
+                            <Style Selector="Button.updateAvailable /template/ ContentPresenter">
+                                <Setter Property="Background" Value="#3A8A3F" />
+                            </Style>
+                            <Style Selector="Button.updateAvailable:pointerover /template/ ContentPresenter">
+                                <Setter Property="Background" Value="#2E6F33" />
+                            </Style>
+                            <Style Selector="Button.updateAvailable">
+                                <Style.Animations>
+                                    <Animation Duration="0:0:0.8" IterationCount="5">
+                                        <KeyFrame Cue="0%"><Setter Property="Opacity" Value="1" /></KeyFrame>
+                                        <KeyFrame Cue="50%"><Setter Property="Opacity" Value="0.4" /></KeyFrame>
+                                        <KeyFrame Cue="100%"><Setter Property="Opacity" Value="1" /></KeyFrame>
+                                    </Animation>
+                                </Style.Animations>
+                            </Style>
+                        </Button.Styles>
+                        <Button.Flyout>
+                            <Flyout Placement="BottomEdgeAlignedRight">
+                                <StackPanel Width="300">
+                                    <TextBlock Text="PDF Grouping" FontWeight="Bold" FontSize="16" />
+                                    <TextBlock Text="slice &amp; group PDF" FontStyle="Italic" Foreground="#555" Margin="0,0,0,4" />
+                                    <TextBlock Text="{Binding AppVersionText}"
+                                               Foreground="#555" Margin="0,0,0,4" />
+                                    <TextBlock Text="{l:Tr About_Author}" Margin="0,0,0,2" />
+                                    <TextBlock Text="github.com/OlBaskov-rec/inb-pdfGrouping"
+                                               Foreground="#777" FontSize="12" />
+                                    <Border Height="1" Background="#E0E0E0" Margin="0,8" />
+                                    <!-- Обычная ручная проверка (когда обновление ещё не найдено) -->
+                                    <Button Content="{l:Tr About_CheckUpdate}"
+                                            IsVisible="{Binding ShowCheckButton}"
+                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                            Command="{Binding CheckUpdatesManualCommand}" />
+                                    <!-- Зелёная кнопка: обновление найдено автоматически -->
+                                    <Button Content="{Binding UpdateFoundButtonText}"
+                                            IsVisible="{Binding ShowRevealButton}"
+                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                            Background="#3A8A3F" Foreground="White" FontWeight="Bold"
+                                            Command="{Binding RevealUpdateCommand}" />
+                                    <TextBlock Text="{Binding UpdateCheckStatus}" TextWrapping="Wrap"
+                                               FontSize="12" Foreground="#555" Margin="0,6,0,0" />
+                                </StackPanel>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                </StackPanel>
+            </StackPanel>
         </Border>
 
-        <!-- Row 1: всего страниц (под блоком пути к файлу) -->
-        <Border Grid.Row="1" Background="#F0F0F0" CornerRadius="4" Padding="8" Margin="0,0,0,8">
-            <TextBlock>
-                <Run Text="{l:Tr Total_Pages}" Foreground="Gray" />
-                <Run Text="{Binding TotalPages}" FontWeight="Bold" />
-            </TextBlock>
-        </Border>
-
-        <!-- Row 2: диапазоны | метка | группы (высота по списку диапазонов; колонки тянутся вместе) -->
+        <!-- Row 1: диапазоны → имя файла → файлы для вывода (высота по списку диапазонов; колонки
+             тянутся вместе). Между секторами — бледные стрелки-треугольники: направление, в котором
+             обычно движется внимание при работе с программой (задать диапазон → назвать файл →
+             получить готовые файлы). -->
         <!-- MinWidth колонок не даёт секции «Диапазоны» сжаться под два поля номеров (наезжание при предпросмотре). -->
-        <Grid Grid.Row="2" Margin="0,0,0,8">
+        <Grid Grid.Row="1" Margin="0,0,0,8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" MinWidth="350" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" MinWidth="250" />
             </Grid.ColumnDefinitions>
@@ -335,9 +334,14 @@
                 </Grid>
             </Border>
 
-            <!-- Метка группы -->
-            <Border Grid.Column="1" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
-                    Padding="10" Margin="8,0" Width="210">
+            <!-- Стрелка: Диапазоны страниц → Имя файла -->
+            <TextBlock Grid.Column="1" Text="▶" FontSize="22" FontWeight="Bold"
+                       Foreground="#DCD3C3" VerticalAlignment="Center"
+                       HorizontalAlignment="Center" Margin="4,0" />
+
+            <!-- Метка группы / Имя файла -->
+            <Border Grid.Column="2" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
+                    Padding="10" Width="210">
                 <!-- Один StackPanel сверху вниз, VerticalAlignment=Top: кнопки идут сразу после
                      быстрого выбора со стандартным интервалом (Margin="0,12,0,0", как в панели
                      «Диапазоны страниц»), без искусственного прижатия к низу — раньше пустая
@@ -373,8 +377,13 @@
                 </StackPanel>
             </Border>
 
-            <!-- Группы -->
-            <Border Grid.Column="2" MinWidth="240" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
+            <!-- Стрелка: Имя файла → Файлы для вывода -->
+            <TextBlock Grid.Column="3" Text="▶" FontSize="22" FontWeight="Bold"
+                       Foreground="#DCD3C3" VerticalAlignment="Center"
+                       HorizontalAlignment="Center" Margin="4,0" />
+
+            <!-- Группы / Файлы для вывода -->
+            <Border Grid.Column="4" MinWidth="240" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
                 <!-- Строка `*`: серая подложка списка тянется до низа панели (единый стиль). -->
                 <Grid RowDefinitions="Auto,*">
                     <TextBlock Grid.Row="0" Text="{l:Tr Groups_Title}" FontWeight="Bold" Margin="0,0,0,6" />
@@ -422,7 +431,7 @@
         </Grid>
 
         <!-- Результаты (созданные файлы) — остаются в прокручиваемой середине -->
-        <Border Grid.Row="6" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
+        <Border Grid.Row="5" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
                 Padding="10" Margin="0,8,0,0" IsVisible="{Binding HasResults}">
             <Grid RowDefinitions="Auto,*">
                 <DockPanel Grid.Row="0" Margin="0,0,0,6">
@@ -442,11 +451,11 @@
         </Grid>
         </ScrollViewer>
 
-        <!-- Закреплённая зона сообщений (Row 2): всегда видна; при длинном тексте — прокрутка.
+        <!-- Закреплённая зона сообщений (Row 1): всегда видна; при длинном тексте — прокрутка.
              Вынесена из прокручиваемой середины, чтобы нижний бар «Обработать» оставался виден. -->
         <!-- Лимит высоты: при длинном сообщении оно прокручивается ВНУТРИ себя, чтобы окно не
              вырастало выше экрана и середина (диапазоны/границы) оставалась видна без прокрутки. -->
-        <ScrollViewer Grid.Row="2" MaxHeight="260" Margin="0,8,24,0"
+        <ScrollViewer Grid.Row="1" MaxHeight="260" Margin="0,8,0,0"
                       HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
         <StackPanel>
         <Border x:Name="WarningBlock"
@@ -587,8 +596,8 @@
         </ScrollViewer>
 
         <!-- Закреплённый низ: «Сохранить в» + кнопки «Обработать»/«Без пересечений» всегда видны (вне прокрутки) -->
-        <Border Grid.Row="3" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0"
-                Padding="0,8,0,0" Margin="0,4,24,0">
+        <Border Grid.Row="2" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0"
+                Padding="0,8,0,0" Margin="0,4,0,0">
             <StackPanel>
                 <!-- Куда сохранять (на всю ширину) -->
                 <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"

@@ -164,17 +164,21 @@ public partial class MainWindow : Window
     // ко всем базовым ширинам ниже — иначе средние секции сжимаются внахлёст.
     private const double FilesColumnWidth = 232;
 
+    // Две стрелки-разделителя между «Диапазоны страниц» / «Имя файла» / «Файлы для вывода»
+    // добавляют ~35px каждая (глиф + отступы) — без этой поправки секции сжимались внахлёст.
+    private const double FlowArrowsWidth = 70;
+
     private void AdjustWidthForPreview()
     {
         if (_viewModel.IsPreviewEnabled)
         {
             _widthBeforePreview = Width;     // запоминаем ширину до открытия панели
-            MinWidth = 1190 + FilesColumnWidth;
+            MinWidth = 1190 + FilesColumnWidth + FlowArrowsWidth;
             if (Width < MinWidth) Width = MinWidth;
         }
         else
         {
-            MinWidth = 880 + FilesColumnWidth;
+            MinWidth = 880 + FilesColumnWidth + FlowArrowsWidth;
             double target = _widthBeforePreview > 0 ? _widthBeforePreview : Width;
             Width = System.Math.Max(MinWidth, System.Math.Min(Width, target));
         }

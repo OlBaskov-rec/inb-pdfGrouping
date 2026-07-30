@@ -4,6 +4,20 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.53] — 2026-07-30
+
+**EN — Changed:** language/"i" buttons moved from the top-right corner down into the "File path"
+panel, right below the file path and total-pages count, sharing one pale background panel with
+them; faint arrow markers now show the left-to-right flow between "Page ranges" → "File name" →
+"Output files"; the right-edge margin now exactly matches the left (both 12px, previously the
+right side reserved extra space for the scrollbar).
+
+**RU — Изменено:** кнопки языка и «i» перенесены из правого верхнего угла в панель «Путь к
+файлу» — под путь к файлу и «Всего страниц», в одной бледной подложке с ними; между «Диапазоны
+страниц» → «Имя файла» → «Файлы для вывода» появились бледные стрелки, показывающие порядок
+работы; правое поле окна теперь точно равно левому (по 12px, раньше справа резервировалось место
+под прокрутку).
+
 ## [0.1.52] — 2026-07-30
 
 **EN — Changed:** source-number badges are now brown instead of blue; "Files to process" →
