@@ -4,6 +4,22 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.54] — 2026-07-31
+
+**EN — Fixed:** the auto-hiding scrollbar could overlap the interface when the window was
+shrunk vertically (worse on hover); the right-edge gap now widens only while a scrollbar is
+actually needed and otherwise matches the left. **Changed:** "Sources to process" now shares
+"File path"'s pale background (both describe the active source); the language/"i" buttons moved
+off that background into their own row below it; "+ Add range" is ~25% taller and "+ Add range
+per page" ~20% taller.
+
+**RU — Исправлено:** автоскрывающаяся полоса прокрутки могла наезжать на интерфейс при
+уменьшении окна по высоте (сильнее при наведении); правое поле теперь увеличивается только
+пока прокрутка реально нужна, иначе равно левому. **Изменено:** «Источники для обработки»
+теперь той же бледной подложки, что и «Путь к файлу» (оба поля — про активный источник); кнопки
+языка/«i» убраны с этой подложки в свой ряд под ней; «+ Добавить диапазон» выше на ~25%,
+«+ Добавить диапазон постранично» — на ~20%.
+
 ## [0.1.53] — 2026-07-30
 
 **EN — Changed:** language/"i" buttons moved from the top-right corner down into the "File path"

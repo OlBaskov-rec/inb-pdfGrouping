@@ -36,6 +36,33 @@ public partial class MainWindow : Window
         };
 
         AdjustWidthForPreview();
+
+        // Полосу прокрутки Fluent-тема рисует ПОВЕРХ содержимого (не резервирует место сама),
+        // поэтому при её появлении (окно ниже, чем контент) правый край текста/кнопок оказывается
+        // под ней — особенно заметно при наведении, когда полоса расширяется. Резервируем зазор
+        // (24px) ТОЛЬКО пока полоса реально нужна — не всегда, иначе правое поле окна отличалось бы
+        // от левого при отсутствии прокрутки.
+        SetupScrollGutter(MainContentScroll, MainContentGrid);
+        SetupScrollGutter(MessagesScroll, MessagesStack);
+    }
+
+    private static void SetupScrollGutter(ScrollViewer viewer, Control content)
+    {
+        void Update()
+        {
+            bool needsScrollbar = viewer.Extent.Height > viewer.Viewport.Height + 0.5;
+            double target = needsScrollbar ? 24 : 0;
+            var m = content.Margin;
+            if (System.Math.Abs(m.Right - target) > 0.5)
+                content.Margin = new Thickness(m.Left, m.Top, target, m.Bottom);
+        }
+
+        viewer.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == ScrollViewer.ExtentProperty || e.Property == ScrollViewer.ViewportProperty)
+                Update();
+        };
+        Update();
     }
 
     /// <summary>
