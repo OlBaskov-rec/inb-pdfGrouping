@@ -115,6 +115,7 @@ public partial class MainViewModel
         RangeEnd = TotalPages > 0 ? TotalPages : 1;
         if (value != null)
             SetInfo(L.Format("Msg_Loaded", value.FileName, value.PageCount));
+        OnSourceSwitchedForPreview(value);
     }
 
     [RelayCommand]

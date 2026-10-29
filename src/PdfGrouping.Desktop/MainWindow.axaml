@@ -17,6 +17,17 @@
         WindowStartupLocation="CenterScreen"
         DragDrop.AllowDrop="True">
 
+    <Window.Styles>
+        <!-- Переходящий фокус предпросмотра: в списке источников синяя подсветка и лупа — только
+             пока фокус на файле; когда выбран диапазон (класс rangeFocus) — подсветка снимается. -->
+        <Style Selector="TextBlock.lens"><Setter Property="IsVisible" Value="False" /></Style>
+        <Style Selector="ListBoxItem:selected TextBlock.lens"><Setter Property="IsVisible" Value="True" /></Style>
+        <Style Selector="ListBox.rangeFocus ListBoxItem:selected TextBlock.lens"><Setter Property="IsVisible" Value="False" /></Style>
+        <Style Selector="ListBox.rangeFocus ListBoxItem:selected /template/ ContentPresenter"><Setter Property="Background" Value="Transparent" /></Style>
+        <Style Selector="ListBox.rangeFocus ListBoxItem:selected:pointerover /template/ ContentPresenter"><Setter Property="Background" Value="#14000000" /></Style>
+        <Style Selector="ListBox.rangeFocus ListBoxItem:selected:focus /template/ ContentPresenter"><Setter Property="Background" Value="Transparent" /></Style>
+    </Window.Styles>
+
     <Window.Resources>
         <conv:BoolToBrushConverter x:Key="BoolToBrush" />
         <conv:AngleToTransformConverter x:Key="AngleToTransform" />
@@ -41,7 +52,8 @@
                     <Panel>
                         <TextBlock Text="{l:Tr SourceFiles_Empty}" Foreground="#777" Margin="8,6"
                                    TextWrapping="Wrap" IsVisible="{Binding !SourceFiles.Count}" />
-                        <ListBox ItemsSource="{Binding SourceFiles}" Background="Transparent"
+                        <ListBox x:Name="SourceList" ItemsSource="{Binding SourceFiles}" Background="Transparent"
+                                 Classes.rangeFocus="{Binding IsRangeFocus}"
                                  SelectedItem="{Binding SelectedSourceFile}">
                             <ListBox.Styles>
                                 <Style Selector="ListBoxItem">
@@ -54,14 +66,18 @@
                                     <!-- Тонкая линия-разделитель под каждой строкой; № — не редактируемый
                                          порядковый номер (та же метка, что видна у диапазонов «[N]»). -->
                                     <Border BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="0,0,0,4">
-                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
                                             <TextBlock Grid.Column="0" Text="{Binding Number}" FontWeight="Bold"
                                                        Foreground="#8B5A2B" VerticalAlignment="Center"
                                                        Margin="0,0,6,0" />
                                             <TextBlock Grid.Column="1" Text="{Binding FileName}"
                                                        TextWrapping="Wrap" VerticalAlignment="Center"
                                                        ToolTip.Tip="{Binding FilePath}" />
-                                            <Button Grid.Column="2" Content="✕" Padding="6,2" Foreground="#C42B1C"
+                                            <!-- Лупа: на этом файле сейчас фокус предпросмотра (видна только у выбранной
+                                                 строки и пока фокус не ушёл на диапазон — см. стили в Window.Styles). -->
+                                            <TextBlock Grid.Column="2" Classes="lens" Text="🔍" Foreground="#0078D4"
+                                                       VerticalAlignment="Center" Margin="4,0" />
+                                            <Button Grid.Column="3" Content="✕" Padding="6,2" Foreground="#C42B1C"
                                                     Background="Transparent" BorderThickness="0"
                                                     Command="{ReflectionBinding $parent[ListBox].DataContext.RemoveSourceFileCommand}"
                                                     CommandParameter="{Binding}" ToolTip.Tip="{l:Tr Tip_RemoveFile}" />
@@ -88,11 +104,26 @@
                            Foreground="#777" FontSize="12" IsVisible="{Binding !HasPreview}" />
                 <ScrollViewer IsVisible="{Binding HasPreview}">
                     <StackPanel>
+                        <!-- Листание страниц исходного файла (когда фокус на файле, а не на диапазоне) -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,8"
+                                    IsVisible="{Binding IsSourcePreview}">
+                            <TextBlock Text="{l:Tr Range_PagesShort}" Foreground="Gray"
+                                       VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <NumericUpDown Value="{Binding SourcePreviewPage}" Minimum="1" Maximum="100000"
+                                           Increment="1" FormatString="0" Width="130" />
+                        </StackPanel>
                         <!-- Начальная страница -->
-                        <TextBlock FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,3">
+                        <TextBlock FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,3"
+                                   IsVisible="{Binding !IsSourcePreview}">
                             <Run Text="{l:Tr Preview_StartPageLabel}" />
                             <Run Text=": " />
                             <Run Text="{Binding SelectedRange.StartPage}" />
+                        </TextBlock>
+                        <TextBlock FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,3"
+                                   IsVisible="{Binding IsSourcePreview}">
+                            <Run Text="{l:Tr Range_PagesShort}" />
+                            <Run Text=" " />
+                            <Run Text="{Binding StartThumbPage}" />
                         </TextBlock>
                         <Border Background="#F7F7F7" BorderBrush="#E0E0E0" BorderThickness="1" Padding="4"
                                 HorizontalAlignment="Center" Cursor="Hand"
@@ -112,11 +143,19 @@
                             <Border Grid.Column="2" Height="1" Background="#D8D8D8" VerticalAlignment="Center" />
                         </Grid>
 
-                        <!-- Конечная страница -->
-                        <TextBlock FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,3">
+                        <!-- Конечная страница (у файла из одной страницы второй нет — блок скрыт) -->
+                        <StackPanel IsVisible="{Binding EndThumb, Converter={x:Static ObjectConverters.IsNotNull}}">
+                        <TextBlock FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,3"
+                                   IsVisible="{Binding !IsSourcePreview}">
                             <Run Text="{l:Tr Preview_EndPageLabel}" />
                             <Run Text=": " />
                             <Run Text="{Binding SelectedRange.EndPage}" />
+                        </TextBlock>
+                        <TextBlock FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,3"
+                                   IsVisible="{Binding IsSourcePreview}">
+                            <Run Text="{l:Tr Range_PagesShort}" />
+                            <Run Text=" " />
+                            <Run Text="{Binding EndThumbPage}" />
                         </TextBlock>
                         <Border Background="#F7F7F7" BorderBrush="#E0E0E0" BorderThickness="1" Padding="4"
                                 HorizontalAlignment="Center" Cursor="Hand"
@@ -127,6 +166,7 @@
                         <Button Content="{l:Tr Btn_Zoom}" Margin="0,4,0,0" HorizontalAlignment="Center"
                                 Command="{Binding ZoomEndCommand}"
                                 ToolTip.Tip="{l:Tr Tip_ZoomEnd}" />
+                        </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
             </DockPanel>

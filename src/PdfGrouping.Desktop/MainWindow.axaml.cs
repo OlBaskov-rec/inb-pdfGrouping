@@ -25,6 +25,11 @@ public partial class MainWindow : Window
         _viewModel = new MainViewModel(new StorageProviderFilePicker(() => this), new UpdateService());
         DataContext = _viewModel;
 
+        // Клик по строке списка источников возвращает фокус предпросмотра на файл (в т.ч. по уже
+        // выбранной строке, когда выбор не меняется и SelectionChanged не придёт).
+        SourceList.AddHandler(PointerPressedEvent, (_, _) => _viewModel.FocusSource(),
+            Avalonia.Interactivity.RoutingStrategies.Tunnel);
+
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
         AddHandler(DragDrop.DropEvent, OnDrop);
 

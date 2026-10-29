@@ -4,6 +4,12 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект придерживается [семантического версионирования](https://semver.org/lang/ru/).
 
+## [0.1.55] — 2026-10-29
+
+**EN — Added:** preview of files in "Sources to process" (pages from 1, page selector, last viewed pages remembered per file); moving preview focus — blue highlight + magnifier on the previewed file, which moves to the selected range and back.
+
+**RU — Добавлено:** предпросмотр файлов в «Источниках для обработки» (страницы с первой, выбор страницы, последние просмотренные запоминаются по файлам); переходящий фокус — синяя подсветка и лупа на просматриваемом файле, уходит на выбранный диапазон и обратно.
+
 ## [0.1.54] — 2026-07-31
 
 **EN — Fixed:** the auto-hiding scrollbar could overlap the interface when the window was

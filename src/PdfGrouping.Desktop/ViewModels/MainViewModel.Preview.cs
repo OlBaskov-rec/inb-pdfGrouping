@@ -62,11 +62,86 @@ public partial class MainViewModel
         }
     }
 
+    // ===== Предпросмотр исходного файла (без диапазона) и «переходящий фокус» =====
+    // Фокус предпросмотра — либо на выбранном диапазоне (IsRangeFocus), либо на активном
+    // исходном файле (IsSourcePreview). Одновременно подсвечено только одно из двух.
+
+    /// <summary>Фокус предпросмотра на диапазоне из списка «Диапазоны страниц».</summary>
+    [ObservableProperty]
+    private bool _isRangeFocus;
+
+    /// <summary>Фокус предпросмотра на активном файле из «Источники для обработки».</summary>
+    [ObservableProperty]
+    private bool _isSourcePreview;
+
+    /// <summary>Первая из двух показываемых страниц исходного файла (запоминается по файлам).</summary>
+    [ObservableProperty]
+    private int _sourcePreviewPage = 1;
+
+    [ObservableProperty]
+    private int _startThumbPage;
+
+    [ObservableProperty]
+    private int _endThumbPage;
+
+    private readonly Dictionary<string, int> _lastSourcePage = new(StringComparer.OrdinalIgnoreCase);
+    private bool _suppressPageChange;
+
+    private void UpdateFocusState()
+    {
+        IsRangeFocus = SelectedRange is not null;
+        IsSourcePreview = SelectedRange is null && SelectedSourceFile is not null;
+    }
+
+    /// <summary>Вернуть фокус предпросмотра на исходный файл (клик по строке в списке источников).</summary>
+    public void FocusSource()
+    {
+        if (SelectedRange is not null)
+            SelectedRange = null;
+    }
+
+    /// <summary>Смена активного файла: показать его последние просматриваемые страницы (или с первой).</summary>
+    private void OnSourceSwitchedForPreview(SourceFileEntry? value)
+    {
+        _suppressPageChange = true;
+        SourcePreviewPage = value is not null && _lastSourcePage.TryGetValue(value.FilePath, out int p)
+            ? Math.Clamp(p, 1, Math.Max(1, value.PageCount))
+            : 1;
+        _suppressPageChange = false;
+
+        if (SelectedRange is not null)
+            SelectedRange = null; // сам обновит фокус и предпросмотр
+        else
+        {
+            UpdateFocusState();
+            if (IsPreviewEnabled)
+                _ = RefreshPreviewAsync();
+        }
+    }
+
+    partial void OnSourcePreviewPageChanged(int value)
+    {
+        if (_suppressPageChange || SelectedSourceFile is null) return;
+
+        int clamped = Math.Clamp(value, 1, Math.Max(1, SelectedSourceFile.PageCount));
+        if (clamped != value)
+        {
+            SourcePreviewPage = clamped;
+            return;
+        }
+
+        _lastSourcePage[SelectedSourceFile.FilePath] = value;
+        if (IsSourcePreview && IsPreviewEnabled)
+            _ = RefreshPreviewAsync();
+    }
+
     partial void OnSelectedRangeChanged(PageRange? value)
     {
         PreviewRangeText = value is null
             ? string.Empty
             : L.Format("Preview_RangeInfo", value.PageCount, value.StartPage, value.EndPage);
+
+        UpdateFocusState();
 
         if (IsPreviewEnabled)
             _ = RefreshPreviewAsync();
@@ -97,25 +172,47 @@ public partial class MainViewModel
     {
         int generation = ++_previewGeneration;
         var range = SelectedRange;
-        // Каждый диапазон несёт СВОЙ исходный файл: выбранный диапазон в списке может быть из
-        // файла, отличного от текущего активного — предпросмотр обязан брать пример именно оттуда.
-        var path = range?.SourceFile;
-
-        if (range is null || string.IsNullOrEmpty(path))
+        string? path;
+        int startPage, endPage; // endPage = 0 — второй страницы нет
+        if (range is not null)
+        {
+            // Каждый диапазон несёт СВОЙ исходный файл: выбранный диапазон в списке может быть из
+            // файла, отличного от текущего активного — предпросмотр обязан брать пример именно оттуда.
+            path = range.SourceFile;
+            startPage = range.StartPage;
+            endPage = range.EndPage;
+        }
+        else if (SelectedSourceFile is { } file)
+        {
+            // Нет выбранного диапазона — смотрим сам активный файл: две подряд страницы.
+            path = file.FilePath;
+            startPage = Math.Clamp(SourcePreviewPage, 1, Math.Max(1, file.PageCount));
+            endPage = startPage + 1 <= file.PageCount ? startPage + 1 : 0;
+            PreviewRangeText = $"{L["Range_PagesShort"]} {startPage} / {file.PageCount}";
+        }
+        else
         {
             SetThumbs(null, null);
             return;
         }
 
-        int startPage = range.StartPage;
-        int endPage = range.EndPage;
+        if (string.IsNullOrEmpty(path))
+        {
+            SetThumbs(null, null);
+            return;
+        }
+
+        StartThumbPage = startPage;
+        EndThumbPage = endPage;
 
         try
         {
             var (s, e) = await Task.Run(() =>
             {
                 var sp = ImageHelper.ToBitmap(_renderService.RenderPage(path, startPage, 360, 1000));
-                var ep = ImageHelper.ToBitmap(_renderService.RenderPage(path, endPage, 360, 1000));
+                var ep = endPage > 0
+                    ? ImageHelper.ToBitmap(_renderService.RenderPage(path, endPage, 360, 1000))
+                    : null;
                 return (sp, ep);
             });
 
@@ -123,7 +220,7 @@ public partial class MainViewModel
             {
                 // Пока рендерили, выбрали другой диапазон — результат устарел, освобождаем.
                 s.Dispose();
-                e.Dispose();
+                e?.Dispose();
                 return;
             }
 
@@ -138,15 +235,16 @@ public partial class MainViewModel
     }
 
     [RelayCommand]
-    private Task ZoomStartAsync() => OpenZoomAsync(SelectedRange?.StartPage);
+    private Task ZoomStartAsync() => OpenZoomAsync(StartThumbPage > 0 ? StartThumbPage : null);
 
     [RelayCommand]
-    private Task ZoomEndAsync() => OpenZoomAsync(SelectedRange?.EndPage);
+    private Task ZoomEndAsync() => OpenZoomAsync(EndThumbPage > 0 ? EndThumbPage : null);
 
     private async Task OpenZoomAsync(int? page)
     {
-        // Зум — из файла ВЫБРАННОГО диапазона (не обязательно текущего активного файла).
-        var path = SelectedRange?.SourceFile;
+        // Зум — из файла ВЫБРАННОГО диапазона (не обязательно текущего активного файла);
+        // без диапазона — из активного исходного файла.
+        var path = SelectedRange?.SourceFile ?? SelectedSourceFile?.FilePath;
         if (page is null || string.IsNullOrEmpty(path)) return;
 
         int p = page.Value;
